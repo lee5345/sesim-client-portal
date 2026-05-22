@@ -223,8 +223,10 @@ id UUID PK
 company_id UUID
 name TEXT
 resident_registration_number TEXT
+email TEXT
 hire_date DATE
 department_name TEXT
+pay_amount NUMBER
 pay_type TEXT
 pay_tax_basis TEXT
 employment_type TEXT
@@ -527,8 +529,10 @@ ExcelJS
 ```txt
 이름
 주민번호
+이메일
 입사일
 부서
+급여
 급여 종류
 세전/세후
 계약직 여부
