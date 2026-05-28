@@ -1,2 +1,86 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+
+# next.js
+/.next/
+/out/
+/build
+
+# production
+/dist
+
+# env
+.env
+.env.*
+!.env.example
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# prisma
+/prisma/dev.db
+/prisma/dev.db-journal
+
+# uploads / temp
+/uploads
+/tmp
+/temp
+
+# testing
+/coverage
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# ide
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# os
+.DS_Store
+Thumbs.db
+
+# misc
+*.pem
+*.key
+
+# sentry
+.sentryclirc
+
+# local db dumps/backups
+*.sql
+*.dump
+*.bak
+
+# generated files
+/generated
+
+# turbo
+.turbo
+
+# cache
+.cache
+.eslintcache
+
+# playwright
+/playwright-report
+/test-results
+
+# local secrets
+secrets/
+credentials/
+
+# development
 .cursorignore
 AGENTS.md
