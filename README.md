@@ -10,110 +10,49 @@ Primary workflows:
 2. Termination Information - 퇴사자 정보 입력/관리
 3. Salary Change Information - 급여변경 정보 입력/관리
 
-MVP priorities:
+# Core Stack
 
-- Security
-- Strict tenant isolation
-- Fast CRUD implementation
-- Reliable Excel exports
-- Extensible architecture
+## App
 
-Non-goals:
+* Next.js (App Router)
+* TypeScript
+* Prisma ORM
+* PostgreSQL
+* Auth.js
 
-- Employee self-service
-- Excel import
-- Messaging/chat
-- Payroll calculation engine
-- Billing/payments
+## UI
 
----
+* Tailwind CSS
+* shadcn/ui
+* TanStack Table
+* React Hook Form
+* Zod
 
-# Recommended Tech Stack
+## Infra
 
-## Frontend
-
-- Next.js (App Router)
-- TypeScript
-- TailwindCSS
-- shadcn/ui
-- React Hook Form
-- Zod
-- TanStack Table
-- Axios or native fetch
-
-## Backend
-
-Option A (recommended for speed + structure):
-
-- NestJS
-- TypeScript
-- Prisma ORM
-
-Option B:
-
-- Express + Prisma
-
-## Database
-
-- PostgreSQL
-
-## Auth
-
-- Session auth preferred
-- HttpOnly secure cookies
-- bcrypt/argon2 password hashing
-
-## Excel Export
-
-- ExcelJS
-
-## Validation
-
-- Zod shared schemas
-
-## Deployment
-
-Frontend:
-- Vercel
-
-Backend:
-- Railway / Render / Fly.io / ECS
-
-DB:
-- Neon / Supabase / RDS
-
-Monitoring:
-- Sentry
+* Vercel
+* Neon Postgres
+* Sentry
 
 ---
 
-# Multi-Tenant Architecture
+# Core Architecture
 
-## Tenant Model
-
-Every business object must contain:
-
-- company_id
-- created_by_user_id
-- updated_by_user_id
-
-STRICT RULE:
-
-ClientCompanyAdmin MUST NEVER access records outside their own company_id.
-
-Every query MUST be scoped.
-
-Example:
-
-```ts
-where: {
-  companyId: user.companyId
-}
+```txt
+Frontend UI
+  V
+Server Actions / Route Handlers
+  V
+Business Logic / RBAC / Validation
+  V
+Prisma ORM
+  V
+PostgreSQL
 ```
 
-Never trust frontend filtering.
+Monolithic full-stack Next.js architecture.
 
-Always enforce tenant isolation server-side.
+No microservices.
 
 ---
 
@@ -121,420 +60,227 @@ Always enforce tenant isolation server-side.
 
 ## ClientCompanyAdmin
 
-- Belongs to exactly one company
-- CRUD only for own company
-- Can export own data
+* CRUD only for own company
+* Export own company data
 
 ## FirmStaff
 
-- Can access all companies
-- Can edit client records
-- Can export all data
+* Access all companies
+* Edit/export all records
 
-## FirmAdmin
+## FirmAdmin (optional)
 
-- Company/user management
-- Optional in MVP
+* User/company management
 
 ---
 
-# Recommended Folder Structure
+# Tenant Isolation
 
-## Frontend
-
-```bash
-apps/web/
-├── app/
-├── components/
-├── features/
-│   ├── auth/
-│   ├── companies/
-│   ├── hire-intakes/
-│   ├── terminations/
-│   └── comp-changes/
-├── lib/
-├── hooks/
-├── types/
-└── utils/
-```
-
-## Backend
-
-```bash
-apps/api/
-├── src/
-│   ├── auth/
-│   ├── users/
-│   ├── companies/
-│   ├── hire-intakes/
-│   ├── terminations/
-│   ├── compensation-changes/
-│   ├── exports/
-│   ├── audit-logs/
-│   ├── common/
-│   │   ├── guards/
-│   │   ├── middleware/
-│   │   ├── interceptors/
-│   │   └── utils/
-│   └── prisma/
-```
-
----
-
-# Core Database Tables
-
-## companies
-
-```sql
-id UUID PK
-name TEXT
-status TEXT
-created_at TIMESTAMP
-updated_at TIMESTAMP
-```
-
-## users
-
-```sql
-id UUID PK
-email TEXT UNIQUE
-password_hash TEXT
-role TEXT
-company_id UUID NULL
-status TEXT
-last_login_at TIMESTAMP NULL
-created_at TIMESTAMP
-updated_at TIMESTAMP
-```
-
-## departments
-
-```sql
-id UUID PK
-company_id UUID NULL
-name TEXT
-is_active BOOLEAN
-```
-
-## hire_intakes
-
-```sql
-id UUID PK
-company_id UUID
-name TEXT
-resident_registration_number TEXT
-email TEXT
-hire_date DATE
-department_name TEXT
-pay_amount NUMBER
-pay_type TEXT
-pay_tax_basis TEXT
-employment_type TEXT
-contract_start_date DATE NULL
-contract_end_date DATE NULL
-created_by_user_id UUID
-updated_by_user_id UUID
-deleted_at TIMESTAMP NULL
-created_at TIMESTAMP
-updated_at TIMESTAMP
-```
-
-## termination_records
-
-```sql
-id UUID PK
-company_id UUID
-name TEXT
-resident_registration_number TEXT
-termination_date DATE
-termination_reason TEXT
-created_by_user_id UUID
-updated_by_user_id UUID
-deleted_at TIMESTAMP NULL
-created_at TIMESTAMP
-updated_at TIMESTAMP
-```
-
-## compensation_change_records
-
-```sql
-id UUID PK
-company_id UUID
-name TEXT
-resident_registration_number TEXT
-before_pay_type TEXT
-before_pay_tax_basis TEXT
-before_amount NUMERIC
-after_pay_type TEXT
-after_pay_tax_basis TEXT
-after_amount NUMERIC
-effective_date DATE
-created_by_user_id UUID
-updated_by_user_id UUID
-deleted_at TIMESTAMP NULL
-created_at TIMESTAMP
-updated_at TIMESTAMP
-```
-
-## audit_logs
-
-```sql
-id UUID PK
-user_id UUID
-company_id UUID
-entity_type TEXT
-entity_id UUID
-action TEXT
-metadata JSONB
-created_at TIMESTAMP
-```
-
----
-
-# Critical Security Notes
-
-## RRN Handling
-
-Treat RRN (주민번호) as highly sensitive PII.
-
-Requirements:
-
-- Encrypt at rest
-- Never expose cross-tenant
-- Avoid logging plaintext
-- Mask in UI by default
-
-Example masked display:
+Every business table must contain:
 
 ```txt
-900101-1******
+company_id
 ```
 
-## Encryption
-
-Recommended:
+All client queries MUST be scoped server-side:
 
 ```txt
-AES-256-GCM field encryption
+WHERE company_id = session.company_id
 ```
 
-Never store encryption keys in source code.
-
-Use env vars or secret manager.
-
-## Auth
-
-Requirements:
-
-- HTTPS only
-- Secure cookies
-- HttpOnly cookies
-- CSRF protection
-- Rate limiting on auth routes
-
-## Password Hashing
-
-Use:
-
-```txt
-argon2 preferred
-bcrypt acceptable
-```
-
-Never use SHA256 directly.
+Never trust frontend filtering.
 
 ---
 
-# Recommended Enums
+# Core Modules
 
-## Pay Type
+## 입사자 정보
 
-```ts
-enum PayType {
-  ANNUAL = 'annual',
-  MONTHLY = 'monthly',
-  DAILY = 'daily',
-  HOURLY = 'hourly'
-}
+Fields:
+
+```txt
+이름
+주민번호
+입사일
+부서
+급여 종류
+세전/세후
+급여
+계약직 여부
+계약기간
 ```
 
-## Pay Tax Basis
+## 퇴사자 정보
 
-```ts
-enum PayTaxBasis {
-  PRE_TAX = 'pre_tax',
-  POST_TAX = 'post_tax'
-}
+Fields:
+
+```txt
+이름
+주민번호
+퇴사일
+퇴사사유
 ```
 
-## Employment Type
+## 급여변경
 
-```ts
-enum EmploymentType {
-  PERMANENT = 'permanent',
-  CONTRACT = 'contract'
-}
+Fields:
+
+```txt
+이름
+주민번호
+변경 전 급여
+변경 후 급여
+급여 변경일
 ```
 
-## Termination Reason
+---
 
-```ts
-enum TerminationReason {
-  PERSONAL = 'personal',
-  RECOMMENDED_RESIGNATION = 'recommended_resignation',
-  CONTRACT_END = 'contract_end',
-  TERMINATION = 'termination',
-  OTHER = 'other'
-}
+# Core Tables
+
+```txt
+companies
+users
+departments
+
+hire_intakes
+termination_records
+compensation_change_records
+
+audit_logs
+```
+
+All tables:
+
+* UUID PKs
+* timestamps
+* soft delete preferred
+
+---
+
+# Important Enums
+
+## 급여 종류
+
+```txt
+연봉
+월급
+일당
+시급
+```
+
+## 세전/세후
+
+```txt
+세전
+세후
+```
+
+## 계약직 여부
+
+```txt
+정규직
+계약직
+```
+
+## 퇴사사유
+
+```txt
+개인사정
+권고사직
+계약만료
+해고
+직접입력
 ```
 
 ---
 
 # Validation Rules
 
-## Hire Intake
+## 계약직
 
 If:
 
 ```txt
-employment_type === CONTRACT
+계약직 여부 === 계약직
 ```
 
 Then:
 
 ```txt
-contract_start_date required
-contract_end_date required
+계약기간 required
 ```
 
-## Compensation Change
-
-Amounts must be:
+## 급여
 
 ```txt
 > 0
 ```
 
-## RRN
+## 주민번호
 
-Only basic format validation.
-
-Do NOT over-validate.
-
-Example regex:
-
-```ts
-/^\d{6}-?\d{7}$/
-```
+Basic format validation only.
 
 ---
 
-# API Design
+# Security Rules
+
+## 주민번호
+
+Requirements:
+
+* encrypt at rest
+* never log plaintext
+* mask in UI by default
+
+Example:
+
+```txt
+900101-1******
+```
 
 ## Auth
 
-```http
-POST /auth/login
-POST /auth/logout
-POST /auth/forgot-password
-POST /auth/reset-password
-GET /me
-```
-
-## Companies
-
-```http
-GET /companies
-POST /companies
-PATCH /companies/:id
-```
-
-## Hire Intakes
-
-```http
-GET /companies/:companyId/hire-intakes
-POST /companies/:companyId/hire-intakes
-PATCH /companies/:companyId/hire-intakes/:id
-DELETE /companies/:companyId/hire-intakes/:id
-GET /companies/:companyId/hire-intakes/export.xlsx
-```
-
-## Terminations
-
-```http
-GET /companies/:companyId/terminations
-POST /companies/:companyId/terminations
-PATCH /companies/:companyId/terminations/:id
-DELETE /companies/:companyId/terminations/:id
-GET /companies/:companyId/terminations/export.xlsx
-```
-
-## Compensation Changes
-
-```http
-GET /companies/:companyId/comp-changes
-POST /companies/:companyId/comp-changes
-PATCH /companies/:companyId/comp-changes/:id
-DELETE /companies/:companyId/comp-changes/:id
-GET /companies/:companyId/comp-changes/export.xlsx
-```
+* HttpOnly cookies
+* secure sessions
+* CSRF protection
+* HTTPS only
 
 ---
 
-# Excel Export Rules
+# Excel Export
 
-## File Type
+## Format
 
 ```txt
 .xlsx
 ```
 
-## Export Scope
-
-Per:
-
-- Company
-- Dataset
-
-## Filename Convention
+## Filename
 
 ```txt
 {CompanyName}_{DatasetType}_YYYYMMDD.xlsx
 ```
 
-Example:
+## Rules
 
-```txt
-ABC병원_입사자정보_20260522.xlsx
-```
-
-## Export Method
-
-Generate server-side.
-
-Prefer streaming response.
-
-## Library
-
-```txt
-ExcelJS
-```
+* server-side generation only
+* centralized export mappings
+* exact column ordering required
 
 ---
 
-# Exact Export Column Order
+# Exact Export Columns
 
 ## 입사자 정보
 
 ```txt
 이름
 주민번호
-이메일
 입사일
 부서
-급여
 급여 종류
 세전/세후
+급여
 계약직 여부
 계약기간
 ```
@@ -552,237 +298,96 @@ ExcelJS
 
 ```txt
 이름
-변경 전 급여 종류
-변경 전 세전/세후
-변경 전 금액
-변경 후 급여 종류
-변경 후 세전/세후
-변경 후 금액
+변경 전 급여
+변경 후 급여
 급여 변경일
 ```
 
-Centralize mappings in ONE module.
-
-Example:
-
-```ts
-export const hireExportColumns = [...]
-```
-
-Never hardcode columns in controllers.
-
 ---
 
-# Frontend Pages
-
-## Public
-
-Optional marketing page
-
-## Auth
-
-- Login
-- Forgot password
-- Reset password
-
-## Client Portal
-
-- Dashboard
-- 입사자 정보
-- 퇴사자 정보
-- 급여변경
-
-Each requires:
-
-- Table list
-- Create form
-- Edit form
-- Delete action
-- Export button
-
-## Firm Portal
-
-- Company list
-- Company detail page
-- Dataset tabs
-- Export controls
-
----
-
-# Important UI Components
-
-## Required
-
-- Date picker
-- Dropdown/select
-- Pagination table
-- Inline validation errors
-- Confirmation modal for delete
-
-## Recommended
-
-- TanStack Table
-- shadcn/ui
-- React Hook Form
-
----
-
-# RBAC Middleware Logic
-
-## ClientCompanyAdmin
-
-Allowed ONLY if:
-
-```ts
-req.params.companyId === user.companyId
-```
-
-Otherwise:
+# Suggested App Structure
 
 ```txt
-403 Forbidden
-```
+/app
+  /(marketing)
+  /(auth)
+  /(client)
+  /(firm)
 
-## FirmStaff / FirmAdmin
+/modules
+  /auth
+  /companies
+  /hire-intakes
+  /terminations
+  /comp-changes
+  /exports
 
-Can access all companies.
-
----
-
-# Soft Delete Rules
-
-Preferred MVP approach:
-
-```txt
-deleted_at TIMESTAMP NULL
-```
-
-Never hard-delete sensitive records initially.
-
-Queries should always filter:
-
-```sql
-WHERE deleted_at IS NULL
+/lib
+  /db
+  /auth
+  /permissions
+  /encryption
+  /validation
 ```
 
 ---
 
-# Audit Logging
-
-Every create/update/delete/export should create audit log entry.
-
-## Required Fields
-
-```txt
-user_id
-company_id
-entity_type
-entity_id
-action
-metadata
-timestamp
-```
-
-## Actions
-
-```txt
-create
-update
-delete
-export
-```
-
----
-
-# Suggested Development Order
+# Development Order
 
 ## Phase 1
 
-- DB schema
-- Prisma setup
-- Auth
-- RBAC middleware
+* Prisma schema
+* Auth.js
+* RBAC
+* tenant isolation
 
 ## Phase 2
 
-- Companies CRUD
-- User management
-- Departments
+* Companies
+* Users
+* Departments
 
 ## Phase 3
 
-- Hire intake CRUD
-- Termination CRUD
-- Comp change CRUD
+* CRUD modules
+* tables/forms
+* validation
 
 ## Phase 4
 
-- Excel exports
+* Excel exports
 
 ## Phase 5
 
-- Audit logs
-- Encryption
-- Hardening
+* encryption
+* audit logs
+* security hardening
 
 ## Phase 6
 
-- Tests
-- Deployment
-- Monitoring
+* testing
+* deployment
+* monitoring
 
 ---
 
-# Testing Requirements
+# Testing Priorities
 
-## Auth/RBAC
+## Critical
 
-Must test:
+* tenant isolation
+* RBAC
+* export correctness
+* 주민번호 exposure
+* auth/session security
 
-- Client cannot access another company
-- Firm can access all
+## Must Test
 
-## Validation
-
-Must test:
-
-- Contract requires dates
-- Amount positive
-- 주민번호 regex
-
-## Export
-
-Must test:
-
-- Header order
-- Header labels
-- Date formatting
-- XLSX generation
-
----
-
-# Recommended Prisma Conventions
-
-## Use UUIDs
-
-```prisma
-id String @id @default(uuid())
-```
-
-## Add Indexes
-
-Example:
-
-```prisma
-@@index([companyId])
-```
-
-Add indexes for:
-
-- companyId
-- hireDate
-- terminationDate
-- effectiveDate
+* cross-company access attempts
+* malformed form input
+* XLSX formatting
+* soft delete behavior
+* role escalation
 
 ---
 
@@ -790,163 +395,41 @@ Add indexes for:
 
 ```env
 DATABASE_URL=
-JWT_SECRET=
-SESSION_SECRET=
+AUTH_SECRET=
 ENCRYPTION_KEY=
 SMTP_HOST=
 SMTP_PORT=
 SMTP_USER=
 SMTP_PASS=
 SENTRY_DSN=
-NODE_ENV=
 ```
 
 Never commit `.env`.
 
 ---
 
-# Recommended Initial MVP Constraints
-
-To move fast:
-
-- Keep department_name as string
-- Use enums for fixed dropdowns
-- No realtime features
-- No websocket infra
-- No file uploads
-- No microservices
-- Monolith architecture preferred initially
-
----
-
-# Production Readiness Checklist
-
-## Before Production
-
-- HTTPS enabled
-- DB backups enabled
-- Error monitoring enabled
-- Rate limiting enabled
-- Encryption verified
-- Tenant isolation tested
-- Export functionality tested
-- Env vars secured
-- Cookies secure + HttpOnly
-- CSRF enabled
-
----
-
-# Biggest Risk Areas
-
-## 1. Tenant Isolation Bugs
-
-MOST IMPORTANT.
-
-Always verify:
+# Architectural Priorities
 
 ```txt
-company_id scoping
-```
-
-on every query.
-
-## 2. 주민번호 Exposure
-
-Avoid:
-
-- Logs
-- Analytics
-- Console output
-- Client-side persistence
-
-## 3. Export Bugs
-
-Excel column order MUST match spec exactly.
-
-## 4. Hardcoded Config
-
-Centralize:
-
-- Export mappings
-- Dropdown values
-- Labels
-
----
-
-# Recommended Future Features
-
-## Phase 2 Ideas
-
-- Employee master entity
-- Excel upload/import
-- Payroll calculator
-- MFA
-- Approval workflows
-- Notifications
-- Activity feeds
-- Fine-grained permissions
-- Dynamic export templates
-- Analytics dashboard
-- Korean labor compliance engine
-
----
-
-# Personal Dev Notes
-
-## Architectural Priorities
-
 1. Security
 2. Tenant isolation
 3. Maintainability
-4. Fast iteration
-5. Clean exports
-
-## MVP Philosophy
-
-DO NOT over-engineer.
-
-Keep:
-
-- clear services
-- strong RBAC
-- centralized config
-- simple CRUD
-- reliable exports
-
-This is essentially:
-
-```txt
-multi-tenant secure CRUD + Excel export platform
+4. Export correctness
+5. Fast iteration
 ```
-
-not a full payroll system.
 
 ---
 
-# Quick MVP Summary
+# MVP Constraints
 
-Core stack:
+Do NOT add initially:
 
-```txt
-Next.js
-NestJS
-PostgreSQL
-Prisma
-ExcelJS
-Tailwind
-```
-
-Core concerns:
-
-```txt
-RBAC
-tenant isolation
-PII security
-Excel export correctness
-```
-
-Core deliverable:
-
-```txt
-secure company-scoped HR intake portal for Korean labor firms
-```
+* Excel import
+* realtime features
+* websockets
+* microservices
+* employee portals
+* notifications
+* workflow engines
+* payroll systems
+* mobile apps
