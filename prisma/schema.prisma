@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  CLIENT_ADMIN
+  FIRM_STAFF
+  FIRM_ADMIN
+}
+
+enum SalaryType {
+  MONTHLY
+  HOURLY
+  ANNUAL
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  EXPORT
+  LOGIN
+}
+
+model Company {
+  id             String   @id @default(uuid()) @db.Uuid
+  name           String
+  businessNumber String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  users User[]
+
+  newHires            NewHire[]
+  terminations        Termination[]
+  compensationChanges CompensationChange[]
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  passwordHash String
+  role         UserRole
+  companyId    String?  @db.Uuid
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  company Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  createdNewHires            NewHire[]            @relation("NewHireCreatedBy")
+  createdTerminations        Termination[]        @relation("TerminationCreatedBy")
+  createdCompensationChanges CompensationChange[] @relation("CompChangeCreatedBy")
+  auditLogs                  AuditLog[]           @relation("AuditLogActor")
+
+  @@index([companyId])
+}
+
+model NewHire {
+  id            String     @id @default(uuid()) @db.Uuid
+  companyId     String     @db.Uuid
+  name          String
+  rrnEncrypted  String
+  rrnIv         String
+  hireDate      DateTime
+  department    String?
+  salaryType    SalaryType
+  salaryGross   Int?
+  salaryNet     Int?
+  isContract    Boolean    @default(false)
+  contractStart DateTime?
+  contractEnd   DateTime?
+  deletedAt     DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  createdById   String     @db.Uuid
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  createdBy User    @relation("NewHireCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([companyId])
+  @@index([companyId, deletedAt])
+}
+
+model Termination {
+  id              String    @id @default(uuid()) @db.Uuid
+  companyId       String    @db.Uuid
+  name            String
+  rrnEncrypted    String
+  rrnIv           String
+  terminationDate DateTime
+  reason          String?
+  deletedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdById     String    @db.Uuid
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  createdBy User    @relation("TerminationCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([companyId])
+  @@index([companyId, deletedAt])
+}
+
+model CompensationChange {
+  id           String    @id @default(uuid()) @db.Uuid
+  companyId    String    @db.Uuid
+  name         String
+  rrnEncrypted String
+  rrnIv        String
+  salaryBefore Int
+  salaryAfter  Int
+  changeDate   DateTime
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdById  String    @db.Uuid
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  createdBy User    @relation("CompChangeCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([companyId])
+  @@index([companyId, deletedAt])
+}
+
+model AuditLog {
+  id        String      @id @default(uuid()) @db.Uuid
+  actorId   String      @db.Uuid
+  companyId String      @db.Uuid
+  action    AuditAction
+  tableName String
+  recordId  String?
+  payload   Json?
+  createdAt DateTime    @default(now())
+
+  actor User @relation("AuditLogActor", fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([actorId])
+  @@index([companyId])
+}
