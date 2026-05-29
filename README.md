@@ -9,6 +9,11 @@ Primary workflows:
 1. New Hire Information - 입사자 정보 입력/관리
 2. Termination Information - 퇴사자 정보 입력/관리
 3. Salary Change Information - 급여변경 정보 입력/관리
+4. Insurance/Tax Calculator - 사대보험/세금 역산
+
+> **Internal engineering reference:** see `MASTER_GUIDE.pdf` for full architecture, security design, implementation roadmap, and testing strategy.
+
+---
 
 # Core Stack
 
@@ -67,6 +72,7 @@ No microservices.
 
 * Access all companies
 * Edit/export all records
+* Calculator access
 
 ## FirmAdmin (optional)
 
@@ -123,15 +129,57 @@ Fields:
 
 ## 급여변경
 
-Fields:
+Fields (same salary structure as 입사자, captured for both before and after):
 
 ```txt
 이름
 주민번호
+변경 전 급여 종류
+변경 전 세전/세후
 변경 전 급여
+변경 후 급여 종류
+변경 후 세전/세후
 변경 후 급여
 급여 변경일
 ```
+
+## 사대보험/세금 역산 Calculator
+
+Purpose: reverse-calculate 세전급여 needed to achieve a target 세후급여 for 일용직 workers.
+
+Inputs:
+
+```txt
+Worker type: 일용직 (fixed for MVP)
+근무일수 (integer)
+목표 세후급여 (KRW)
+반올림 방식 (FLOOR default / ROUND)
+```
+
+Outputs:
+
+```txt
+추정 세전급여
+근로소득세
+지방소득세
+국민연금
+건강보험
+공제합계
+급여합계
+설명 출력 (step-by-step derivation for firm staff)
+```
+
+Design rules:
+
+```txt
+Deduction rates stored in versioned rate table keyed by effective date
+Stateless — no DB writes
+Mandatory disclaimer on every result output
+Automated tests with known fixtures required before production use
+Firm staff / FirmAdmin access only in MVP
+```
+
+> ⚠️ Results are for reference only. Actual deduction amounts vary by individual circumstances. Always verify with a qualified 노무사 or 세무사.
 
 ---
 
@@ -168,11 +216,13 @@ All tables:
 시급
 ```
 
-## 세전/세후
+## 세전/세후 (`SalaryBasis`)
+
+UI: client selects exactly one (dropdown or radio). Stored as basis + a single amount (not separate gross/net columns).
 
 ```txt
-세전
-세후
+세전  → GROSS
+세후  → NET
 ```
 
 ## 계약직 여부
@@ -213,7 +263,8 @@ Then:
 ## 급여
 
 ```txt
-> 0
+salaryAmount > 0
+salaryBasis required (GROSS or NET)
 ```
 
 ## 주민번호
@@ -228,7 +279,7 @@ Basic format validation only.
 
 Requirements:
 
-* encrypt at rest
+* encrypt at rest (AES-256-GCM)
 * never log plaintext
 * mask in UI by default
 
@@ -298,7 +349,12 @@ Example:
 
 ```txt
 이름
+주민번호
+변경 전 급여 종류
+변경 전 세전/세후
 변경 전 급여
+변경 후 급여 종류
+변경 후 세전/세후
 변경 후 급여
 급여 변경일
 ```
@@ -313,6 +369,7 @@ Example:
   /(auth)
   /(client)
   /(firm)
+    /calculator
 
 /modules
   /auth
@@ -321,6 +378,7 @@ Example:
   /terminations
   /comp-changes
   /exports
+  /calculator
 
 /lib
   /db
@@ -328,6 +386,10 @@ Example:
   /permissions
   /encryption
   /validation
+  /calculators
+    /rates       # versioned rate tables
+    /daily-wage  # core calc logic
+    /explain     # step-by-step output builder
 ```
 
 ---
@@ -365,6 +427,12 @@ Example:
 
 ## Phase 6
 
+* Calculator module
+* rate tables
+* fixture tests
+
+## Phase 7
+
 * testing
 * deployment
 * monitoring
@@ -380,6 +448,7 @@ Example:
 * export correctness
 * 주민번호 exposure
 * auth/session security
+* calculator fixture accuracy
 
 ## Must Test
 
@@ -388,6 +457,8 @@ Example:
 * XLSX formatting
 * soft delete behavior
 * role escalation
+* calculator round-trip (NET_TO_GROSS → GROSS_TO_NET)
+* rate table version selection by date
 
 ---
 
@@ -395,6 +466,7 @@ Example:
 
 ```env
 DATABASE_URL=
+DIRECT_URL=
 AUTH_SECRET=
 ENCRYPTION_KEY=
 SMTP_HOST=
@@ -415,7 +487,8 @@ Never commit `.env`.
 2. Tenant isolation
 3. Maintainability
 4. Export correctness
-5. Fast iteration
+5. Calculator accuracy
+6. Fast iteration
 ```
 
 ---
@@ -433,3 +506,5 @@ Do NOT add initially:
 * workflow engines
 * payroll systems
 * mobile apps
+* calculator access for client companies
+* 월급직 / 계약직 calculator support

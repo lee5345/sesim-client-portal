@@ -20,6 +20,11 @@ enum SalaryType {
   HOURLY
 }
 
+enum SalaryBasis {
+  GROSS
+  NET
+}
+
 enum AuditAction {
   CREATE
   UPDATE
@@ -62,23 +67,23 @@ model User {
 }
 
 model NewHire {
-  id            String     @id @default(uuid()) @db.Uuid
-  companyId     String     @db.Uuid
+  id            String      @id @default(uuid()) @db.Uuid
+  companyId     String      @db.Uuid
   name          String
   rrnEncrypted  String
   rrnIv         String
   hireDate      DateTime
   department    String?
   salaryType    SalaryType
-  salaryGross   Int?
-  salaryNet     Int?
-  isContract    Boolean    @default(false)
+  salaryBasis   SalaryBasis
+  salaryAmount  Int
+  isContract    Boolean     @default(false)
   contractStart DateTime?
   contractEnd   DateTime?
   deletedAt     DateTime?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  createdById   String     @db.Uuid
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  createdById   String      @db.Uuid
 
   company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
   createdBy User    @relation("NewHireCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
@@ -108,22 +113,22 @@ model Termination {
 }
 
 model CompensationChange {
-  id                String     @id @default(uuid()) @db.Uuid
-  companyId         String     @db.Uuid
-  name              String
-  rrnEncrypted      String
-  rrnIv             String
-  salaryTypeBefore  SalaryType
-  salaryGrossBefore Int?
-  salaryNetBefore   Int?
-  salaryTypeAfter   SalaryType
-  salaryGrossAfter  Int?
-  salaryNetAfter    Int?
-  changeDate        DateTime
-  deletedAt         DateTime?
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
-  createdById       String     @db.Uuid
+  id                 String      @id @default(uuid()) @db.Uuid
+  companyId          String      @db.Uuid
+  name               String
+  rrnEncrypted       String
+  rrnIv              String
+  salaryTypeBefore   SalaryType
+  salaryBasisBefore  SalaryBasis
+  salaryAmountBefore Int
+  salaryTypeAfter    SalaryType
+  salaryBasisAfter   SalaryBasis
+  salaryAmountAfter  Int
+  changeDate         DateTime
+  deletedAt          DateTime?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  createdById        String      @db.Uuid
 
   company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
   createdBy User    @relation("CompChangeCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
