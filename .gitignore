@@ -83,5 +83,6 @@ credentials/
 
 # development
 .cursorignore
+.agents/
 AGENTS.md
 /lib/generated/prisma
