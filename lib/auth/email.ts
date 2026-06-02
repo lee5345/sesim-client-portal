@@ -1,0 +1,39 @@
+import { Resend } from "resend";
+
+function getResend() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY is not set");
+  }
+  return new Resend(apiKey);
+}
+
+export async function sendPasswordSetupEmail(to: string, setupUrl: string) {
+  const fromEmail = process.env.RESEND_FROM_EMAIL;
+  if (!fromEmail) {
+    throw new Error("RESEND_FROM_EMAIL is not set");
+  }
+
+  await getResend().emails.send({
+    from: fromEmail,
+    to,
+    subject: "비밀번호 설정 링크 안내 (24시간 유효)",
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.6;">
+        <h2 style="margin: 0 0 12px;">비밀번호 설정 안내</h2>
+        <p style="margin: 0 0 12px;">
+          아래 링크를 눌러 비밀번호를 설정해 주세요.
+          <strong>이 링크는 발급 시점부터 24시간 동안만 유효</strong>합니다.
+        </p>
+        <p style="margin: 0 0 16px;">
+          <a href="${setupUrl}" style="display: inline-block; padding: 10px 14px; background: #111827; color: #ffffff; text-decoration: none; border-radius: 6px;">
+            비밀번호 설정하기
+          </a>
+        </p>
+        <p style="margin: 0 0 6px; color: #6b7280; font-size: 14px;">링크가 클릭되지 않으면 아래 주소를 복사해 브라우저에 붙여넣어 주세요.</p>
+        <p style="margin: 0; color: #111827; font-size: 14px; word-break: break-all;">${setupUrl}</p>
+      </div>
+    `,
+  });
+}
+
