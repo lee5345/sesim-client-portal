@@ -7,6 +7,13 @@ export class ForbiddenError extends Error {
   }
 }
 
+export class EmailDeliveryError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "EmailDeliveryError";
+  }
+}
+
 export class PasswordSetupTokenError extends Error {
   constructor(message: string) {
     super(message);

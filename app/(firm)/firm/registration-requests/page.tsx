@@ -5,8 +5,14 @@ import {
   rejectRegistrationRequestAction,
 } from "@/modules/companies/registration-requests";
 
-export default async function RegistrationRequestsPage() {
+export default async function RegistrationRequestsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ approved?: string; emailError?: string }>;
+}) {
   await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
+
+  const { approved, emailError } = await searchParams;
 
   const [requests, companies] = await Promise.all([
     prisma.registrationRequest.findMany({
@@ -31,6 +37,16 @@ export default async function RegistrationRequestsPage() {
   return (
     <div>
       <h1>가입 신청 관리</h1>
+      {approved && !emailError ? (
+        <p>승인되었습니다. 비밀번호 설정 이메일을 발송했습니다.</p>
+      ) : null}
+      {approved && emailError ? (
+        <p>
+          승인은 완료되었으나 비밀번호 설정 이메일 발송에 실패했습니다. Resend
+          설정(도메인 인증, 발신 주소)을 확인하거나, DB의 password_setup_tokens
+          에서 링크를 직접 전달해 주세요.
+        </p>
+      ) : null}
       <table>
         <thead>
           <tr>

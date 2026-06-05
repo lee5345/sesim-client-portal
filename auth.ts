@@ -36,16 +36,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
 
         if (!user) {
-          throw new Error("이메일 또는 비밀번호가 올바르지 않습니다.");
+          throw new Error("Wrong email or password.");
         }
 
         if (!user.isActive) {
-          throw new Error("비활성화된 계정입니다. 관리자에게 문의해 주세요.");
+          throw new Error("Inactive account.");
         }
 
         const ok = await bcrypt.compare(password, user.passwordHash);
         if (!ok) {
-          throw new Error("이메일 또는 비밀번호가 올바르지 않습니다.");
+          throw new Error("Wrong email or password.");
         }
 
         return {

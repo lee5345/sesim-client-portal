@@ -8,8 +8,14 @@ import {
   toggleUserActiveAction,
 } from "@/modules/auth/staff-users";
 
-export default async function FirmAdminUsersPage() {
-  await requireAuth("FIRM_ADMIN");
+export default async function FirmAdminUsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const session = await requireAuth("FIRM_ADMIN");
+  const { error } = await searchParams;
+  const currentUserId = session.user.userId;
 
   const users = await prisma.user.findMany({
     where: { role: { in: ["FIRM_STAFF", "FIRM_ADMIN"] } },
@@ -46,6 +52,9 @@ export default async function FirmAdminUsersPage() {
   return (
     <div>
       <h1>직원 계정 관리</h1>
+      {error === "self" ? (
+        <p>본인 계정은 비활성화하거나 삭제할 수 없습니다.</p>
+      ) : null}
 
       <h2>신규 생성</h2>
       <form action={createAction}>
@@ -102,19 +111,27 @@ export default async function FirmAdminUsersPage() {
               <td>{u.mustChangePassword ? "Y" : "N"}</td>
               <td>{u.createdAt.toISOString()}</td>
               <td>
-                <form action={toggleAction}>
-                  <input type="hidden" name="userId" value={u.id} />
-                  <input
-                    type="hidden"
-                    name="isActive"
-                    value={u.isActive ? "false" : "true"}
-                  />
-                  <button type="submit">{u.isActive ? "비활성화" : "활성화"}</button>
-                </form>
-                <form action={deleteAction}>
-                  <input type="hidden" name="userId" value={u.id} />
-                  <button type="submit">삭제</button>
-                </form>
+                {u.id === currentUserId ? (
+                  <span>본인</span>
+                ) : (
+                  <>
+                    <form action={toggleAction}>
+                      <input type="hidden" name="userId" value={u.id} />
+                      <input
+                        type="hidden"
+                        name="isActive"
+                        value={u.isActive ? "false" : "true"}
+                      />
+                      <button type="submit">
+                        {u.isActive ? "비활성화" : "활성화"}
+                      </button>
+                    </form>
+                    <form action={deleteAction}>
+                      <input type="hidden" name="userId" value={u.id} />
+                      <button type="submit">삭제</button>
+                    </form>
+                  </>
+                )}
               </td>
             </tr>
           ))}

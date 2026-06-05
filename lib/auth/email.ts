@@ -1,5 +1,7 @@
 import { Resend } from "resend";
 
+import { EmailDeliveryError } from "@/lib/auth/errors";
+
 function getResend() {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -14,7 +16,7 @@ export async function sendPasswordSetupEmail(to: string, setupUrl: string) {
     throw new Error("RESEND_FROM_EMAIL is not set");
   }
 
-  await getResend().emails.send({
+  const { data, error } = await getResend().emails.send({
     from: fromEmail,
     to,
     subject: "비밀번호 설정 링크 안내 (24시간 유효)",
@@ -35,5 +37,18 @@ export async function sendPasswordSetupEmail(to: string, setupUrl: string) {
       </div>
     `,
   });
-}
 
+  if (error) {
+    console.error("[sendPasswordSetupEmail] Resend error", {
+      to,
+      statusCode: error.statusCode,
+      name: error.name,
+      message: error.message,
+    });
+    throw new EmailDeliveryError(error.message);
+  }
+
+  if (!data?.id) {
+    throw new EmailDeliveryError("Email send failed with no message id");
+  }
+}

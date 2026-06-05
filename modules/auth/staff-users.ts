@@ -1,10 +1,17 @@
 "use server";
 
 import bcrypt from "bcrypt";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { prisma } from "@/lib/db/db";
 import { requireAuth } from "@/lib/auth/guards";
+
+function redirectIfSelfTarget(actorId: string, targetUserId: string): void {
+  if (actorId === targetUserId) {
+    redirect("/firm/admin/users?error=self");
+  }
+}
 
 const createSchema = z.object({
   name: z.string().min(1),
@@ -44,12 +51,14 @@ const toggleSchema = z.object({
 });
 
 export async function toggleUserActiveAction(formData: FormData) {
-  await requireAuth("FIRM_ADMIN");
+  const session = await requireAuth("FIRM_ADMIN");
 
   const input = toggleSchema.parse({
     userId: formData.get("userId"),
     isActive: formData.get("isActive"),
   });
+
+  redirectIfSelfTarget(session.user.userId, input.userId);
 
   await prisma.user.update({
     where: { id: input.userId },
@@ -62,11 +71,13 @@ const deleteSchema = z.object({
 });
 
 export async function deleteUserAction(formData: FormData) {
-  await requireAuth("FIRM_ADMIN");
+  const session = await requireAuth("FIRM_ADMIN");
 
   const input = deleteSchema.parse({
     userId: formData.get("userId"),
   });
+
+  redirectIfSelfTarget(session.user.userId, input.userId);
 
   await prisma.$transaction(async (tx) => {
     const count = await tx.auditLog.count({ where: { actorId: input.userId } });

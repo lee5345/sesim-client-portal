@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db/db";
 import { auth } from "@/auth";
 import { requireAuth } from "@/lib/auth/guards";
+import { logoutAction } from "@/lib/auth/logout";
 
 const schema = z
   .object({
@@ -41,7 +42,7 @@ export default async function ChangePasswordPage() {
       data: { passwordHash, mustChangePassword: false },
     });
 
-    redirect("/post-login");
+    await logoutAction();
   }
 
   return (
@@ -66,6 +67,9 @@ export default async function ChangePasswordPage() {
           </label>
         </div>
         <button type="submit">변경하기</button>
+      </form>
+      <form action={logoutAction} style={{ marginTop: 16 }}>
+        <button type="submit">로그아웃</button>
       </form>
     </div>
   );

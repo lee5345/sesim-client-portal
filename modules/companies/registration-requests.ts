@@ -1,6 +1,7 @@
 "use server";
 
 import crypto from "crypto";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { prisma } from "@/lib/db/db";
@@ -89,8 +90,15 @@ export async function approveRegistrationRequestAction(formData: FormData) {
     return { email: request.email, setupUrl };
   });
 
-  if (result) {
+  if (!result) {
+    redirect("/firm/registration-requests");
+  }
+
+  try {
     await sendPasswordSetupEmail(result.email, result.setupUrl);
+    redirect("/firm/registration-requests?approved=1");
+  } catch {
+    redirect("/firm/registration-requests?approved=1&emailError=1");
   }
 }
 
