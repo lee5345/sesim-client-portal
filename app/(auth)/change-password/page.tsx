@@ -6,6 +6,10 @@ import { prisma } from "@/lib/db/db";
 import { auth } from "@/auth";
 import { requireAuth } from "@/lib/auth/guards";
 import { logoutAction } from "@/lib/auth/logout";
+import { AuthShell } from "@/components/layout/auth-shell";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const schema = z
   .object({
@@ -46,32 +50,41 @@ export default async function ChangePasswordPage() {
   }
 
   return (
-    <div>
-      <h1>비밀번호 변경</h1>
-      <form action={action}>
-        <div>
-          <label>
-            새 비밀번호 (8자 이상)
-            <input name="password" type="password" minLength={8} required />
-          </label>
+    <AuthShell
+      title="비밀번호 변경"
+      description="보안을 위해 새 비밀번호를 설정해 주세요."
+    >
+      <form action={action} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="password">새 비밀번호 (8자 이상)</Label>
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            minLength={8}
+            required
+          />
         </div>
-        <div>
-          <label>
-            새 비밀번호 확인
-            <input
-              name="confirmPassword"
-              type="password"
-              minLength={8}
-              required
-            />
-          </label>
+        <div className="space-y-2">
+          <Label htmlFor="confirmPassword">새 비밀번호 확인</Label>
+          <Input
+            id="confirmPassword"
+            name="confirmPassword"
+            type="password"
+            minLength={8}
+            required
+          />
         </div>
-        <button type="submit">변경하기</button>
+        <Button type="submit" className="w-full">
+          변경하기
+        </Button>
       </form>
-      <form action={logoutAction} style={{ marginTop: 16 }}>
-        <button type="submit">로그아웃</button>
+
+      <form action={logoutAction} className="mt-4 border-t pt-4">
+        <Button type="submit" variant="ghost" className="w-full">
+          로그아웃
+        </Button>
       </form>
-    </div>
+    </AuthShell>
   );
 }
-
