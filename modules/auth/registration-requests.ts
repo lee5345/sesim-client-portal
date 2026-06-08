@@ -12,7 +12,13 @@ const signupRequestSchema = z.object({
   note: z.string().optional(),
 });
 
-export async function createSignupRequestAction(formData: FormData) {
+export type SignupRequestResult =
+  | { ok: true }
+  | { ok: false; error: "EMAIL_ALREADY_REGISTERED" };
+
+export async function createSignupRequestAction(
+  formData: FormData,
+): Promise<SignupRequestResult> {
   const input = signupRequestSchema.parse({
     name: formData.get("name"),
     email: formData.get("email"),
@@ -21,12 +27,20 @@ export async function createSignupRequestAction(formData: FormData) {
     note: formData.get("note") || undefined,
   });
 
-  const existing = await prisma.registrationRequest.findFirst({
+  const existingUser = await prisma.user.findUnique({
+    where: { email: input.email },
+    select: { id: true },
+  });
+  if (existingUser) {
+    return { ok: false, error: "EMAIL_ALREADY_REGISTERED" };
+  }
+
+  const pendingRequest = await prisma.registrationRequest.findFirst({
     where: { email: input.email, status: "PENDING" },
     select: { id: true },
   });
-  if (existing) {
-    return { ok: true as const };
+  if (pendingRequest) {
+    return { ok: false, error: "EMAIL_ALREADY_REGISTERED" };
   }
 
   await prisma.registrationRequest.create({

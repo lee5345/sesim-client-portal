@@ -94,12 +94,17 @@ export async function approveRegistrationRequestAction(formData: FormData) {
     redirect("/firm/registration-requests");
   }
 
+  let emailFailed = false;
   try {
     await sendPasswordSetupEmail(result.email, result.setupUrl);
-    redirect("/firm/registration-requests?approved=1");
   } catch {
+    emailFailed = true;
+  }
+
+  if (emailFailed) {
     redirect("/firm/registration-requests?approved=1&emailError=1");
   }
+  redirect("/firm/registration-requests?approved=1");
 }
 
 const rejectSchema = z.object({

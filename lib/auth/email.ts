@@ -1,26 +1,37 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 import { EmailDeliveryError } from "@/lib/auth/errors";
 
-function getResend() {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    throw new Error("RESEND_API_KEY is not set");
+function getTransporter() {
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASSWORD;
+  if (!user) {
+    throw new Error("GMAIL_USER is not set");
   }
-  return new Resend(apiKey);
+  if (!pass) {
+    throw new Error("GMAIL_APP_PASSWORD is not set");
+  }
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user,
+      pass,
+    },
+  });
 }
 
 export async function sendPasswordSetupEmail(to: string, setupUrl: string) {
-  const fromEmail = process.env.RESEND_FROM_EMAIL;
+  const fromEmail = process.env.GMAIL_USER;
   if (!fromEmail) {
-    throw new Error("RESEND_FROM_EMAIL is not set");
+    throw new Error("GMAIL_USER is not set");
   }
 
-  const { data, error } = await getResend().emails.send({
-    from: fromEmail,
-    to,
-    subject: "비밀번호 설정 링크 안내 (24시간 유효)",
-    html: `
+  try {
+    const info = await getTransporter().sendMail({
+      from: fromEmail,
+      to,
+      subject: "비밀번호 설정 링크 안내 (24시간 유효)",
+      html: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.6;">
         <h2 style="margin: 0 0 12px;">비밀번호 설정 안내</h2>
         <p style="margin: 0 0 12px;">
@@ -36,19 +47,17 @@ export async function sendPasswordSetupEmail(to: string, setupUrl: string) {
         <p style="margin: 0; color: #111827; font-size: 14px; word-break: break-all;">${setupUrl}</p>
       </div>
     `,
-  });
-
-  if (error) {
-    console.error("[sendPasswordSetupEmail] Resend error", {
-      to,
-      statusCode: error.statusCode,
-      name: error.name,
-      message: error.message,
     });
-    throw new EmailDeliveryError(error.message);
-  }
 
-  if (!data?.id) {
-    throw new EmailDeliveryError("Email send failed with no message id");
+    if (!info.messageId) {
+      throw new EmailDeliveryError("Email send failed with no message id");
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown email delivery error";
+    console.error("[sendPasswordSetupEmail] Nodemailer error", {
+      to,
+      message,
+    });
+    throw new EmailDeliveryError(message);
   }
 }
