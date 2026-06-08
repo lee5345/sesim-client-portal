@@ -33,6 +33,12 @@ enum AuditAction {
   LOGIN
 }
 
+enum RegistrationRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model Company {
   id             String   @id @default(uuid()) @db.Uuid
   name           String
@@ -40,7 +46,8 @@ model Company {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  users User[]
+  users                User[]
+  registrationRequests RegistrationRequest[]
 
   newHires            NewHire[]
   terminations        Termination[]
@@ -48,13 +55,16 @@ model Company {
 }
 
 model User {
-  id           String   @id @default(uuid()) @db.Uuid
-  email        String   @unique
-  passwordHash String
-  role         UserRole
-  companyId    String?  @db.Uuid
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                 String   @id @default(uuid()) @db.Uuid
+  name               String
+  email              String   @unique
+  passwordHash       String
+  role               UserRole
+  companyId          String?  @db.Uuid
+  isActive           Boolean  @default(true)
+  mustChangePassword Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   company Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
 
@@ -62,8 +72,42 @@ model User {
   createdTerminations        Termination[]        @relation("TerminationCreatedBy")
   createdCompensationChanges CompensationChange[] @relation("CompChangeCreatedBy")
   auditLogs                  AuditLog[]           @relation("AuditLogActor")
+  reviewedRegistrationRequests RegistrationRequest[] @relation("RegistrationRequestReviewedBy")
+  passwordSetupTokens        PasswordSetupToken[]
 
   @@index([companyId])
+}
+
+model RegistrationRequest {
+  id          String                      @id @default(uuid()) @db.Uuid
+  name        String
+  email       String
+  companyName String
+  phone       String?
+  note        String?
+  status      RegistrationRequestStatus   @default(PENDING)
+  companyId   String?                     @db.Uuid
+  reviewedById String?                    @db.Uuid
+  reviewedAt  DateTime?
+  createdAt   DateTime                    @default(now())
+
+  company    Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  reviewedBy User?    @relation("RegistrationRequestReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([email, status])
+}
+
+model PasswordSetupToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model NewHire {
