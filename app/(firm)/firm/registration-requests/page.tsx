@@ -42,9 +42,9 @@ export default async function RegistrationRequestsPage({
       ) : null}
       {approved && emailError ? (
         <p>
-          승인은 완료되었으나 비밀번호 설정 이메일 발송에 실패했습니다. Resend
-          설정(도메인 인증, 발신 주소)을 확인하거나, DB의 password_setup_tokens
-          에서 링크를 직접 전달해 주세요.
+          승인은 완료되었으나 비밀번호 설정 이메일 발송에 실패했습니다. Gmail
+          SMTP 설정(GMAIL_USER, GMAIL_APP_PASSWORD)을 확인하거나, DB의
+          password_setup_tokens 에서 링크를 직접 전달해 주세요.
         </p>
       ) : null}
       <table>
