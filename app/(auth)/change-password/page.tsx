@@ -21,7 +21,22 @@ const schema = z
     path: ["confirmPassword"],
   });
 
-export default async function ChangePasswordPage() {
+function getChangePasswordErrorMessage(error?: string) {
+  switch (error) {
+    case "mismatch":
+      return "비밀번호가 일치하지 않습니다.";
+    case "invalid":
+      return "비밀번호는 8자 이상이어야 합니다.";
+    default:
+      return null;
+  }
+}
+
+export default async function ChangePasswordPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   const session = await auth();
   if (!session?.user) {
     redirect("/login");
@@ -31,14 +46,28 @@ export default async function ChangePasswordPage() {
     redirect("/post-login");
   }
 
+  const { error } = await searchParams;
+  const errorMessage = getChangePasswordErrorMessage(error);
+
   async function action(formData: FormData) {
     "use server";
 
     const s = await requireAuth(undefined, { allowMustChangePassword: true });
-    const input = schema.parse({
+    const result = schema.safeParse({
       password: formData.get("password"),
       confirmPassword: formData.get("confirmPassword"),
     });
+
+    if (!result.success) {
+      const hasMismatch = result.error.issues.some(
+        (issue) =>
+          issue.path[0] === "confirmPassword" && issue.code === "custom",
+      );
+      const errorCode = hasMismatch ? "mismatch" : "invalid";
+      redirect(`/change-password?error=${errorCode}`);
+    }
+
+    const input = result.data;
 
     const passwordHash = await bcrypt.hash(input.password, 12);
     await prisma.user.update({
@@ -54,6 +83,11 @@ export default async function ChangePasswordPage() {
       title="비밀번호 변경"
       description="보안을 위해 새 비밀번호를 설정해 주세요."
     >
+      {errorMessage ? (
+        <p className="mb-4 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {errorMessage}
+        </p>
+      ) : null}
       <form action={action} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="password">새 비밀번호 (8자 이상)</Label>

@@ -68,7 +68,7 @@ export default async function SignupRequestPage({
           <Input id="phone" name="phone" type="tel" />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="note">메모 (선택)</Label>
+          <Label htmlFor="note">비고 (선택)</Label>
           <textarea
             id="note"
             name="note"

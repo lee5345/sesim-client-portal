@@ -11,7 +11,7 @@ export async function getFirmDashboardData() {
     recentTerminations,
     recentActivityCount,
   ] = await Promise.all([
-    prisma.company.count(),
+    prisma.company.count({ where: { deletedAt: null } }),
     prisma.registrationRequest.count({
       where: { status: "PENDING" },
     }),

@@ -3,5 +3,5 @@ export function getFirmName(): string {
 }
 
 export function getFirmTagline(): string {
-  return process.env.NEXT_PUBLIC_FIRM_TAGLINE ?? "고객사 HR 데이터 포털";
+  return process.env.NEXT_PUBLIC_FIRM_TAGLINE ?? "고객사 인사 데이터 포털";
 }

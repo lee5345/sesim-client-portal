@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Building2,
   Calculator,
+  ClipboardList,
   LayoutDashboard,
   Settings,
   UserMinus,
@@ -20,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 export const NAV_ICONS = {
   "layout-dashboard": LayoutDashboard,
   building2: Building2,
+  "clipboard-list": ClipboardList,
   calculator: Calculator,
   users: Users,
   "user-plus": UserPlus,

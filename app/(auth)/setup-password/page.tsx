@@ -24,12 +24,24 @@ const schema = z
     path: ["confirmPassword"],
   });
 
+function getSetupPasswordErrorMessage(error?: string) {
+  switch (error) {
+    case "mismatch":
+      return "비밀번호가 일치하지 않습니다.";
+    case "invalid":
+      return "비밀번호는 8자 이상이어야 합니다.";
+    default:
+      return null;
+  }
+}
+
 export default async function SetupPasswordPage({
   searchParams,
 }: {
-  searchParams: Promise<{ token?: string }>;
+  searchParams: Promise<{ token?: string; error?: string }>;
 }) {
-  const { token } = await searchParams;
+  const { token, error } = await searchParams;
+  const errorMessage = getSetupPasswordErrorMessage(error);
 
   if (!token) {
     return (
@@ -64,12 +76,25 @@ export default async function SetupPasswordPage({
   async function action(formData: FormData) {
     "use server";
 
-    const input = schema.parse({
-      token: formData.get("token"),
+    const tokenValue = String(formData.get("token") ?? "");
+    const result = schema.safeParse({
+      token: tokenValue,
       password: formData.get("password"),
       confirmPassword: formData.get("confirmPassword"),
     });
 
+    if (!result.success) {
+      const hasMismatch = result.error.issues.some(
+        (issue) =>
+          issue.path[0] === "confirmPassword" && issue.code === "custom",
+      );
+      const errorCode = hasMismatch ? "mismatch" : "invalid";
+      redirect(
+        `/setup-password?token=${encodeURIComponent(tokenValue)}&error=${errorCode}`,
+      );
+    }
+
+    const input = result.data;
     const userId = await validatePasswordSetupToken(input.token);
     const passwordHash = await bcrypt.hash(input.password, 12);
 
@@ -89,6 +114,11 @@ export default async function SetupPasswordPage({
       title="비밀번호 설정"
       description="계정 비밀번호를 설정해 주세요."
     >
+      {errorMessage ? (
+        <p className="mb-4 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {errorMessage}
+        </p>
+      ) : null}
       <form action={action} className="space-y-4">
         <input type="hidden" name="token" value={token} />
         <div className="space-y-2">

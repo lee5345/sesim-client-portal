@@ -1,9 +1,5 @@
 import { requireAuth } from "@/lib/auth/guards";
-import {
-  getAvatarInitials,
-  getGivenName,
-  getRoleLabel,
-} from "@/lib/auth/roles";
+import { getAvatarInitials, getRoleLabel } from "@/lib/auth/roles";
 import { getFirmName, getFirmTagline } from "@/lib/config/branding";
 import { getPendingRegistrationRequestCount } from "@/modules/companies/companies";
 import { PortalShell } from "@/components/layout/portal-shell";
@@ -18,10 +14,11 @@ export default async function FirmLayout({
 
   const navItems = [
     { href: "/firm/dashboard", label: "대시보드", icon: "layout-dashboard" as const },
+    { href: "/firm/companies", label: "고객사 목록", icon: "building2" as const },
     {
-      href: "/firm/companies",
-      label: "고객사 목록",
-      icon: "building2" as const,
+      href: "/firm/client-accounts",
+      label: "고객 계정 관리",
+      icon: "users" as const,
       badge: pendingCount,
     },
     {
@@ -41,8 +38,6 @@ export default async function FirmLayout({
       : []),
   ];
 
-  const givenName = getGivenName(session.user.name ?? "");
-
   return (
     <PortalShell
       firmName={getFirmName()}
@@ -52,7 +47,7 @@ export default async function FirmLayout({
       navItems={navItems}
       userName={session.user.name ?? "사용자"}
       userRoleLabel={getRoleLabel(session.user.role)}
-      avatarText={getAvatarInitials(givenName)}
+      avatarText={getAvatarInitials(session.user.name ?? "")}
     >
       {children}
     </PortalShell>

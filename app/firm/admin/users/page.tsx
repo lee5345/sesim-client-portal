@@ -4,11 +4,11 @@ import { redirect } from "next/navigation";
 import { CreateStaffUserForm } from "@/components/firm/create-staff-user-form";
 import { StaffUsersTable } from "@/components/firm/staff-users-table";
 import { PageHeader } from "@/components/layout/page-header";
-import { prisma } from "@/lib/db/db";
 import { requireAuth } from "@/lib/auth/guards";
 import {
   createFirmStaffUserAction,
   deleteUserAction,
+  listFirmStaffUsers,
   toggleUserActiveAction,
 } from "@/modules/auth/staff-users";
 
@@ -21,19 +21,7 @@ export default async function FirmAdminUsersPage({
   const { error } = await searchParams;
   const currentUserId = session.user.userId;
 
-  const users = await prisma.user.findMany({
-    where: { role: { in: ["FIRM_STAFF", "FIRM_ADMIN"] } },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      isActive: true,
-      mustChangePassword: true,
-      createdAt: true,
-    },
-  });
+  const users = await listFirmStaffUsers();
 
   async function createAction(formData: FormData) {
     "use server";

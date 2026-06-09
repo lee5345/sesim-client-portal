@@ -6,11 +6,29 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/db/db";
 import { requireAuth } from "@/lib/auth/guards";
+import { sortFirmStaffUsers } from "@/lib/sort/korean";
 
 function redirectIfSelfTarget(actorId: string, targetUserId: string): void {
   if (actorId === targetUserId) {
     redirect("/firm/admin/users?error=self");
   }
+}
+
+export async function listFirmStaffUsers() {
+  const users = await prisma.user.findMany({
+    where: { role: { in: ["FIRM_STAFF", "FIRM_ADMIN"] } },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      isActive: true,
+      mustChangePassword: true,
+      createdAt: true,
+    },
+  });
+
+  return sortFirmStaffUsers(users);
 }
 
 const createSchema = z.object({

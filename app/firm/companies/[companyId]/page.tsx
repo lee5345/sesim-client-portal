@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { requireAuth } from "@/lib/auth/guards";
+import { NO_BUSINESS_NUMBER_LABEL } from "@/lib/companies/labels";
 import { getCompanyById } from "@/modules/companies/companies";
+import { CompanyEditForm } from "@/components/companies/company-edit-form";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,7 +23,7 @@ export default async function FirmCompanyDetailPage({
 }: {
   params: Promise<{ companyId: string }>;
 }) {
-  await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
+  const session = await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
   const { companyId } = await params;
 
   const company = await getCompanyById(companyId);
@@ -32,6 +34,7 @@ export default async function FirmCompanyDetailPage({
   const newHireCount = company._count.newHires;
   const terminationCount = company._count.terminations;
   const compensationCount = company._count.compensationChanges;
+  const canDelete = session.user.role === "FIRM_ADMIN";
 
   return (
     <div className="space-y-6">
@@ -52,12 +55,19 @@ export default async function FirmCompanyDetailPage({
           <Badge variant={company.isActive ? "default" : "secondary"}>
             {company.isActive ? "활성" : "비활성"}
           </Badge>
+          <CompanyEditForm
+            company={{
+              id: company.id,
+              name: company.name,
+              businessNumber: company.businessNumber,
+              isActive: company.isActive,
+            }}
+            canDelete={canDelete}
+          />
         </div>
-        {company.businessNumber ? (
-          <p className="text-sm text-muted-foreground">
-            사업자등록번호: {company.businessNumber}
-          </p>
-        ) : null}
+        <p className="text-sm text-muted-foreground">
+          사업자등록번호: {company.businessNumber ?? NO_BUSINESS_NUMBER_LABEL}
+        </p>
       </div>
 
       <Tabs defaultValue="new-hires">

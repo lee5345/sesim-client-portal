@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 type StaffUser = {
   id: string;
@@ -128,16 +129,13 @@ export function StaffUsersTable({
                                 {user.isActive ? "비활성화" : "활성화"}
                               </Button>
                             </form>
-                            <form action={deleteAction}>
-                              <input type="hidden" name="userId" value={user.id} />
-                              <Button
-                                type="submit"
-                                variant="destructive"
-                                size="sm"
-                              >
-                                삭제
-                              </Button>
-                            </form>
+                            <ConfirmDeleteDialog
+                              title="직원 계정 삭제"
+                              description={`"${user.name}" (${user.email}) 계정을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`}
+                              action={deleteAction}
+                              hiddenFields={{ userId: user.id }}
+                              triggerLabel="삭제"
+                            />
                           </div>
                         )}
                       </td>

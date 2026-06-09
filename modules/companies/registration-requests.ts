@@ -91,7 +91,7 @@ export async function approveRegistrationRequestAction(formData: FormData) {
   });
 
   if (!result) {
-    redirect("/firm/registration-requests");
+    redirect("/firm/client-accounts");
   }
 
   let emailFailed = false;
@@ -102,9 +102,9 @@ export async function approveRegistrationRequestAction(formData: FormData) {
   }
 
   if (emailFailed) {
-    redirect("/firm/registration-requests?approved=1&emailError=1");
+    redirect("/firm/client-accounts?approved=1&emailError=1");
   }
-  redirect("/firm/registration-requests?approved=1");
+  redirect("/firm/client-accounts?approved=1");
 }
 
 const rejectSchema = z.object({
@@ -126,5 +126,7 @@ export async function rejectRegistrationRequestAction(formData: FormData) {
       reviewedAt: new Date(),
     },
   });
+
+  redirect("/firm/client-accounts");
 }
 

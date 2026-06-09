@@ -42,7 +42,7 @@ export default async function FirmDashboardPage() {
                 variant="link"
                 size="sm"
                 className="h-auto p-0"
-                render={<Link href="/firm/registration-requests" />}
+                render={<Link href="/firm/client-accounts" />}
               >
                 보기
               </Button>

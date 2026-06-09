@@ -1,11 +1,12 @@
-import Link from "next/link";
+"use client";
 
-import { requireAuth } from "@/lib/auth/guards";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+
+import { NO_BUSINESS_NUMBER_LABEL } from "@/lib/companies/labels";
 import { formatDateTime } from "@/lib/format/date";
-import { listCompanies } from "@/modules/companies/companies";
-import { AddCompanyDialog } from "@/components/companies/add-company-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,49 +15,59 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
-export default async function FirmCompaniesPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ q?: string }>;
-}) {
-  const session = await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
-  const { q } = await searchParams;
-  const companies = await listCompanies(q);
-  const isAdmin = session.user.role === "FIRM_ADMIN";
+type CompanyListItem = {
+  id: string;
+  name: string;
+  businessNumber: string | null;
+  isActive: boolean;
+  updatedAt: Date | string;
+  _count: {
+    newHires: number;
+    terminations: number;
+  };
+};
+
+type CompaniesListProps = {
+  companies: CompanyListItem[];
+  initialQuery?: string;
+};
+
+export function CompaniesList({ companies, initialQuery = "" }: CompaniesListProps) {
+  const router = useRouter();
+  const [query, setQuery] = useState(initialQuery);
+
+  const filtered = useMemo(() => {
+    const trimmed = query.trim().toLowerCase();
+    if (!trimmed) return companies;
+    return companies.filter((company) =>
+      company.name.toLowerCase().includes(trimmed),
+    );
+  }, [companies, query]);
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">고객사 목록</h1>
-          <p className="mt-1 text-muted-foreground">
-            등록된 고객사를 조회하고 관리합니다.
-          </p>
-        </div>
-        {isAdmin ? <AddCompanyDialog /> : null}
-      </div>
-
-      <form method="get" className="flex max-w-sm gap-2">
+    <div className="space-y-6">
+      <div className="flex max-w-sm gap-2">
         <Input
-          name="q"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
           placeholder="회사명 검색"
-          defaultValue={q ?? ""}
         />
-        <Button type="submit" variant="secondary">
+        <Button type="button" variant="secondary" onClick={() => router.refresh()}>
           검색
         </Button>
-      </form>
+      </div>
 
-      {companies.length === 0 ? (
+      {filtered.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            {q ? "검색 결과가 없습니다." : "등록된 고객사가 없습니다."}
+            {query.trim() ? "검색 결과가 없습니다." : "등록된 고객사가 없습니다."}
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {companies.map((company) => (
+          {filtered.map((company) => (
             <Link key={company.id} href={`/firm/companies/${company.id}`}>
               <Card className="h-full transition-shadow hover:shadow-md">
                 <CardHeader>
@@ -66,9 +77,9 @@ export default async function FirmCompaniesPage({
                       {company.isActive ? "활성" : "비활성"}
                     </Badge>
                   </div>
-                  {company.businessNumber ? (
-                    <CardDescription>{company.businessNumber}</CardDescription>
-                  ) : null}
+                  <CardDescription>
+                    {company.businessNumber ?? NO_BUSINESS_NUMBER_LABEL}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm text-muted-foreground">
                   <p>
@@ -76,7 +87,7 @@ export default async function FirmCompaniesPage({
                     {company._count.terminations}건
                   </p>
                   <p className="text-xs">
-                    최종 수정: {formatDateTime(company.updatedAt)}
+                    최종 수정: {formatDateTime(new Date(company.updatedAt))}
                   </p>
                 </CardContent>
               </Card>

@@ -1,9 +1,6 @@
 import { requireAuth } from "@/lib/auth/guards";
-import {
-  createDepartmentAction,
-  deleteDepartmentAction,
-  listDepartments,
-} from "@/modules/companies/departments";
+import { createDepartmentAction, listDepartments } from "@/modules/companies/departments";
+import { DepartmentTags } from "@/components/client/department-tags";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -46,27 +43,7 @@ export default async function ClientSettingsPage() {
               등록된 부서가 없습니다. 아래에서 새 부서를 추가해 주세요.
             </p>
           ) : (
-            <div className="flex flex-wrap gap-2">
-              {departments.map((dept) => (
-                <div
-                  key={dept.id}
-                  className="flex items-center gap-1 rounded-full border bg-muted/40 pl-3 pr-1 py-1 text-sm"
-                >
-                  <span>{dept.name}</span>
-                  <form action={deleteDepartmentAction}>
-                    <input type="hidden" name="id" value={dept.id} />
-                    <Button
-                      type="submit"
-                      variant="ghost"
-                      size="xs"
-                      className="h-6 text-muted-foreground hover:text-destructive"
-                    >
-                      삭제
-                    </Button>
-                  </form>
-                </div>
-              ))}
-            </div>
+            <DepartmentTags departments={departments} />
           )}
 
           <form action={createDepartmentAction} className="flex max-w-md gap-2">

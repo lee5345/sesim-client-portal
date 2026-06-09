@@ -16,23 +16,6 @@ export function getRoleLabel(role: UserRole): string {
 export function getAvatarInitials(name: string): string {
   const trimmed = name.trim();
   if (!trimmed) return "?";
-  const parts = trimmed.split(/\s+/);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-  return trimmed.slice(0, 2).toUpperCase();
-}
-
-/** First given name for firm sidebar avatar (e.g. 홍길동 → 길) */
-export function getGivenName(name: string): string {
-  const trimmed = name.trim();
-  if (!trimmed) return "?";
-  const parts = trimmed.split(/\s+/);
-  if (parts.length >= 2) {
-    return parts[1];
-  }
-  if (trimmed.length >= 2) {
-    return trimmed.slice(1);
-  }
-  return trimmed;
+  if (trimmed.length === 1) return trimmed;
+  return trimmed.slice(-2);
 }

@@ -30,11 +30,12 @@ export async function sendPasswordSetupEmail(to: string, setupUrl: string) {
     const info = await getTransporter().sendMail({
       from: fromEmail,
       to,
-      subject: "비밀번호 설정 링크 안내 (24시간 유효)",
+      subject: "[세심노무컨설팅] 고객사 관리자 계정 생성 안내",
       html: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.6;">
         <h2 style="margin: 0 0 12px;">비밀번호 설정 안내</h2>
         <p style="margin: 0 0 12px;">
+          세심 노무 컨설팅 포털에 가입해주셔서 감사합니다. <br />
           아래 링크를 눌러 비밀번호를 설정해 주세요.
           <strong>이 링크는 발급 시점부터 24시간 동안만 유효</strong>합니다.
         </p>
