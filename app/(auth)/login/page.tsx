@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { redirect } from "next/navigation";
 
 import { signIn, auth } from "@/auth";
@@ -27,7 +28,8 @@ export default async function LoginPage({
         password: String(formData.get("password") || ""),
         redirectTo: "/post-login",
       });
-    } catch {
+    } catch (error) {
+      if (isRedirectError(error)) throw error;
       redirect("/login?error=1");
     }
   }
