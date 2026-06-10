@@ -11,10 +11,10 @@ export function sortByKoreanName<T>(
   return [...items].sort((a, b) => compareKorean(getName(a), getName(b)));
 }
 
-type FirmStaffRole = "FIRM_ADMIN" | "FIRM_STAFF";
+import type { UserRole } from "@/lib/generated/prisma/client";
 
 export function sortFirmStaffUsers<
-  T extends { role: FirmStaffRole; name: string },
+  T extends { role: UserRole; name: string },
 >(users: readonly T[]): T[] {
   return [...users].sort((a, b) => {
     const aIsAdmin = a.role === "FIRM_ADMIN";

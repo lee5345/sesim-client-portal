@@ -9,7 +9,7 @@ const PUBLIC_PREFIXES = [
   "/post-login",
 ];
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (pathname.startsWith("/change-password")) {
@@ -44,10 +44,16 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  if (pathname.startsWith("/client/") || pathname === "/client") {
+    const role = session?.role;
+    if (role !== "CLIENT_ADMIN") {
+      return NextResponse.redirect(new URL("/unauthorized", req.url));
+    }
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
-
