@@ -1,6 +1,6 @@
 import { CheckCircle2, ClipboardList } from "lucide-react";
 
-import { OPTIONAL_FIELD_EMPTY_LABEL } from "@/lib/companies/labels";
+import { EMPTY_FIELD_LABEL } from "@/lib/companies/labels";
 import { formatDate } from "@/lib/format/date";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -95,7 +95,7 @@ export function RegistrationRequestsList({
                       <dd className="mt-0.5">
                         {request.phone?.trim()
                           ? request.phone
-                          : OPTIONAL_FIELD_EMPTY_LABEL}
+                          : EMPTY_FIELD_LABEL}
                       </dd>
                     </div>
                     <div className="sm:col-span-2">
@@ -103,7 +103,7 @@ export function RegistrationRequestsList({
                       <dd className="mt-0.5 whitespace-pre-wrap">
                         {request.note?.trim()
                           ? request.note
-                          : OPTIONAL_FIELD_EMPTY_LABEL}
+                          : EMPTY_FIELD_LABEL}
                       </dd>
                     </div>
                   </dl>

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Building2, Users } from "lucide-react";
 
-import { OPTIONAL_FIELD_EMPTY_LABEL } from "@/lib/companies/labels";
+import { EMPTY_FIELD_LABEL } from "@/lib/companies/labels";
 import { formatDate } from "@/lib/format/date";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ type ClientAccount = {
 };
 
 function formatSignupPhone(signupPhone: string | null) {
-  return signupPhone?.trim() ? signupPhone : OPTIONAL_FIELD_EMPTY_LABEL;
+  return signupPhone?.trim() ? signupPhone : EMPTY_FIELD_LABEL;
 }
 
 type CompanyGroup = {

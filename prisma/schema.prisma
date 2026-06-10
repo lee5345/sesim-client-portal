@@ -44,6 +44,35 @@ model Company {
   name           String
   businessNumber String?
   isActive       Boolean   @default(true)
+
+  // Profile / registration info
+  firmContactName            String?
+  managesPayroll             Boolean?
+  managesFourMajorInsurance  Boolean?
+  workplaceManagementNumber  String?
+  representativeName         String?
+  companyContactName         String?
+  companyContactTitle        String?
+  phone                      String?
+  mobile                     String?
+  fax                        String?
+  email                      String?
+  businessAddress            String?
+  taxOfficeName              String?
+  taxOfficeContact           String?
+  certificatePassword        String?
+  workersCompPhone           String?
+  workersCompFax             String?
+  nhisPhone                  String?
+  nhisFax                    String?
+  npsPhone                   String?
+  npsFax                     String?
+  employmentCenterPhone      String?
+  employmentCenterFax        String?
+  retirementPensionContact   String?
+  retirementPensionPhone     String?
+  notes                      String?
+
   deletedAt      DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt

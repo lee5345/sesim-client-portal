@@ -6,6 +6,7 @@ import { requireAuth } from "@/lib/auth/guards";
 import { NO_BUSINESS_NUMBER_LABEL } from "@/lib/companies/labels";
 import { getCompanyById } from "@/modules/companies/companies";
 import { CompanyEditForm } from "@/components/companies/company-edit-form";
+import { CompanyInfoLink } from "@/components/companies/company-info-link";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -55,15 +56,18 @@ export default async function FirmCompanyDetailPage({
           <Badge variant={company.isActive ? "default" : "secondary"}>
             {company.isActive ? "활성" : "비활성"}
           </Badge>
-          <CompanyEditForm
-            company={{
-              id: company.id,
-              name: company.name,
-              businessNumber: company.businessNumber,
-              isActive: company.isActive,
-            }}
-            canDelete={canDelete}
-          />
+          <div className="flex items-center gap-2">
+            <CompanyInfoLink companyId={company.id} />
+            <CompanyEditForm
+              company={{
+                id: company.id,
+                name: company.name,
+                businessNumber: company.businessNumber,
+                isActive: company.isActive,
+              }}
+              canDelete={canDelete}
+            />
+          </div>
         </div>
         <p className="text-sm text-muted-foreground">
           사업자등록번호: {company.businessNumber ?? NO_BUSINESS_NUMBER_LABEL}
