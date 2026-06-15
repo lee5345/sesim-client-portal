@@ -34,10 +34,11 @@ import {
   RRN_SEGMENT_LENGTHS,
   splitIntoSegments,
 } from "@/lib/form/segmented-digits";
+import { formatSalaryInput, parseSalaryInput } from "@/lib/format/currency";
 import type { SalaryBasis, SalaryType } from "@/lib/generated/prisma/client";
 
 const selectClassName =
-  "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+  "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
 
 type DepartmentOption = {
   id: string;
@@ -345,33 +346,38 @@ export function HireIntakeFormDialog({
 
             <div className="space-y-2">
               <Label htmlFor={`department-${formId}`}>부서</Label>
-              {departments.length > 0 ? (
-                <select
-                  id={`department-${formId}`}
-                  value={formValues.department}
-                  onChange={(event) =>
-                    updateFormValue("department", event.target.value)
-                  }
-                  className={selectClassName}
-                >
-                  <option value="">선택 안 함</option>
-                  {departments.map((department) => (
-                    <option key={department.id} value={department.name}>
-                      {department.name}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <Input
-                  id={`department-${formId}`}
-                  value={formValues.department}
-                  onChange={(event) =>
-                    updateFormValue("department", event.target.value)
-                  }
-                  placeholder="부서명 입력"
-                  maxLength={50}
-                />
-              )}
+              <select
+                id={`department-${formId}`}
+                value={formValues.department}
+                onChange={(event) =>
+                  updateFormValue("department", event.target.value)
+                }
+                className={selectClassName}
+                disabled={departments.length === 0 || isPending}
+              >
+                <option value="">
+                  {departments.length > 0 ? "선택 안 함" : "등록된 부서 없음"}
+                </option>
+                {departments.map((department) => (
+                  <option key={department.id} value={department.name}>
+                    {department.name}
+                  </option>
+                ))}
+                {isEdit &&
+                formValues.department &&
+                !departments.some(
+                  (department) => department.name === formValues.department,
+                ) ? (
+                  <option value={formValues.department}>
+                    {formValues.department}
+                  </option>
+                ) : null}
+              </select>
+              {departments.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  설정 &gt; 부서 관리에서 부서를 먼저 등록해 주세요.
+                </p>
+              ) : null}
             </div>
 
             <div className="space-y-2">
@@ -416,12 +422,14 @@ export function HireIntakeFormDialog({
               <Label htmlFor={`salaryAmount-${formId}`}>급여 금액</Label>
               <Input
                 id={`salaryAmount-${formId}`}
-                type="number"
-                min={1}
-                step={1}
-                value={formValues.salaryAmount}
+                type="text"
+                inputMode="numeric"
+                value={formatSalaryInput(formValues.salaryAmount)}
                 onChange={(event) =>
-                  updateFormValue("salaryAmount", event.target.value)
+                  updateFormValue(
+                    "salaryAmount",
+                    parseSalaryInput(event.target.value),
+                  )
                 }
                 required
               />

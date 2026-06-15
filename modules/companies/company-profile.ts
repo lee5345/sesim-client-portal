@@ -10,8 +10,14 @@ import {
   type CompanyProfile,
   type CompanyProfileFieldKey,
 } from "@/lib/companies/profile-fields";
+import { optionalBusinessNumberSchema } from "@/lib/validation/business-number";
+import { getFirstZodErrorMessage } from "@/lib/validation/zod-korean";
 import { prisma } from "@/lib/db/db";
 import { requireAuth } from "@/lib/auth/guards";
+
+export type CompanyProfileFieldActionResult =
+  | { success: true }
+  | { success: false; error: string };
 
 const companyProfileSelect = {
   id: true,
@@ -66,6 +72,10 @@ function parseFieldValue(key: CompanyProfileFieldKey, rawValue: FormDataEntryVal
 
   if (!value) return null;
 
+  if (field.type === "businessNumber") {
+    return optionalBusinessNumberSchema.parse(value) ?? null;
+  }
+
   if (field.type === "email") {
     z.string().email("올바른 이메일 형식이 아닙니다.").parse(value);
   }
@@ -88,12 +98,33 @@ export async function getCompanyProfile(
   });
 }
 
-export async function updateCompanyProfileFieldAction(formData: FormData) {
+export async function updateCompanyProfileFieldAction(
+  formData: FormData,
+): Promise<CompanyProfileFieldActionResult> {
   await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
 
-  const companyId = z.string().uuid().parse(formData.get("companyId"));
-  const field = fieldKeySchema.parse(formData.get("field"));
-  const parsedValue = parseFieldValue(field, formData.get("value"));
+  const companyIdResult = z.string().uuid().safeParse(formData.get("companyId"));
+  if (!companyIdResult.success) {
+    return { success: false, error: getFirstZodErrorMessage(companyIdResult.error) };
+  }
+
+  const fieldResult = fieldKeySchema.safeParse(formData.get("field"));
+  if (!fieldResult.success) {
+    return { success: false, error: getFirstZodErrorMessage(fieldResult.error) };
+  }
+
+  let parsedValue: string | boolean | null;
+  try {
+    parsedValue = parseFieldValue(fieldResult.data, formData.get("value"));
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { success: false, error: getFirstZodErrorMessage(error) };
+    }
+    throw error;
+  }
+
+  const companyId = companyIdResult.data;
+  const field = fieldResult.data;
 
   const existing = await prisma.company.findFirst({
     where: { id: companyId, deletedAt: null },
@@ -112,4 +143,5 @@ export async function updateCompanyProfileFieldAction(formData: FormData) {
   revalidatePath(`/firm/companies/${companyId}`);
   revalidatePath(`/firm/companies/${companyId}/info`);
   revalidatePath("/firm/dashboard");
+  return { success: true };
 }

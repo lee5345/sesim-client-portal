@@ -21,6 +21,7 @@ export function joinSegments(values: string[], separator = ""): string {
 
 export const RRN_SEGMENT_LENGTHS = [6, 7] as const;
 export const PHONE_SEGMENT_LENGTHS = [3, 4, 4] as const;
+export const BUSINESS_NUMBER_SEGMENT_LENGTHS = [3, 2, 5] as const;
 
 export function joinRrnSegments(front: string, back: string): string {
   if (!front && !back) {
@@ -28,4 +29,16 @@ export function joinRrnSegments(front: string, back: string): string {
   }
 
   return `${front}-${back}`;
+}
+
+export function joinBusinessNumberSegments(
+  first: string,
+  second: string,
+  third: string,
+): string {
+  if (!first && !second && !third) {
+    return "";
+  }
+
+  return `${first}-${second}-${third}`;
 }

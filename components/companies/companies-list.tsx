@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { NO_BUSINESS_NUMBER_LABEL } from "@/lib/companies/labels";
+import { formatBusinessNumber } from "@/lib/format/business-number";
 import { formatDateTime } from "@/lib/format/date";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -77,8 +78,9 @@ export function CompaniesList({ companies, initialQuery = "" }: CompaniesListPro
                       {company.isActive ? "활성" : "비활성"}
                     </Badge>
                   </div>
-                  <CardDescription>
-                    {company.businessNumber ?? NO_BUSINESS_NUMBER_LABEL}
+                  <CardDescription className="font-mono">
+                    {formatBusinessNumber(company.businessNumber) ??
+                      NO_BUSINESS_NUMBER_LABEL}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm text-muted-foreground">

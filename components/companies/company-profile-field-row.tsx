@@ -5,11 +5,13 @@ import { Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { EMPTY_FIELD_LABEL } from "@/lib/companies/labels";
+import { formatBusinessNumber } from "@/lib/format/business-number";
 import {
   type CompanyProfile,
   type CompanyProfileFieldDef,
 } from "@/lib/companies/profile-fields";
 import { updateCompanyProfileFieldAction } from "@/modules/companies/company-profile";
+import { BusinessNumberInput } from "@/components/companies/business-number-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -43,6 +45,10 @@ function formatDisplayValue(
     return value ? "••••••••" : EMPTY_FIELD_LABEL;
   }
 
+  if (field.type === "businessNumber") {
+    return formatBusinessNumber(typeof value === "string" ? value : null) ?? EMPTY_FIELD_LABEL;
+  }
+
   if (typeof value === "string" && value.length > 0) {
     return value;
   }
@@ -62,6 +68,10 @@ function getEditDefaultValue(
     return "";
   }
 
+  if (field.type === "businessNumber") {
+    return formatBusinessNumber(typeof value === "string" ? value : null) ?? "";
+  }
+
   return typeof value === "string" ? value : "";
 }
 
@@ -76,6 +86,7 @@ export function CompanyProfileFieldRow({
   const [draftValue, setDraftValue] = useState(() =>
     getEditDefaultValue(field, profile),
   );
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -89,11 +100,13 @@ export function CompanyProfileFieldRow({
 
   const startEdit = () => {
     setDraftValue(getEditDefaultValue(field, profile));
+    setSaveError(null);
     setIsEditing(true);
   };
 
   const cancelEdit = () => {
     setDraftValue(getEditDefaultValue(field, profile));
+    setSaveError(null);
     setIsEditing(false);
   };
 
@@ -102,13 +115,19 @@ export function CompanyProfileFieldRow({
       return;
     }
 
+    setSaveError(null);
     const formData = new FormData();
     formData.set("companyId", companyId);
     formData.set("field", field.key);
     formData.set("value", draftValue);
 
     startTransition(async () => {
-      await updateCompanyProfileFieldAction(formData);
+      const result = await updateCompanyProfileFieldAction(formData);
+      if (!result.success) {
+        setSaveError(result.error);
+        return;
+      }
+
       setIsEditing(false);
       router.refresh();
     });
@@ -158,6 +177,11 @@ export function CompanyProfileFieldRow({
       </div>
 
       <div className="mt-1">
+        {saveError ? (
+          <p className="mb-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {saveError}
+          </p>
+        ) : null}
         {isEditing ? (
           field.type === "textarea" ? (
             <textarea
@@ -181,6 +205,13 @@ export function CompanyProfileFieldRow({
               <option value="true">관리 함</option>
               <option value="false">관리 안 함</option>
             </select>
+          ) : field.type === "businessNumber" ? (
+            <BusinessNumberInput
+              idPrefix={`profile-${companyId}-${field.key}`}
+              value={draftValue}
+              onChange={setDraftValue}
+              disabled={isPending}
+            />
           ) : (
             <Input
               id={`profile-${companyId}-${field.key}`}
@@ -202,6 +233,7 @@ export function CompanyProfileFieldRow({
           <p
             className={cn(
               "text-sm break-words whitespace-pre-wrap",
+              field.type === "businessNumber" && "font-mono",
               isEmpty ? "text-muted-foreground" : "text-foreground",
             )}
           >

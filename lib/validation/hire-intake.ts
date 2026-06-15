@@ -72,7 +72,8 @@ const hireIntakeBaseSchema = z.object({
         return undefined;
       }
 
-      return Number(value);
+      const normalized = String(value).replace(/,/g, "");
+      return Number(normalized);
     },
     z
       .number({

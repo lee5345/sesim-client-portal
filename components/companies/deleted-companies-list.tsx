@@ -1,4 +1,5 @@
 import { NO_BUSINESS_NUMBER_LABEL } from "@/lib/companies/labels";
+import { formatBusinessNumber } from "@/lib/format/business-number";
 import { formatDateTime } from "@/lib/format/date";
 import { restoreCompanyAction } from "@/modules/companies/companies";
 import { Button } from "@/components/ui/button";
@@ -58,8 +59,9 @@ export function DeletedCompaniesList({
                     className="border-b last:border-0 hover:bg-muted/20"
                   >
                     <td className="px-4 py-3 font-medium">{company.name}</td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {company.businessNumber ?? NO_BUSINESS_NUMBER_LABEL}
+                    <td className="px-4 py-3 font-mono text-muted-foreground">
+                      {formatBusinessNumber(company.businessNumber) ??
+                        NO_BUSINESS_NUMBER_LABEL}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {company.deletedAt

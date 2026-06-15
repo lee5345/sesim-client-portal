@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -8,6 +8,7 @@ import {
   softDeleteCompanyAction,
   updateCompanyAction,
 } from "@/modules/companies/companies";
+import { BusinessNumberInput } from "@/components/companies/business-number-input";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatBusinessNumber } from "@/lib/format/business-number";
 
 const selectClassName =
   "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
@@ -39,6 +41,21 @@ export function CompanyEditForm({ company, canDelete }: CompanyEditFormProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isActive, setIsActive] = useState(company.isActive ? "true" : "false");
+  const [businessNumber, setBusinessNumber] = useState(
+    formatBusinessNumber(company.businessNumber) ?? "",
+  );
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    setIsActive(company.isActive ? "true" : "false");
+    setBusinessNumber(formatBusinessNumber(company.businessNumber) ?? "");
+    setFormError(null);
+  }, [open, company.businessNumber, company.isActive]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -57,13 +74,30 @@ export function CompanyEditForm({ company, canDelete }: CompanyEditFormProps) {
           </DialogDescription>
         </DialogHeader>
         <form
-          action={async (formData) => {
-            await updateCompanyAction(formData);
-            setOpen(false);
-            router.refresh();
-          }}
           className="space-y-4"
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            setFormError(null);
+
+            const formData = new FormData(event.currentTarget);
+            startTransition(async () => {
+              const result = await updateCompanyAction(formData);
+              if (!result.success) {
+                setFormError(result.error);
+                return;
+              }
+
+              setOpen(false);
+              router.refresh();
+            });
+          }}
         >
+          {formError ? (
+            <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {formError}
+            </p>
+          ) : null}
           <input type="hidden" name="companyId" value={company.id} />
           <input type="hidden" name="isActive" value={isActive} />
 
@@ -76,16 +110,17 @@ export function CompanyEditForm({ company, canDelete }: CompanyEditFormProps) {
                 defaultValue={company.name}
                 required
                 maxLength={100}
+                disabled={isPending}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor={`businessNumber-${company.id}`}>사업자등록번호</Label>
-              <Input
-                id={`businessNumber-${company.id}`}
+              <Label>사업자등록번호</Label>
+              <BusinessNumberInput
+                idPrefix={`businessNumber-${company.id}`}
                 name="businessNumber"
-                defaultValue={company.businessNumber ?? ""}
-                placeholder="000-00-00000"
-                maxLength={20}
+                value={businessNumber}
+                onChange={setBusinessNumber}
+                disabled={isPending}
               />
             </div>
             <div className="space-y-2">
@@ -95,6 +130,7 @@ export function CompanyEditForm({ company, canDelete }: CompanyEditFormProps) {
                 value={isActive}
                 onChange={(event) => setIsActive(event.target.value)}
                 className={selectClassName}
+                disabled={isPending}
               >
                 <option value="true">활성</option>
                 <option value="false">비활성</option>
@@ -120,10 +156,12 @@ export function CompanyEditForm({ company, canDelete }: CompanyEditFormProps) {
           ) : null}
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
               취소
             </Button>
-            <Button type="submit">저장</Button>
+            <Button type="submit" disabled={isPending}>
+              저장
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

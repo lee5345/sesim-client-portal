@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 const ENGLISH_MESSAGE_PATTERNS: Array<[RegExp, string]> = [
   [/invalid email/i, "올바른 이메일 형식이 아닙니다."],
   [/invalid option/i, "올바른 값을 선택해 주세요."],
@@ -22,4 +24,9 @@ export function translateZodErrorMessage(message: string): string {
   }
 
   return "입력값을 확인해 주세요.";
+}
+
+export function getFirstZodErrorMessage(error: z.ZodError): string {
+  const message = error.issues[0]?.message ?? "입력값을 확인해 주세요.";
+  return translateZodErrorMessage(message);
 }

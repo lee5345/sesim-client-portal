@@ -5,6 +5,7 @@ import {
   SALARY_BASIS_LABELS,
   SALARY_TYPE_LABELS,
 } from "@/modules/hire-intakes/labels";
+import { formatSalaryAmount } from "@/lib/format/currency";
 import { formatDate } from "@/lib/format/date";
 import type { SalaryBasis, SalaryType } from "@/lib/generated/prisma/client";
 import { Badge } from "@/components/ui/badge";
@@ -44,10 +45,6 @@ type HireIntakesTableProps = {
   hireIntakes: HireIntakeRow[];
   departments: DepartmentOption[];
 };
-
-function formatSalaryAmount(amount: number) {
-  return `${amount.toLocaleString("ko-KR")}원`;
-}
 
 function toFormDateValue(date: Date | null) {
   if (!date) {

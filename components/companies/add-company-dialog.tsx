@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Plus } from "lucide-react";
 
 import { createCompanyAction } from "@/modules/companies/companies";
+import { BusinessNumberInput } from "@/components/companies/business-number-input";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,9 +20,25 @@ import { Label } from "@/components/ui/label";
 
 export function AddCompanyDialog() {
   const [open, setOpen] = useState(false);
+  const [businessNumber, setBusinessNumber] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  function resetState() {
+    setBusinessNumber("");
+    setFormError(null);
+  }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (!nextOpen) {
+          resetState();
+        }
+      }}
+    >
       <DialogTrigger
         render={
           <Button>
@@ -38,29 +55,62 @@ export function AddCompanyDialog() {
           </DialogDescription>
         </DialogHeader>
         <form
-          action={async (formData) => {
-            await createCompanyAction(formData);
-            setOpen(false);
-          }}
           className="space-y-4"
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            setFormError(null);
+
+            const formData = new FormData(event.currentTarget);
+            startTransition(async () => {
+              const result = await createCompanyAction(formData);
+              if (!result.success) {
+                setFormError(result.error);
+                return;
+              }
+
+              setOpen(false);
+              resetState();
+            });
+          }}
         >
+          {formError ? (
+            <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {formError}
+            </p>
+          ) : null}
           <div className="space-y-2">
             <Label htmlFor="name">회사명</Label>
-            <Input id="name" name="name" required placeholder="회사명 입력" />
+            <Input
+              id="name"
+              name="name"
+              required
+              placeholder="회사명 입력"
+              disabled={isPending}
+            />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="businessNumber">사업자등록번호 (선택)</Label>
-            <Input
-              id="businessNumber"
+            <Label>사업자등록번호 (선택)</Label>
+            <BusinessNumberInput
+              idPrefix="add-company-business-number"
               name="businessNumber"
-              placeholder="000-00-00000"
+              value={businessNumber}
+              onChange={setBusinessNumber}
+              disabled={isPending}
             />
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={isPending}
+            >
               취소
             </Button>
-            <Button type="submit">추가</Button>
+            <Button type="submit" disabled={isPending}>
+              추가
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

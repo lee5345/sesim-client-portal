@@ -9,9 +9,14 @@ import { Button } from "@/components/ui/button";
 type MaskedRrnCellProps = {
   id: string;
   maskedRrn: string;
+  revealAction?: (id: string) => Promise<{ rrn: string }>;
 };
 
-export function MaskedRrnCell({ id, maskedRrn }: MaskedRrnCellProps) {
+export function MaskedRrnCell({
+  id,
+  maskedRrn,
+  revealAction = revealRRN,
+}: MaskedRrnCellProps) {
   const [revealed, setRevealed] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -33,7 +38,7 @@ export function MaskedRrnCell({ id, maskedRrn }: MaskedRrnCellProps) {
           setError(null);
           startTransition(async () => {
             try {
-              const result = await revealRRN(id);
+              const result = await revealAction(id);
               setRevealed(result.rrn);
             } catch {
               setError("주민등록번호를 불러오지 못했습니다.");

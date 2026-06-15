@@ -17,8 +17,10 @@ type SegmentedDigitFieldsProps = {
 };
 
 const segmentWidthClass: Record<number, string> = {
+  2: "w-10",
   3: "w-14",
   4: "w-16",
+  5: "w-20",
   6: "w-[5.5rem]",
   7: "w-[6.25rem]",
 };
