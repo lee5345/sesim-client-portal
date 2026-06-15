@@ -1,15 +1,20 @@
 import { requireAuth } from "@/lib/auth/guards";
-import { EmptyState } from "@/components/dashboard/empty-state";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { listDepartments } from "@/modules/companies/departments";
+import { listHireIntakes } from "@/modules/hire-intakes/actions";
+import { HireIntakesTable } from "@/components/client/hire-intakes-table";
 
 export default async function ClientNewHiresPage() {
-  await requireAuth("CLIENT_ADMIN");
+  const session = await requireAuth("CLIENT_ADMIN");
+  const companyId = session.user.companyId;
+
+  if (!companyId) {
+    return <p className="text-muted-foreground">소속 회사 정보가 없습니다.</p>;
+  }
+
+  const [hireIntakes, departments] = await Promise.all([
+    listHireIntakes(companyId),
+    listDepartments(companyId),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -20,15 +25,7 @@ export default async function ClientNewHiresPage() {
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>입사자 목록</CardTitle>
-          <CardDescription>등록된 입사자 정보가 여기에 표시됩니다.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <EmptyState message="다음 단계에서 입사자 등록 기능이 추가됩니다." />
-        </CardContent>
-      </Card>
+      <HireIntakesTable hireIntakes={hireIntakes} departments={departments} />
     </div>
   );
 }

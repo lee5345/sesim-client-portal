@@ -367,10 +367,9 @@ Example:
 
 ```txt
 /app
-  /(marketing)
-  /(auth)
-  /(client)
-  /(firm)
+  /(auth)          # route group — no URL prefix (/login, /signup-request, …)
+  /client          # /client/*
+  /firm            # /firm/*
     /calculator
 
 /modules

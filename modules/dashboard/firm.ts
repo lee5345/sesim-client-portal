@@ -9,7 +9,8 @@ export async function getFirmDashboardData() {
     pendingRequestCount,
     recentNewHires,
     recentTerminations,
-    recentActivityCount,
+    recentNewHireCount,
+    recentTerminationCount,
   ] = await Promise.all([
     prisma.company.count({ where: { deletedAt: null } }),
     prisma.registrationRequest.count({
@@ -35,15 +36,15 @@ export async function getFirmDashboardData() {
         company: { select: { name: true } },
       },
     }),
-    prisma.$transaction([
-      prisma.newHire.count({
-        where: { deletedAt: null, createdAt: { gte: sevenDaysAgo } },
-      }),
-      prisma.termination.count({
-        where: { deletedAt: null, createdAt: { gte: sevenDaysAgo } },
-      }),
-    ]).then(([nh, t]) => nh + t),
+    prisma.newHire.count({
+      where: { deletedAt: null, createdAt: { gte: sevenDaysAgo } },
+    }),
+    prisma.termination.count({
+      where: { deletedAt: null, createdAt: { gte: sevenDaysAgo } },
+    }),
   ]);
+
+  const recentActivityCount = recentNewHireCount + recentTerminationCount;
 
   const recentActivity = [
     ...recentNewHires.map((r) => ({

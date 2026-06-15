@@ -1,0 +1,489 @@
+"use client";
+
+import { useEffect, useState, useTransition } from "react";
+import { Eye, Pencil } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+import {
+  createHireIntake,
+  revealRRN,
+  updateHireIntake,
+} from "@/modules/hire-intakes/actions";
+import {
+  SALARY_BASES,
+  SALARY_BASIS_LABELS,
+  SALARY_TYPE_LABELS,
+  SALARY_TYPES,
+} from "@/modules/hire-intakes/labels";
+import { SegmentedDigitFields } from "@/components/client/segmented-digit-fields";
+import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  joinRrnSegments,
+  RRN_SEGMENT_LENGTHS,
+  splitIntoSegments,
+} from "@/lib/form/segmented-digits";
+import type { SalaryBasis, SalaryType } from "@/lib/generated/prisma/client";
+
+const selectClassName =
+  "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+
+type DepartmentOption = {
+  id: string;
+  name: string;
+};
+
+type HireIntakeFormValues = {
+  name: string;
+  email: string;
+  rrnSegments: string[];
+  hireDate: string;
+  department: string;
+  salaryType: SalaryType;
+  salaryBasis: SalaryBasis;
+  salaryAmount: string;
+  isContract: string;
+  contractStart: string;
+  contractEnd: string;
+};
+
+type HireIntakeFormDialogProps = {
+  mode: "create" | "edit";
+  departments: DepartmentOption[];
+  hireIntake?: {
+    id: string;
+    name: string;
+    email: string;
+    hireDate: string;
+    department: string | null;
+    salaryType: SalaryType;
+    salaryBasis: SalaryBasis;
+    salaryAmount: number;
+    isContract: boolean;
+    contractStart: string | null;
+    contractEnd: string | null;
+  };
+};
+
+function toDateInputValue(date: string | null | undefined) {
+  return date ?? "";
+}
+
+function createEmptyRrnSegments() {
+  return splitIntoSegments("", [...RRN_SEGMENT_LENGTHS]);
+}
+
+function getInitialFormValues(
+  hireIntake: HireIntakeFormDialogProps["hireIntake"],
+): HireIntakeFormValues {
+  return {
+    name: hireIntake?.name ?? "",
+    email: hireIntake?.email ?? "",
+    rrnSegments: createEmptyRrnSegments(),
+    hireDate: toDateInputValue(hireIntake?.hireDate),
+    department: hireIntake?.department ?? "",
+    salaryType: hireIntake?.salaryType ?? "MONTHLY",
+    salaryBasis: hireIntake?.salaryBasis ?? "GROSS",
+    salaryAmount:
+      hireIntake?.salaryAmount !== undefined
+        ? String(hireIntake.salaryAmount)
+        : "",
+    isContract: hireIntake?.isContract ? "true" : "false",
+    contractStart: toDateInputValue(hireIntake?.contractStart),
+    contractEnd: toDateInputValue(hireIntake?.contractEnd),
+  };
+}
+
+function buildFormData(
+  values: HireIntakeFormValues,
+  options: { includeRrn: boolean },
+): FormData {
+  const formData = new FormData();
+
+  formData.set("name", values.name);
+  formData.set("email", values.email);
+  formData.set("hireDate", values.hireDate);
+  formData.set("department", values.department);
+  formData.set("salaryType", values.salaryType);
+  formData.set("salaryBasis", values.salaryBasis);
+  formData.set("salaryAmount", values.salaryAmount);
+  formData.set("isContract", values.isContract);
+  formData.set("contractStart", values.contractStart);
+  formData.set("contractEnd", values.contractEnd);
+
+  if (options.includeRrn) {
+    formData.set(
+      "rrn",
+      joinRrnSegments(values.rrnSegments[0] ?? "", values.rrnSegments[1] ?? ""),
+    );
+  }
+
+  return formData;
+}
+
+export function HireIntakeFormDialog({
+  mode,
+  departments,
+  hireIntake,
+}: HireIntakeFormDialogProps) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [formValues, setFormValues] = useState<HireIntakeFormValues>(() =>
+    getInitialFormValues(hireIntake),
+  );
+  const [rrnEditing, setRrnEditing] = useState(mode === "create");
+  const [revealedRrn, setRevealedRrn] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const isEdit = mode === "edit";
+  const formId = `${mode}-${hireIntake?.id ?? "new"}`;
+  const isContract = formValues.isContract === "true";
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    setFormValues(getInitialFormValues(hireIntake));
+    setRrnEditing(mode === "create");
+    setRevealedRrn(null);
+    setFormError(null);
+  }, [open, hireIntake, mode]);
+
+  function updateFormValue<K extends keyof HireIntakeFormValues>(
+    key: K,
+    value: HireIntakeFormValues[K],
+  ) {
+    setFormValues((current) => ({ ...current, [key]: value }));
+  }
+
+  function resetState() {
+    setFormValues(getInitialFormValues(hireIntake));
+    setRrnEditing(mode === "create");
+    setRevealedRrn(null);
+    setFormError(null);
+  }
+
+  function startRrnEditing(rrn?: string) {
+    setRrnEditing(true);
+    if (rrn) {
+      setFormValues((current) => ({
+        ...current,
+        rrnSegments: splitIntoSegments(rrn, [...RRN_SEGMENT_LENGTHS]),
+      }));
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (!nextOpen) {
+          resetState();
+        }
+      }}
+    >
+      <DialogTrigger
+        render={
+          isEdit ? (
+            <Button variant="outline" size="icon-sm" aria-label="입사자 정보 수정">
+              <Pencil className="size-4" />
+            </Button>
+          ) : (
+            <Button type="button">입사자 등록</Button>
+          )
+        }
+      />
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{isEdit ? "입사자 정보 수정" : "입사자 등록"}</DialogTitle>
+          <DialogDescription>
+            {isEdit
+              ? "입사자 정보를 수정합니다. 주민등록번호는 별도 확인 후 변경할 수 있습니다."
+              : "신규 입사자 정보를 등록합니다."}
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          className="space-y-4"
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            setFormError(null);
+
+            startTransition(async () => {
+              const formData = buildFormData(formValues, {
+                includeRrn: !isEdit || rrnEditing,
+              });
+              const result =
+                isEdit && hireIntake
+                  ? await updateHireIntake(hireIntake.id, formData)
+                  : await createHireIntake(formData);
+
+              if (!result.success) {
+                setFormError(result.error);
+                return;
+              }
+
+              setOpen(false);
+              resetState();
+              router.refresh();
+            });
+          }}
+        >
+          {formError ? (
+            <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {formError}
+            </p>
+          ) : null}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor={`name-${formId}`}>이름</Label>
+              <Input
+                id={`name-${formId}`}
+                value={formValues.name}
+                onChange={(event) => updateFormValue("name", event.target.value)}
+                required
+                maxLength={100}
+              />
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor={`email-${formId}`}>이메일</Label>
+              <Input
+                id={`email-${formId}`}
+                type="text"
+                inputMode="email"
+                autoComplete="email"
+                value={formValues.email}
+                onChange={(event) => updateFormValue("email", event.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <Label>주민등록번호</Label>
+              {isEdit && !rrnEditing ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-sm text-muted-foreground">
+                    {revealedRrn ?? "******-*******"}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isPending}
+                    onClick={() => {
+                      if (!hireIntake) {
+                        return;
+                      }
+                      startTransition(async () => {
+                        const result = await revealRRN(hireIntake.id);
+                        setRevealedRrn(result.rrn);
+                      });
+                    }}
+                  >
+                    <Eye className="size-4" />
+                    확인
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isPending}
+                    onClick={() => {
+                      if (revealedRrn) {
+                        startRrnEditing(revealedRrn);
+                        return;
+                      }
+                      if (!hireIntake) {
+                        return;
+                      }
+                      startTransition(async () => {
+                        const result = await revealRRN(hireIntake.id);
+                        setRevealedRrn(result.rrn);
+                        startRrnEditing(result.rrn);
+                      });
+                    }}
+                  >
+                    변경
+                  </Button>
+                </div>
+              ) : (
+                <SegmentedDigitFields
+                  idPrefix={`rrn-${formId}`}
+                  segmentLengths={RRN_SEGMENT_LENGTHS}
+                  values={formValues.rrnSegments}
+                  onChange={(rrnSegments) => updateFormValue("rrnSegments", rrnSegments)}
+                  disabled={isPending}
+                />
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor={`hireDate-${formId}`}>입사일</Label>
+              <DateInput
+                id={`hireDate-${formId}`}
+                value={formValues.hireDate}
+                onChange={(value) => updateFormValue("hireDate", value)}
+                required
+                disabled={isPending}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor={`department-${formId}`}>부서</Label>
+              {departments.length > 0 ? (
+                <select
+                  id={`department-${formId}`}
+                  value={formValues.department}
+                  onChange={(event) =>
+                    updateFormValue("department", event.target.value)
+                  }
+                  className={selectClassName}
+                >
+                  <option value="">선택 안 함</option>
+                  {departments.map((department) => (
+                    <option key={department.id} value={department.name}>
+                      {department.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <Input
+                  id={`department-${formId}`}
+                  value={formValues.department}
+                  onChange={(event) =>
+                    updateFormValue("department", event.target.value)
+                  }
+                  placeholder="부서명 입력"
+                  maxLength={50}
+                />
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor={`salaryType-${formId}`}>급여 유형</Label>
+              <select
+                id={`salaryType-${formId}`}
+                value={formValues.salaryType}
+                onChange={(event) =>
+                  updateFormValue("salaryType", event.target.value as SalaryType)
+                }
+                className={selectClassName}
+                required
+              >
+                {SALARY_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {SALARY_TYPE_LABELS[type]}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor={`salaryBasis-${formId}`}>급여 기준</Label>
+              <select
+                id={`salaryBasis-${formId}`}
+                value={formValues.salaryBasis}
+                onChange={(event) =>
+                  updateFormValue("salaryBasis", event.target.value as SalaryBasis)
+                }
+                className={selectClassName}
+                required
+              >
+                {SALARY_BASES.map((basis) => (
+                  <option key={basis} value={basis}>
+                    {SALARY_BASIS_LABELS[basis]}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor={`salaryAmount-${formId}`}>급여 금액</Label>
+              <Input
+                id={`salaryAmount-${formId}`}
+                type="number"
+                min={1}
+                step={1}
+                value={formValues.salaryAmount}
+                onChange={(event) =>
+                  updateFormValue("salaryAmount", event.target.value)
+                }
+                required
+              />
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor={`isContract-${formId}`}>고용 형태</Label>
+              <select
+                id={`isContract-${formId}`}
+                value={formValues.isContract}
+                onChange={(event) =>
+                  updateFormValue("isContract", event.target.value)
+                }
+                className={selectClassName}
+                required
+              >
+                <option value="false">정규직</option>
+                <option value="true">계약직</option>
+              </select>
+            </div>
+
+            {isContract ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor={`contractStart-${formId}`}>계약 시작일</Label>
+                  <DateInput
+                    id={`contractStart-${formId}`}
+                    value={formValues.contractStart}
+                    onChange={(value) => updateFormValue("contractStart", value)}
+                    required
+                    disabled={isPending}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`contractEnd-${formId}`}>계약 종료일</Label>
+                  <DateInput
+                    id={`contractEnd-${formId}`}
+                    value={formValues.contractEnd}
+                    onChange={(value) => updateFormValue("contractEnd", value)}
+                    required
+                    disabled={isPending}
+                  />
+                </div>
+              </>
+            ) : null}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={isPending}
+            >
+              취소
+            </Button>
+            <Button type="submit" disabled={isPending}>
+              저장
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
