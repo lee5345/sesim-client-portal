@@ -3,23 +3,19 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { requireAuth } from "@/lib/auth/guards";
-import { formatDate, formatDateTime } from "@/lib/format/date";
-import { NO_BUSINESS_NUMBER_LABEL } from "@/lib/companies/labels";
-import { formatBusinessNumber } from "@/lib/format/business-number";
+import { NO_WORKPLACE_MANAGEMENT_NUMBER_LABEL } from "@/lib/companies/labels";
+import { formatWorkplaceManagementNumber } from "@/lib/format/workplace-management-number";
 import { getCompanyById } from "@/modules/companies/companies";
 import {
   listCompanyNewHires,
   listCompanyTerminations,
-  revealCompanyNewHireRrn,
 } from "@/modules/companies/company-activity";
-import {
-  SALARY_BASIS_LABELS,
-  SALARY_TYPE_LABELS,
-} from "@/modules/hire-intakes/labels";
+import { listDepartments } from "@/modules/companies/departments";
 import { CompanyEditForm } from "@/components/companies/company-edit-form";
 import { CompanyInfoLink } from "@/components/companies/company-info-link";
+import { DepartmentManager } from "@/components/companies/department-manager";
 import { EmptyState } from "@/components/dashboard/empty-state";
-import { MaskedRrnCell } from "@/components/client/masked-rrn-cell";
+import { HireIntakesTable } from "@/components/client/hire-intakes-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,8 +26,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
-import { formatSalaryAmount } from "@/lib/format/currency";
+import { formatDate, formatDateTime } from "@/lib/format/date";
 
 export default async function FirmCompanyDetailPage({
   params,
@@ -41,10 +36,11 @@ export default async function FirmCompanyDetailPage({
   const session = await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
   const { companyId } = await params;
 
-  const [company, newHires, terminations] = await Promise.all([
+  const [company, newHires, terminations, departments] = await Promise.all([
     getCompanyById(companyId),
     listCompanyNewHires(companyId),
     listCompanyTerminations(companyId),
+    listDepartments(companyId),
   ]);
   if (!company) {
     notFound();
@@ -56,7 +52,7 @@ export default async function FirmCompanyDetailPage({
   const canDelete = session.user.role === "FIRM_ADMIN";
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <div className="flex flex-col gap-4">
         <Button
           nativeButton={false}
@@ -80,7 +76,7 @@ export default async function FirmCompanyDetailPage({
               company={{
                 id: company.id,
                 name: company.name,
-                businessNumber: company.businessNumber,
+                workplaceManagementNumber: company.workplaceManagementNumber,
                 isActive: company.isActive,
               }}
               canDelete={canDelete}
@@ -88,8 +84,9 @@ export default async function FirmCompanyDetailPage({
           </div>
         </div>
         <p className="font-mono text-sm text-muted-foreground">
-          사업자등록번호:{" "}
-          {formatBusinessNumber(company.businessNumber) ?? NO_BUSINESS_NUMBER_LABEL}
+          사업장관리번호:{" "}
+          {formatWorkplaceManagementNumber(company.workplaceManagementNumber) ??
+            NO_WORKPLACE_MANAGEMENT_NUMBER_LABEL}
         </p>
       </div>
 
@@ -115,86 +112,13 @@ export default async function FirmCompanyDetailPage({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="new-hires">
-          <Card>
-            <CardHeader>
-              <CardTitle>입사자 정보</CardTitle>
-              <CardDescription>
-                {company.name}의 입사자 데이터입니다.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {newHires.length === 0 ? (
-                <EmptyState message="등록된 입사자 정보가 없습니다." />
-              ) : (
-                <div className="overflow-x-auto rounded-lg border">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b bg-muted/50 text-left">
-                        <th className="px-4 py-3 font-medium">이름</th>
-                        <th className="px-4 py-3 font-medium">이메일</th>
-                        <th className="px-4 py-3 font-medium">주민등록번호</th>
-                        <th className="px-4 py-3 font-medium">입사일</th>
-                        <th className="px-4 py-3 font-medium">부서</th>
-                        <th className="px-4 py-3 font-medium">급여</th>
-                        <th className="px-4 py-3 font-medium">고용 형태</th>
-                        <th className="px-4 py-3 font-medium">등록일</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {newHires.map((row) => (
-                        <tr key={row.id} className="border-b last:border-0">
-                          <td className="px-4 py-3">{row.name}</td>
-                          <td className="px-4 py-3">{row.email}</td>
-                          <td className="px-4 py-3">
-                            <MaskedRrnCell
-                              id={row.id}
-                              maskedRrn={row.maskedRrn}
-                              revealAction={revealCompanyNewHireRrn}
-                            />
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {formatDate(row.hireDate)}
-                          </td>
-                          <td className="px-4 py-3">
-                            {row.department ?? "-"}
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="space-y-1">
-                              <div>
-                                {SALARY_TYPE_LABELS[row.salaryType]} ·{" "}
-                                {SALARY_BASIS_LABELS[row.salaryBasis]}
-                              </div>
-                              <div className="text-muted-foreground">
-                                {formatSalaryAmount(row.salaryAmount)}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            {row.isContract ? (
-                              <div className="space-y-1">
-                                <Badge variant="secondary">계약직</Badge>
-                                <div className="text-xs text-muted-foreground">
-                                  {row.contractStart && row.contractEnd
-                                    ? `${formatDate(row.contractStart)} ~ ${formatDate(row.contractEnd)}`
-                                    : "—"}
-                                </div>
-                              </div>
-                            ) : (
-                              <Badge variant="outline">정규직</Badge>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {formatDateTime(row.createdAt)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <TabsContent value="new-hires" className="space-y-4">
+          <DepartmentManager departments={departments} companyId={companyId} />
+          <HireIntakesTable
+            hireIntakes={newHires}
+            departments={departments}
+            companyId={companyId}
+          />
         </TabsContent>
 
         <TabsContent value="terminations">

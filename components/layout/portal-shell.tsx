@@ -57,8 +57,8 @@ export function PortalShell({
         />
       </aside>
 
-      <div className="ml-64 flex min-h-screen flex-1 flex-col">
-        <main className="portal-main flex-1 overflow-y-auto p-6 md:p-8">
+      <div className="ml-64 flex min-h-screen min-w-0 flex-1 flex-col">
+        <main className="portal-main min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-6 md:p-8">
           {children}
         </main>
       </div>

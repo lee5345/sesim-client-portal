@@ -1,7 +1,6 @@
 import { requireAuth } from "@/lib/auth/guards";
-import { createDepartmentAction, listDepartments } from "@/modules/companies/departments";
-import { DepartmentTags } from "@/components/client/department-tags";
-import { Button } from "@/components/ui/button";
+import { listDepartments } from "@/modules/companies/departments";
+import { DepartmentManager } from "@/components/companies/department-manager";
 import {
   Card,
   CardContent,
@@ -9,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 
 export default async function ClientSettingsPage() {
   const session = await requireAuth("CLIENT_ADMIN");
@@ -37,24 +35,8 @@ export default async function ClientSettingsPage() {
             입사자 등록 시 선택할 부서 목록을 관리합니다.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {departments.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              등록된 부서가 없습니다. 아래에서 새 부서를 추가해 주세요.
-            </p>
-          ) : (
-            <DepartmentTags departments={departments} />
-          )}
-
-          <form action={createDepartmentAction} className="flex max-w-md gap-2">
-            <Input
-              name="name"
-              placeholder="새 부서 추가"
-              required
-              maxLength={50}
-            />
-            <Button type="submit">추가</Button>
-          </form>
+        <CardContent>
+          <DepartmentManager departments={departments} />
         </CardContent>
       </Card>
     </div>

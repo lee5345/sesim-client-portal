@@ -8,7 +8,7 @@ import {
   softDeleteCompanyAction,
   updateCompanyAction,
 } from "@/modules/companies/companies";
-import { BusinessNumberInput } from "@/components/companies/business-number-input";
+import { WorkplaceManagementNumberInput } from "@/components/companies/workplace-management-number-input";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatBusinessNumber } from "@/lib/format/business-number";
+import { formatWorkplaceManagementNumber } from "@/lib/format/workplace-management-number";
 
 const selectClassName =
   "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
@@ -31,7 +31,7 @@ type CompanyEditFormProps = {
   company: {
     id: string;
     name: string;
-    businessNumber: string | null;
+    workplaceManagementNumber: string | null;
     isActive: boolean;
   };
   canDelete: boolean;
@@ -41,8 +41,8 @@ export function CompanyEditForm({ company, canDelete }: CompanyEditFormProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isActive, setIsActive] = useState(company.isActive ? "true" : "false");
-  const [businessNumber, setBusinessNumber] = useState(
-    formatBusinessNumber(company.businessNumber) ?? "",
+  const [workplaceManagementNumber, setWorkplaceManagementNumber] = useState(
+    formatWorkplaceManagementNumber(company.workplaceManagementNumber) ?? "",
   );
   const [formError, setFormError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -53,9 +53,11 @@ export function CompanyEditForm({ company, canDelete }: CompanyEditFormProps) {
     }
 
     setIsActive(company.isActive ? "true" : "false");
-    setBusinessNumber(formatBusinessNumber(company.businessNumber) ?? "");
+    setWorkplaceManagementNumber(
+      formatWorkplaceManagementNumber(company.workplaceManagementNumber) ?? "",
+    );
     setFormError(null);
-  }, [open, company.businessNumber, company.isActive]);
+  }, [open, company.workplaceManagementNumber, company.isActive]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -70,7 +72,7 @@ export function CompanyEditForm({ company, canDelete }: CompanyEditFormProps) {
         <DialogHeader>
           <DialogTitle>고객사 정보</DialogTitle>
           <DialogDescription>
-            회사명, 사업자등록번호, 운영 상태를 수정합니다.
+            회사명, 사업장관리번호, 운영 상태를 수정합니다.
           </DialogDescription>
         </DialogHeader>
         <form
@@ -114,12 +116,12 @@ export function CompanyEditForm({ company, canDelete }: CompanyEditFormProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label>사업자등록번호</Label>
-              <BusinessNumberInput
-                idPrefix={`businessNumber-${company.id}`}
-                name="businessNumber"
-                value={businessNumber}
-                onChange={setBusinessNumber}
+              <Label>사업장관리번호</Label>
+              <WorkplaceManagementNumberInput
+                idPrefix={`workplaceManagementNumber-${company.id}`}
+                name="workplaceManagementNumber"
+                value={workplaceManagementNumber}
+                onChange={setWorkplaceManagementNumber}
                 disabled={isPending}
               />
             </div>

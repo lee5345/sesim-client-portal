@@ -9,20 +9,20 @@ import { Button } from "@/components/ui/button";
 type MaskedRrnCellProps = {
   id: string;
   maskedRrn: string;
-  revealAction?: (id: string) => Promise<{ rrn: string }>;
+  companyId?: string;
 };
 
 export function MaskedRrnCell({
   id,
   maskedRrn,
-  revealAction = revealRRN,
+  companyId,
 }: MaskedRrnCellProps) {
   const [revealed, setRevealed] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 whitespace-nowrap">
       <span className="font-mono text-sm">{revealed ?? maskedRrn}</span>
       <Button
         type="button"
@@ -38,7 +38,7 @@ export function MaskedRrnCell({
           setError(null);
           startTransition(async () => {
             try {
-              const result = await revealAction(id);
+              const result = await revealRRN(id, companyId);
               setRevealed(result.rrn);
             } catch {
               setError("주민등록번호를 불러오지 못했습니다.");

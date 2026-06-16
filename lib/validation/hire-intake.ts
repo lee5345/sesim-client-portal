@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { stripPhoneDigits } from "@/lib/format/phone";
+import { NON_TAXABLE_ALLOWANCE_TYPES } from "@/modules/hire-intakes/constants";
 import { isValidDateString, parseDateString } from "@/lib/validation/date-string";
 import { translateZodErrorMessage } from "@/lib/validation/zod-korean";
 
@@ -12,6 +14,105 @@ export const salaryTypeSchema = z.enum(["ANNUAL", "MONTHLY", "DAILY", "HOURLY"],
 export const salaryBasisSchema = z.enum(["GROSS", "NET"], {
   error: "급여 기준을 선택해 주세요.",
 });
+
+export const nonTaxableAllowanceTypeSchema = z.enum(NON_TAXABLE_ALLOWANCE_TYPES);
+
+export const nonTaxableAllowanceSchema = z
+  .object({
+    type: nonTaxableAllowanceTypeSchema,
+    customLabel: z.string().trim().optional(),
+    amount: z
+      .number({ error: "금액을 입력해 주세요." })
+      .int("금액은 정수로 입력해 주세요.")
+      .positive("금액은 0보다 커야 합니다."),
+  })
+  .superRefine((data, ctx) => {
+    if (data.type === "기타" && !data.customLabel?.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        message: "기타 항목명을 입력해 주세요.",
+        path: ["customLabel"],
+      });
+    }
+  })
+  .transform((data) => ({
+    type: data.type,
+    ...(data.type === "기타" && data.customLabel
+      ? { customLabel: data.customLabel.trim() }
+      : {}),
+    amount: data.amount,
+  }));
+
+export type NonTaxableAllowance = z.infer<typeof nonTaxableAllowanceSchema>;
+
+export function parseStoredNonTaxableAllowances(
+  value: unknown,
+): NonTaxableAllowance[] | null {
+  if (!Array.isArray(value) || value.length === 0) {
+    return null;
+  }
+
+  const result = z.array(nonTaxableAllowanceSchema).safeParse(value);
+  return result.success ? result.data : null;
+}
+
+const nonTaxableAllowancesSchema = z.preprocess(
+  (value) => {
+    if (value === "" || value === null || value === undefined) {
+      return undefined;
+    }
+    if (typeof value === "string") {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    }
+    return value;
+  },
+  z.array(nonTaxableAllowanceSchema).optional(),
+);
+
+const bankNameSchema = z
+  .string()
+  .trim()
+  .max(50, "은행명은 50자 이하여야 합니다.")
+  .optional()
+  .transform((value) => (value ? value : undefined));
+
+const accountNumberSchema = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value) => (value ? value : undefined))
+  .refine(
+    (value) => value === undefined || /^\d+$/.test(value),
+    "계좌번호는 숫자만 입력해 주세요.",
+  );
+
+const phoneSchema = z.preprocess(
+  (value) => {
+    if (value === "" || value === null || value === undefined) {
+      return undefined;
+    }
+    const digits = stripPhoneDigits(String(value));
+    return digits ? digits : undefined;
+  },
+  z
+    .string()
+    .optional()
+    .refine(
+      (value) => value === undefined || /^\d{10,11}$/.test(value),
+      "연락처는 10~11자리 숫자로 입력해 주세요.",
+    ),
+);
+
+const notesSchema = z
+  .string()
+  .trim()
+  .max(500, "비고는 500자 이하여야 합니다.")
+  .optional()
+  .transform((value) => (value ? value : undefined));
 
 const departmentSchema = z
   .string()
@@ -88,6 +189,11 @@ const hireIntakeBaseSchema = z.object({
   isContract: isContractSchema,
   contractStart: optionalDateSchema(),
   contractEnd: optionalDateSchema(),
+  nonTaxableAllowances: nonTaxableAllowancesSchema,
+  bankName: bankNameSchema,
+  accountNumber: accountNumberSchema,
+  phone: phoneSchema,
+  notes: notesSchema,
 });
 
 const contractStartRefinement = {
@@ -174,6 +280,11 @@ export function parseCreateHireIntakeFormData(
     isContract: formData.get("isContract"),
     contractStart: emptyToUndefined(formData.get("contractStart")),
     contractEnd: emptyToUndefined(formData.get("contractEnd")),
+    nonTaxableAllowances: formData.get("nonTaxableAllowances"),
+    bankName: emptyToUndefined(formData.get("bankName")),
+    accountNumber: emptyToUndefined(formData.get("accountNumber")),
+    phone: emptyToUndefined(formData.get("phone")),
+    notes: emptyToUndefined(formData.get("notes")),
   });
 
   if (!result.success) {
@@ -198,6 +309,11 @@ export function parseUpdateHireIntakeFormData(
     isContract: formData.get("isContract"),
     contractStart: emptyToUndefined(formData.get("contractStart")),
     contractEnd: emptyToUndefined(formData.get("contractEnd")),
+    nonTaxableAllowances: formData.get("nonTaxableAllowances"),
+    bankName: emptyToUndefined(formData.get("bankName")),
+    accountNumber: emptyToUndefined(formData.get("accountNumber")),
+    phone: emptyToUndefined(formData.get("phone")),
+    notes: emptyToUndefined(formData.get("notes")),
   });
 
   if (!result.success) {
@@ -224,5 +340,10 @@ export function toAuditPayload(
     isContract: data.isContract,
     contractStart: data.contractStart?.toISOString() ?? null,
     contractEnd: data.contractEnd?.toISOString() ?? null,
+    nonTaxableAllowances: data.nonTaxableAllowances ?? null,
+    bankName: data.bankName ?? null,
+    accountNumber: data.accountNumber ?? null,
+    phone: data.phone ?? null,
+    notes: data.notes ?? null,
   };
 }

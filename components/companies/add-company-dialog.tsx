@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Plus } from "lucide-react";
 
 import { createCompanyAction } from "@/modules/companies/companies";
-import { BusinessNumberInput } from "@/components/companies/business-number-input";
+import { WorkplaceManagementNumberInput } from "@/components/companies/workplace-management-number-input";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,12 +20,12 @@ import { Label } from "@/components/ui/label";
 
 export function AddCompanyDialog() {
   const [open, setOpen] = useState(false);
-  const [businessNumber, setBusinessNumber] = useState("");
+  const [workplaceManagementNumber, setWorkplaceManagementNumber] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function resetState() {
-    setBusinessNumber("");
+    setWorkplaceManagementNumber("");
     setFormError(null);
   }
 
@@ -51,7 +51,7 @@ export function AddCompanyDialog() {
         <DialogHeader>
           <DialogTitle>고객사 추가</DialogTitle>
           <DialogDescription>
-            새 고객사를 등록합니다. 사업자등록번호는 선택 사항입니다.
+            새 고객사를 등록합니다. 사업장관리번호는 선택 사항입니다.
           </DialogDescription>
         </DialogHeader>
         <form
@@ -90,12 +90,12 @@ export function AddCompanyDialog() {
             />
           </div>
           <div className="space-y-2">
-            <Label>사업자등록번호 (선택)</Label>
-            <BusinessNumberInput
-              idPrefix="add-company-business-number"
-              name="businessNumber"
-              value={businessNumber}
-              onChange={setBusinessNumber}
+            <Label>사업장관리번호 (선택)</Label>
+            <WorkplaceManagementNumberInput
+              idPrefix="add-company-workplace-management-number"
+              name="workplaceManagementNumber"
+              value={workplaceManagementNumber}
+              onChange={setWorkplaceManagementNumber}
               disabled={isPending}
             />
           </div>

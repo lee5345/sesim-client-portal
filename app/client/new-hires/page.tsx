@@ -17,7 +17,7 @@ export default async function ClientNewHiresPage() {
   ]);
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">입사자 정보</h1>
         <p className="mt-1 text-muted-foreground">

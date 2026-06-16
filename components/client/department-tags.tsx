@@ -10,9 +10,10 @@ type Department = {
 
 type DepartmentTagsProps = {
   departments: Department[];
+  companyId?: string;
 };
 
-export function DepartmentTags({ departments }: DepartmentTagsProps) {
+export function DepartmentTags({ departments, companyId }: DepartmentTagsProps) {
   return (
     <div className="flex flex-wrap gap-2">
       {departments.map((dept) => (
@@ -25,7 +26,10 @@ export function DepartmentTags({ departments }: DepartmentTagsProps) {
             title="부서 삭제"
             description={`"${dept.name}" 부서를 삭제하시겠습니까?`}
             action={deleteDepartmentAction}
-            hiddenFields={{ id: dept.id }}
+            hiddenFields={{
+              id: dept.id,
+              ...(companyId ? { companyId } : {}),
+            }}
             triggerLabel="삭제"
             triggerVariant="ghost"
             triggerSize="xs"

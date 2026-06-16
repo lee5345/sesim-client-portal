@@ -170,9 +170,14 @@ model NewHire {
   salaryBasis   SalaryBasis
   salaryAmount  Int
   isContract    Boolean     @default(false)
-  contractStart DateTime?
-  contractEnd   DateTime?
-  deletedAt     DateTime?
+  contractStart          DateTime?
+  contractEnd            DateTime?
+  nonTaxableAllowances   Json?
+  bankName               String?
+  accountNumber          String?
+  phone                  String?
+  notes                  String?
+  deletedAt              DateTime?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   createdById   String      @db.Uuid

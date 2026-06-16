@@ -7,7 +7,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db/db";
 import { requireAuth } from "@/lib/auth/guards";
 import { sortByKoreanName } from "@/lib/sort/korean";
-import { optionalBusinessNumberSchema } from "@/lib/validation/business-number";
+import { optionalWorkplaceManagementNumberSchema } from "@/lib/validation/workplace-management-number";
 import { getFirstZodErrorMessage } from "@/lib/validation/zod-korean";
 
 export type CompanyActionResult =
@@ -16,7 +16,7 @@ export type CompanyActionResult =
 
 const companyFieldsSchema = z.object({
   name: z.string().trim().min(1, "회사명을 입력해 주세요.").max(100),
-  businessNumber: optionalBusinessNumberSchema,
+  workplaceManagementNumber: optionalWorkplaceManagementNumberSchema,
 });
 
 const createCompanySchema = companyFieldsSchema;
@@ -34,6 +34,7 @@ const activeCompanySelect = {
   id: true,
   name: true,
   businessNumber: true,
+  workplaceManagementNumber: true,
   isActive: true,
   updatedAt: true,
   deletedAt: true,
@@ -58,7 +59,7 @@ export async function listCompanies() {
     select: {
       id: true,
       name: true,
-      businessNumber: true,
+      workplaceManagementNumber: true,
       isActive: true,
       updatedAt: true,
       _count: {
@@ -100,7 +101,7 @@ export async function createCompanyAction(
 
   const parsed = createCompanySchema.safeParse({
     name: formData.get("name"),
-    businessNumber: formData.get("businessNumber") || undefined,
+    workplaceManagementNumber: formData.get("workplaceManagementNumber") || undefined,
   });
 
   if (!parsed.success) {
@@ -112,7 +113,7 @@ export async function createCompanyAction(
   await prisma.company.create({
     data: {
       name: input.name,
-      businessNumber: input.businessNumber,
+      workplaceManagementNumber: input.workplaceManagementNumber,
     },
   });
 
@@ -129,7 +130,7 @@ export async function updateCompanyAction(
   const parsed = updateCompanySchema.safeParse({
     companyId: formData.get("companyId"),
     name: formData.get("name"),
-    businessNumber: formData.get("businessNumber") || undefined,
+    workplaceManagementNumber: formData.get("workplaceManagementNumber") || undefined,
     isActive: formData.get("isActive"),
   });
 
@@ -151,7 +152,7 @@ export async function updateCompanyAction(
     where: { id: input.companyId },
     data: {
       name: input.name,
-      businessNumber: input.businessNumber,
+      workplaceManagementNumber: input.workplaceManagementNumber,
       isActive: input.isActive === "true",
     },
   });

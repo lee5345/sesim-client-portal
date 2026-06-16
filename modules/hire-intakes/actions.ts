@@ -3,18 +3,25 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { Prisma } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/db/db";
-import { requireAuth } from "@/lib/auth/guards";
+import {
+  isFirmRole,
+  parseOptionalCompanyId,
+  requireDataEditAuth,
+  resolveCompanyId,
+} from "@/lib/permissions/crud";
 import { decryptRRN, encryptRRN, maskRRN } from "@/lib/encryption/rrn";
 import {
   type CreateHireIntakeInput,
   normalizeRRN,
   parseCreateHireIntakeFormData,
   parseUpdateHireIntakeFormData,
+  parseStoredNonTaxableAllowances,
   toAuditPayload,
 } from "@/lib/validation/hire-intake";
 
-const NEW_HIRES_PATH = "/client/new-hires";
+const CLIENT_NEW_HIRES_PATH = "/client/new-hires";
 
 export type HireIntakeActionResult =
   | { success: true }
@@ -24,11 +31,15 @@ const idSchema = z.object({
   id: z.string().uuid(),
 });
 
-function requireCompanyId(companyId: string | null | undefined): string {
-  if (!companyId) {
-    throw new Error("소속 회사 정보가 없습니다.");
+function revalidateHireIntakePaths(
+  companyId: string,
+  role: Awaited<ReturnType<typeof requireDataEditAuth>>["user"]["role"],
+) {
+  if (isFirmRole(role)) {
+    revalidatePath(`/firm/companies/${companyId}`);
+  } else {
+    revalidatePath(CLIENT_NEW_HIRES_PATH);
   }
-  return companyId;
 }
 
 function toHireIntakeData(
@@ -49,6 +60,14 @@ function toHireIntakeData(
     isContract: input.isContract,
     contractStart: input.isContract ? input.contractStart! : null,
     contractEnd: input.isContract ? input.contractEnd! : null,
+    nonTaxableAllowances:
+      input.nonTaxableAllowances && input.nonTaxableAllowances.length > 0
+        ? (input.nonTaxableAllowances as Prisma.InputJsonValue)
+        : Prisma.DbNull,
+    bankName: input.bankName ?? null,
+    accountNumber: input.accountNumber ?? null,
+    phone: input.phone ?? null,
+    notes: input.notes ?? null,
   };
 }
 
@@ -65,6 +84,9 @@ async function getOwnedHireIntake(id: string, companyId: string) {
 }
 
 export async function listHireIntakes(companyId: string) {
+  const session = await requireDataEditAuth();
+  resolveCompanyId(session, companyId);
+
   const records = await prisma.newHire.findMany({
     where: { companyId, deletedAt: null },
     orderBy: [{ hireDate: "desc" }, { createdAt: "desc" }],
@@ -82,15 +104,33 @@ export async function listHireIntakes(companyId: string) {
       isContract: true,
       contractStart: true,
       contractEnd: true,
+      nonTaxableAllowances: true,
+      bankName: true,
+      accountNumber: true,
+      phone: true,
+      notes: true,
       createdAt: true,
+      updatedAt: true,
+      createdBy: {
+        select: { name: true },
+      },
     },
   });
 
   return records.map((record) => {
     const plaintext = decryptRRN(record.rrnEncrypted, record.rrnIv);
-    const { rrnEncrypted: _encrypted, rrnIv: _iv, ...rest } = record;
+    const {
+      rrnEncrypted: _encrypted,
+      rrnIv: _iv,
+      createdBy,
+      ...rest
+    } = record;
     return {
       ...rest,
+      nonTaxableAllowances: parseStoredNonTaxableAllowances(
+        record.nonTaxableAllowances,
+      ),
+      createdByName: createdBy.name,
       maskedRrn: maskRRN(plaintext),
     };
   });
@@ -99,8 +139,11 @@ export async function listHireIntakes(companyId: string) {
 export async function createHireIntake(
   formData: FormData,
 ): Promise<HireIntakeActionResult> {
-  const session = await requireAuth("CLIENT_ADMIN");
-  const companyId = requireCompanyId(session.user.companyId);
+  const session = await requireDataEditAuth();
+  const companyId = resolveCompanyId(
+    session,
+    parseOptionalCompanyId(formData),
+  );
   const parsed = parseCreateHireIntakeFormData(formData);
 
   if (!parsed.success) {
@@ -131,7 +174,7 @@ export async function createHireIntake(
     });
   });
 
-  revalidatePath(NEW_HIRES_PATH);
+  revalidateHireIntakePaths(companyId, session.user.role);
   return { success: true };
 }
 
@@ -139,8 +182,11 @@ export async function updateHireIntake(
   id: string,
   formData: FormData,
 ): Promise<HireIntakeActionResult> {
-  const session = await requireAuth("CLIENT_ADMIN");
-  const companyId = requireCompanyId(session.user.companyId);
+  const session = await requireDataEditAuth();
+  const companyId = resolveCompanyId(
+    session,
+    parseOptionalCompanyId(formData),
+  );
   const { id: parsedId } = idSchema.parse({ id });
   const existing = await getOwnedHireIntake(parsedId, companyId);
   const parsed = parseUpdateHireIntakeFormData(formData);
@@ -180,13 +226,16 @@ export async function updateHireIntake(
     });
   });
 
-  revalidatePath(NEW_HIRES_PATH);
+  revalidateHireIntakePaths(companyId, session.user.role);
   return { success: true };
 }
 
-export async function deleteHireIntake(id: string) {
-  const session = await requireAuth("CLIENT_ADMIN");
-  const companyId = requireCompanyId(session.user.companyId);
+export async function deleteHireIntake(
+  id: string,
+  explicitCompanyId?: string | null,
+) {
+  const session = await requireDataEditAuth();
+  const companyId = resolveCompanyId(session, explicitCompanyId);
   const { id: parsedId } = idSchema.parse({ id });
   const existing = await getOwnedHireIntake(parsedId, companyId);
 
@@ -211,12 +260,15 @@ export async function deleteHireIntake(id: string) {
     });
   });
 
-  revalidatePath(NEW_HIRES_PATH);
+  revalidateHireIntakePaths(companyId, session.user.role);
 }
 
-export async function revealRRN(id: string) {
-  const session = await requireAuth("CLIENT_ADMIN");
-  const companyId = requireCompanyId(session.user.companyId);
+export async function revealRRN(
+  id: string,
+  explicitCompanyId?: string | null,
+) {
+  const session = await requireDataEditAuth();
+  const companyId = resolveCompanyId(session, explicitCompanyId);
   const { id: parsedId } = idSchema.parse({ id });
   const record = await getOwnedHireIntake(parsedId, companyId);
 
@@ -227,5 +279,8 @@ export async function revealRRN(id: string) {
 
 export async function deleteHireIntakeAction(formData: FormData) {
   const id = formData.get("id");
-  await deleteHireIntake(String(id ?? ""));
+  await deleteHireIntake(
+    String(id ?? ""),
+    parseOptionalCompanyId(formData),
+  );
 }

@@ -11,6 +11,8 @@ import {
   type CompanyProfileFieldKey,
 } from "@/lib/companies/profile-fields";
 import { optionalBusinessNumberSchema } from "@/lib/validation/business-number";
+import { stripPhoneDigits } from "@/lib/format/phone";
+import { optionalWorkplaceManagementNumberSchema } from "@/lib/validation/workplace-management-number";
 import { getFirstZodErrorMessage } from "@/lib/validation/zod-korean";
 import { prisma } from "@/lib/db/db";
 import { requireAuth } from "@/lib/auth/guards";
@@ -74,6 +76,21 @@ function parseFieldValue(key: CompanyProfileFieldKey, rawValue: FormDataEntryVal
 
   if (field.type === "businessNumber") {
     return optionalBusinessNumberSchema.parse(value) ?? null;
+  }
+
+  if (field.type === "workplaceManagementNumber") {
+    return optionalWorkplaceManagementNumberSchema.parse(value) ?? null;
+  }
+
+  if (field.type === "phone") {
+    const digits = stripPhoneDigits(value);
+    if (!digits) {
+      return null;
+    }
+    z.string()
+      .regex(/^\d{9,11}$/, "전화번호는 9~11자리 숫자로 입력해 주세요.")
+      .parse(digits);
+    return digits;
   }
 
   if (field.type === "email") {

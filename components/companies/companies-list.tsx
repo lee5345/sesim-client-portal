@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { NO_BUSINESS_NUMBER_LABEL } from "@/lib/companies/labels";
-import { formatBusinessNumber } from "@/lib/format/business-number";
+import { NO_WORKPLACE_MANAGEMENT_NUMBER_LABEL } from "@/lib/companies/labels";
+import { formatWorkplaceManagementNumber } from "@/lib/format/workplace-management-number";
 import { formatDateTime } from "@/lib/format/date";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input";
 type CompanyListItem = {
   id: string;
   name: string;
-  businessNumber: string | null;
+  workplaceManagementNumber: string | null;
   isActive: boolean;
   updatedAt: Date | string;
   _count: {
@@ -79,8 +79,9 @@ export function CompaniesList({ companies, initialQuery = "" }: CompaniesListPro
                     </Badge>
                   </div>
                   <CardDescription className="font-mono">
-                    {formatBusinessNumber(company.businessNumber) ??
-                      NO_BUSINESS_NUMBER_LABEL}
+                    {formatWorkplaceManagementNumber(
+                      company.workplaceManagementNumber,
+                    ) ?? NO_WORKPLACE_MANAGEMENT_NUMBER_LABEL}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm text-muted-foreground">

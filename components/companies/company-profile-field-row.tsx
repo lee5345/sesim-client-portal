@@ -6,12 +6,15 @@ import { useRouter } from "next/navigation";
 
 import { EMPTY_FIELD_LABEL } from "@/lib/companies/labels";
 import { formatBusinessNumber } from "@/lib/format/business-number";
+import { formatPhone, parsePhoneInput } from "@/lib/format/phone";
+import { formatWorkplaceManagementNumber } from "@/lib/format/workplace-management-number";
 import {
   type CompanyProfile,
   type CompanyProfileFieldDef,
 } from "@/lib/companies/profile-fields";
 import { updateCompanyProfileFieldAction } from "@/modules/companies/company-profile";
 import { BusinessNumberInput } from "@/components/companies/business-number-input";
+import { WorkplaceManagementNumberInput } from "@/components/companies/workplace-management-number-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -49,6 +52,20 @@ function formatDisplayValue(
     return formatBusinessNumber(typeof value === "string" ? value : null) ?? EMPTY_FIELD_LABEL;
   }
 
+  if (field.type === "workplaceManagementNumber") {
+    return (
+      formatWorkplaceManagementNumber(typeof value === "string" ? value : null) ??
+      EMPTY_FIELD_LABEL
+    );
+  }
+
+  if (field.type === "phone") {
+    if (typeof value === "string" && value.length > 0) {
+      return formatPhone(value);
+    }
+    return EMPTY_FIELD_LABEL;
+  }
+
   if (typeof value === "string" && value.length > 0) {
     return value;
   }
@@ -70,6 +87,16 @@ function getEditDefaultValue(
 
   if (field.type === "businessNumber") {
     return formatBusinessNumber(typeof value === "string" ? value : null) ?? "";
+  }
+
+  if (field.type === "workplaceManagementNumber") {
+    return (
+      formatWorkplaceManagementNumber(typeof value === "string" ? value : null) ?? ""
+    );
+  }
+
+  if (field.type === "phone") {
+    return typeof value === "string" ? value : "";
   }
 
   return typeof value === "string" ? value : "";
@@ -212,6 +239,25 @@ export function CompanyProfileFieldRow({
               onChange={setDraftValue}
               disabled={isPending}
             />
+          ) : field.type === "workplaceManagementNumber" ? (
+            <WorkplaceManagementNumberInput
+              idPrefix={`profile-${companyId}-${field.key}`}
+              value={draftValue}
+              onChange={setDraftValue}
+              disabled={isPending}
+            />
+          ) : field.type === "phone" ? (
+            <Input
+              id={`profile-${companyId}-${field.key}`}
+              type="tel"
+              inputMode="numeric"
+              value={formatPhone(draftValue)}
+              onChange={(event) =>
+                setDraftValue(parsePhoneInput(event.target.value))
+              }
+              disabled={isPending}
+              placeholder="010-1234-5678"
+            />
           ) : (
             <Input
               id={`profile-${companyId}-${field.key}`}
@@ -233,7 +279,10 @@ export function CompanyProfileFieldRow({
           <p
             className={cn(
               "text-sm break-words whitespace-pre-wrap",
-              field.type === "businessNumber" && "font-mono",
+              (field.type === "businessNumber" ||
+                field.type === "workplaceManagementNumber" ||
+                field.type === "phone") &&
+                "font-mono",
               isEmpty ? "text-muted-foreground" : "text-foreground",
             )}
           >

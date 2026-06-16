@@ -3,6 +3,7 @@ export type CompanyProfileFieldType =
   | "email"
   | "phone"
   | "businessNumber"
+  | "workplaceManagementNumber"
   | "textarea"
   | "boolean"
   | "password";
@@ -67,8 +68,7 @@ export const COMPANY_PROFILE_SECTIONS: CompanyProfileSection[] = [
       {
         key: "workplaceManagementNumber",
         label: "사업장관리번호",
-        type: "text",
-        maxLength: 30,
+        type: "workplaceManagementNumber",
       },
       { key: "representativeName", label: "대표자", type: "text", maxLength: 50 },
       {
