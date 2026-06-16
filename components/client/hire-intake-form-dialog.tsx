@@ -400,7 +400,7 @@ export function HireIntakeFormDialog({
                         return;
                       }
                       startTransition(async () => {
-                        const result = await revealRRN(hireIntake.id);
+                        const result = await revealRRN(hireIntake.id, companyId);
                         setRevealedRrn(result.rrn);
                       });
                     }}
@@ -422,7 +422,7 @@ export function HireIntakeFormDialog({
                         return;
                       }
                       startTransition(async () => {
-                        const result = await revealRRN(hireIntake.id);
+                        const result = await revealRRN(hireIntake.id, companyId);
                         setRevealedRrn(result.rrn);
                         startRrnEditing(result.rrn);
                       });
