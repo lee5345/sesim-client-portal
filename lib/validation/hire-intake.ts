@@ -90,6 +90,22 @@ const accountNumberSchema = z
     "계좌번호는 숫자만 입력해 주세요.",
   );
 
+const emailSchema = z.preprocess(
+  (value) => {
+    if (value === "" || value === null || value === undefined) {
+      return undefined;
+    }
+    return String(value).trim();
+  },
+  z
+    .string()
+    .optional()
+    .refine(
+      (value) => value === undefined || EMAIL_REGEX.test(value),
+      "올바른 이메일 형식이 아닙니다.",
+    ),
+);
+
 const phoneSchema = z.preprocess(
   (value) => {
     if (value === "" || value === null || value === undefined) {
@@ -158,11 +174,7 @@ function optionalDateSchema() {
 
 const hireIntakeBaseSchema = z.object({
   name: z.string().trim().min(1, "이름을 입력해 주세요."),
-  email: z
-    .string()
-    .trim()
-    .min(1, "이메일을 입력해 주세요.")
-    .refine((value) => EMAIL_REGEX.test(value), "올바른 이메일 형식이 아닙니다."),
+  email: emailSchema,
   hireDate: requiredDateSchema("입사일"),
   department: departmentSchema,
   salaryType: salaryTypeSchema,
@@ -270,7 +282,7 @@ export function parseCreateHireIntakeFormData(
 ): HireIntakeFormParseResult<CreateHireIntakeInput> {
   const result = createHireIntakeSchema.safeParse({
     name: formData.get("name"),
-    email: formData.get("email"),
+    email: emptyToUndefined(formData.get("email")),
     rrn: formData.get("rrn"),
     hireDate: formData.get("hireDate"),
     department: emptyToUndefined(formData.get("department")),
@@ -299,7 +311,7 @@ export function parseUpdateHireIntakeFormData(
 ): HireIntakeFormParseResult<UpdateHireIntakeInput> {
   const result = updateHireIntakeSchema.safeParse({
     name: formData.get("name"),
-    email: formData.get("email"),
+    email: emptyToUndefined(formData.get("email")),
     rrn: emptyToUndefined(formData.get("rrn")),
     hireDate: formData.get("hireDate"),
     department: emptyToUndefined(formData.get("department")),
@@ -331,7 +343,7 @@ export function toAuditPayload(
 ) {
   return {
     name: data.name,
-    email: data.email,
+    email: data.email ?? null,
     hireDate: data.hireDate.toISOString(),
     department: data.department ?? null,
     salaryType: data.salaryType,

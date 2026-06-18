@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { Eye, Pencil, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -51,6 +51,28 @@ const selectClassName =
 const textareaClassName =
   "w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
 
+function FieldLabel({
+  htmlFor,
+  required = false,
+  children,
+}: {
+  htmlFor?: string;
+  required?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <Label htmlFor={htmlFor}>
+      {children}
+      {required ? (
+        <span className="text-destructive" aria-hidden="true">
+          {" "}
+          *
+        </span>
+      ) : null}
+    </Label>
+  );
+}
+
 type DepartmentOption = {
   id: string;
   name: string;
@@ -90,7 +112,7 @@ type HireIntakeFormDialogProps = {
   hireIntake?: {
     id: string;
     name: string;
-    email: string;
+    email: string | null;
     hireDate: string;
     department: string | null;
     salaryType: SalaryType;
@@ -258,6 +280,7 @@ export function HireIntakeFormDialog({
   const isEdit = mode === "edit";
   const formId = `${mode}-${hireIntake?.id ?? "new"}`;
   const isContract = formValues.isContract === "true";
+  const rrnRequired = !isEdit || rrnEditing;
 
   useEffect(() => {
     if (!open) {
@@ -325,7 +348,7 @@ export function HireIntakeFormDialog({
           </DialogDescription>
         </DialogHeader>
         <form
-          className="flex min-h-0 flex-1 flex-col"
+          className="flex min-h-0 flex-1 flex-col gap-4"
           noValidate
           onSubmit={(event) => {
             event.preventDefault();
@@ -352,15 +375,17 @@ export function HireIntakeFormDialog({
             });
           }}
         >
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
           {formError ? (
-            <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <p className="shrink-0 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {formError}
             </p>
           ) : null}
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor={`name-${formId}`}>이름</Label>
+              <FieldLabel htmlFor={`name-${formId}`} required>
+                이름
+              </FieldLabel>
               <Input
                 id={`name-${formId}`}
                 value={formValues.name}
@@ -371,20 +396,7 @@ export function HireIntakeFormDialog({
             </div>
 
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor={`email-${formId}`}>이메일</Label>
-              <Input
-                id={`email-${formId}`}
-                type="text"
-                inputMode="email"
-                autoComplete="email"
-                value={formValues.email}
-                onChange={(event) => updateFormValue("email", event.target.value)}
-                required
-              />
-            </div>
-
-            <div className="space-y-2 sm:col-span-2">
-              <Label>주민등록번호</Label>
+              <FieldLabel required={rrnRequired}>주민등록번호</FieldLabel>
               {isEdit && !rrnEditing ? (
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-mono text-sm text-muted-foreground">
@@ -443,7 +455,9 @@ export function HireIntakeFormDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor={`hireDate-${formId}`}>입사일</Label>
+              <FieldLabel htmlFor={`hireDate-${formId}`} required>
+                입사일
+              </FieldLabel>
               <DateInput
                 id={`hireDate-${formId}`}
                 value={formValues.hireDate}
@@ -454,7 +468,7 @@ export function HireIntakeFormDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor={`department-${formId}`}>부서</Label>
+              <FieldLabel htmlFor={`department-${formId}`}>부서</FieldLabel>
               <select
                 id={`department-${formId}`}
                 value={formValues.department}
@@ -490,7 +504,9 @@ export function HireIntakeFormDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor={`salaryType-${formId}`}>급여 유형</Label>
+              <FieldLabel htmlFor={`salaryType-${formId}`} required>
+                급여 유형
+              </FieldLabel>
               <select
                 id={`salaryType-${formId}`}
                 value={formValues.salaryType}
@@ -509,7 +525,9 @@ export function HireIntakeFormDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor={`salaryBasis-${formId}`}>급여 기준</Label>
+              <FieldLabel htmlFor={`salaryBasis-${formId}`} required>
+                급여 기준
+              </FieldLabel>
               <select
                 id={`salaryBasis-${formId}`}
                 value={formValues.salaryBasis}
@@ -528,7 +546,9 @@ export function HireIntakeFormDialog({
             </div>
 
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor={`salaryAmount-${formId}`}>급여 금액</Label>
+              <FieldLabel htmlFor={`salaryAmount-${formId}`} required>
+                급여 금액
+              </FieldLabel>
               <Input
                 id={`salaryAmount-${formId}`}
                 type="text"
@@ -545,7 +565,9 @@ export function HireIntakeFormDialog({
             </div>
 
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor={`isContract-${formId}`}>고용 형태</Label>
+              <FieldLabel htmlFor={`isContract-${formId}`} required>
+                고용 형태
+              </FieldLabel>
               <select
                 id={`isContract-${formId}`}
                 value={formValues.isContract}
@@ -563,7 +585,9 @@ export function HireIntakeFormDialog({
             {isContract ? (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor={`contractStart-${formId}`}>계약 시작일</Label>
+                  <FieldLabel htmlFor={`contractStart-${formId}`} required>
+                    계약 시작일
+                  </FieldLabel>
                   <DateInput
                     id={`contractStart-${formId}`}
                     value={formValues.contractStart}
@@ -573,7 +597,9 @@ export function HireIntakeFormDialog({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`contractEnd-${formId}`}>계약 종료일</Label>
+                  <FieldLabel htmlFor={`contractEnd-${formId}`} required>
+                    계약 종료일
+                  </FieldLabel>
                   <DateInput
                     id={`contractEnd-${formId}`}
                     value={formValues.contractEnd}
@@ -620,9 +646,12 @@ export function HireIntakeFormDialog({
                     className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_1fr_auto]"
                   >
                     <div className="space-y-1">
-                      <Label htmlFor={`allowance-type-${formId}-${index}`}>
+                      <FieldLabel
+                        htmlFor={`allowance-type-${formId}-${index}`}
+                        required
+                      >
                         종류
-                      </Label>
+                      </FieldLabel>
                       <select
                         id={`allowance-type-${formId}-${index}`}
                         value={row.type}
@@ -653,9 +682,12 @@ export function HireIntakeFormDialog({
                       </select>
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor={`allowance-amount-${formId}-${index}`}>
+                      <FieldLabel
+                        htmlFor={`allowance-amount-${formId}-${index}`}
+                        required
+                      >
                         금액
-                      </Label>
+                      </FieldLabel>
                       <Input
                         id={`allowance-amount-${formId}-${index}`}
                         type="text"
@@ -700,9 +732,12 @@ export function HireIntakeFormDialog({
                     </div>
                     {row.type === "기타" ? (
                       <div className="space-y-1 sm:col-span-2">
-                        <Label htmlFor={`allowance-label-${formId}-${index}`}>
+                        <FieldLabel
+                          htmlFor={`allowance-label-${formId}-${index}`}
+                          required
+                        >
                           항목명
-                        </Label>
+                        </FieldLabel>
                         <Input
                           id={`allowance-label-${formId}-${index}`}
                           value={row.customLabel}
@@ -793,7 +828,20 @@ export function HireIntakeFormDialog({
 
           <div className="grid gap-4 border-t pt-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor={`phone-${formId}`}>연락처</Label>
+              <FieldLabel htmlFor={`email-${formId}`}>이메일</FieldLabel>
+              <Input
+                id={`email-${formId}`}
+                type="text"
+                inputMode="email"
+                autoComplete="email"
+                value={formValues.email}
+                onChange={(event) => updateFormValue("email", event.target.value)}
+                disabled={isPending}
+              />
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <FieldLabel htmlFor={`phone-${formId}`}>연락처</FieldLabel>
               <Input
                 id={`phone-${formId}`}
                 type="tel"
@@ -808,7 +856,7 @@ export function HireIntakeFormDialog({
             </div>
 
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor={`notes-${formId}`}>비고</Label>
+              <FieldLabel htmlFor={`notes-${formId}`}>비고</FieldLabel>
               <textarea
                 id={`notes-${formId}`}
                 value={formValues.notes}

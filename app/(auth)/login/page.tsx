@@ -3,22 +3,31 @@ import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { redirect } from "next/navigation";
 
 import { signIn, auth } from "@/auth";
+import { SessionRevokedDialog } from "@/components/auth/session-revoked-dialog";
 import { AuthShell } from "@/components/layout/auth-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  checkSessionAuthority,
+  revokeSessionForAuthorityChange,
+} from "@/lib/auth/session-authority";
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; success?: string }>;
+  searchParams: Promise<{ error?: string; success?: string; revoked?: string }>;
 }) {
   const session = await auth();
   if (session?.user) {
+    const authorityMismatch = await checkSessionAuthority(session);
+    if (authorityMismatch) {
+      await revokeSessionForAuthorityChange(authorityMismatch);
+    }
     redirect("/post-login");
   }
 
-  const { error, success } = await searchParams;
+  const { error, success, revoked } = await searchParams;
 
   async function loginAction(formData: FormData) {
     "use server";
@@ -50,6 +59,7 @@ export default async function LoginPage({
         </p>
       }
     >
+      <SessionRevokedDialog revoked={revoked} />
       {success ? (
         <p className="mb-4 rounded-lg bg-primary/10 px-3 py-2 text-sm text-primary">
           비밀번호가 설정되었습니다. 로그인해 주세요.

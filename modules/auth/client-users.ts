@@ -6,7 +6,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/db/db";
 import { requireAuth } from "@/lib/auth/guards";
-import { sortByKoreanName } from "@/lib/sort/korean";
+import { sortByActivityThenKoreanName } from "@/lib/sort/korean";
 
 const CLIENT_ACCOUNTS_PATH = "/firm/client-accounts";
 
@@ -137,19 +137,16 @@ export async function listClientAccountsByCompany() {
   const phoneByEmail = buildSignupPhoneByEmail(approvedRequests);
 
   return {
-    companies: sortByKoreanName(
+    companies: sortByActivityThenKoreanName(
       companies.map((company) => ({
         ...company,
-        users: sortByKoreanName(
+        users: sortByActivityThenKoreanName(
           withSignupPhone(company.users, phoneByEmail),
-          (user) => user.name,
         ),
       })),
-      (company) => company.name,
     ),
-    unassigned: sortByKoreanName(
+    unassigned: sortByActivityThenKoreanName(
       withSignupPhone(unassigned, phoneByEmail),
-      (user) => user.name,
     ),
   };
 }

@@ -60,21 +60,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
       if (user) {
-        token.userId = user.id as string;
-        token.role = user.role;
-        token.companyId = user.companyId ?? null;
-        token.mustChangePassword = user.mustChangePassword;
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: {
+            id: true,
+            role: true,
+            companyId: true,
+            mustChangePassword: true,
+          },
+        });
+
+        if (dbUser) {
+          token.userId = dbUser.id;
+          token.role = dbUser.role;
+          token.companyId = dbUser.companyId ?? null;
+          token.mustChangePassword = dbUser.mustChangePassword;
+        }
       }
+
       return token;
     },
     session({ session, token }) {
       if (session.user) {
-        session.user.userId = token.userId as string;
+        session.user.userId = (token.userId ?? token.sub) as string;
         session.user.role = token.role as (typeof session.user.role);
-        session.user.companyId = token.companyId as string | null;
-        session.user.mustChangePassword = token.mustChangePassword as boolean;
+        session.user.companyId = (token.companyId ?? null) as string | null;
+        session.user.mustChangePassword = Boolean(token.mustChangePassword);
       }
       return session;
     },

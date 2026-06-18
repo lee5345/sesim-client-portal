@@ -1,12 +1,9 @@
 import { redirect } from "next/navigation";
 
-import { auth } from "@/auth";
+import { requireValidSession } from "@/lib/auth/guards";
 
 export default async function PostLoginPage() {
-  const session = await auth();
-  if (!session?.user) {
-    redirect("/login");
-  }
+  const session = await requireValidSession();
 
   if (session.user.mustChangePassword) {
     redirect("/change-password");

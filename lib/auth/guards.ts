@@ -2,17 +2,31 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
 import { UserRole } from "@/lib/generated/prisma/client";
-import { ForbiddenError } from "@/lib/auth/errors";
+import {
+  checkSessionAuthority,
+  revokeSessionForAuthorityChange,
+} from "@/lib/auth/session-authority";
 
-export async function requireAuth(
-  requiredRole?: UserRole | UserRole[],
-  opts?: { allowMustChangePassword?: boolean },
-) {
+export async function requireValidSession() {
   const session = await auth();
 
   if (!session?.user) {
     redirect("/login");
   }
+
+  const authorityMismatch = await checkSessionAuthority(session);
+  if (authorityMismatch) {
+    await revokeSessionForAuthorityChange(authorityMismatch);
+  }
+
+  return session;
+}
+
+export async function requireAuth(
+  requiredRole?: UserRole | UserRole[],
+  opts?: { allowMustChangePassword?: boolean },
+) {
+  const session = await requireValidSession();
 
   if (!opts?.allowMustChangePassword && session.user.mustChangePassword) {
     redirect("/change-password");
@@ -24,7 +38,7 @@ export async function requireAuth(
 
   const allowed = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
   if (!allowed.includes(session.user.role)) {
-    throw new ForbiddenError("권한이 없습니다.");
+    redirect("/unauthorized");
   }
 
   return session;

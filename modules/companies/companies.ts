@@ -6,7 +6,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/db/db";
 import { requireAuth } from "@/lib/auth/guards";
-import { sortByKoreanName } from "@/lib/sort/korean";
+import { sortCompaniesByActivity } from "@/lib/sort/korean";
 import { optionalWorkplaceManagementNumberSchema } from "@/lib/validation/workplace-management-number";
 import { getFirstZodErrorMessage } from "@/lib/validation/zod-korean";
 
@@ -24,6 +24,12 @@ const createCompanySchema = companyFieldsSchema;
 const updateCompanySchema = companyFieldsSchema.extend({
   companyId: z.string().uuid(),
   isActive: z.enum(["true", "false"]),
+  firmContactName: z
+    .string()
+    .trim()
+    .max(50)
+    .optional()
+    .transform((value) => value || null),
 });
 
 const companyIdSchema = z.object({
@@ -33,6 +39,7 @@ const companyIdSchema = z.object({
 const activeCompanySelect = {
   id: true,
   name: true,
+  firmContactName: true,
   businessNumber: true,
   workplaceManagementNumber: true,
   isActive: true,
@@ -59,6 +66,7 @@ export async function listCompanies() {
     select: {
       id: true,
       name: true,
+      firmContactName: true,
       workplaceManagementNumber: true,
       isActive: true,
       updatedAt: true,
@@ -71,7 +79,7 @@ export async function listCompanies() {
     },
   });
 
-  return sortByKoreanName(companies, (company) => company.name);
+  return sortCompaniesByActivity(companies);
 }
 
 export async function listDeletedCompanies() {
@@ -132,6 +140,7 @@ export async function updateCompanyAction(
     name: formData.get("name"),
     workplaceManagementNumber: formData.get("workplaceManagementNumber") || undefined,
     isActive: formData.get("isActive"),
+    firmContactName: formData.get("firmContactName") || undefined,
   });
 
   if (!parsed.success) {
@@ -153,12 +162,14 @@ export async function updateCompanyAction(
     data: {
       name: input.name,
       workplaceManagementNumber: input.workplaceManagementNumber,
+      firmContactName: input.firmContactName,
       isActive: input.isActive === "true",
     },
   });
 
   revalidatePath("/firm/companies");
   revalidatePath(`/firm/companies/${input.companyId}`);
+  revalidatePath(`/firm/companies/${input.companyId}/info`);
   revalidatePath("/firm/dashboard");
   return { success: true };
 }
@@ -202,6 +213,14 @@ export async function restoreCompanyAction(formData: FormData) {
     companyId: formData.get("companyId"),
   });
 
+  const existing = await prisma.company.findFirst({
+    where: { id: input.companyId, deletedAt: { not: null } },
+    select: { id: true },
+  });
+  if (!existing) {
+    redirect("/firm/companies/deleted");
+  }
+
   await prisma.company.update({
     where: { id: input.companyId },
     data: { deletedAt: null, isActive: true },
@@ -210,4 +229,58 @@ export async function restoreCompanyAction(formData: FormData) {
   revalidatePath("/firm/companies");
   revalidatePath("/firm/companies/deleted");
   revalidatePath("/firm/dashboard");
+}
+
+export async function permanentlyDeleteCompanyAction(formData: FormData) {
+  await requireAuth("FIRM_ADMIN");
+
+  const input = companyIdSchema.parse({
+    companyId: formData.get("companyId"),
+  });
+
+  const existing = await prisma.company.findFirst({
+    where: { id: input.companyId, deletedAt: { not: null } },
+    select: { id: true },
+  });
+  if (!existing) {
+    redirect("/firm/companies/deleted");
+  }
+
+  const companyId = input.companyId;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.newHire.deleteMany({ where: { companyId } });
+    await tx.termination.deleteMany({ where: { companyId } });
+    await tx.compensationChange.deleteMany({ where: { companyId } });
+    await tx.department.deleteMany({ where: { companyId } });
+    await tx.auditLog.deleteMany({ where: { companyId } });
+
+    const userIds = (
+      await tx.user.findMany({
+        where: { companyId },
+        select: { id: true },
+      })
+    ).map((user) => user.id);
+
+    if (userIds.length > 0) {
+      await tx.auditLog.deleteMany({ where: { actorId: { in: userIds } } });
+      await tx.passwordSetupToken.deleteMany({
+        where: { userId: { in: userIds } },
+      });
+      await tx.user.deleteMany({ where: { companyId } });
+    }
+
+    await tx.registrationRequest.updateMany({
+      where: { companyId },
+      data: { companyId: null },
+    });
+
+    await tx.company.delete({ where: { id: companyId } });
+  });
+
+  revalidatePath("/firm/companies");
+  revalidatePath("/firm/companies/deleted");
+  revalidatePath("/firm/dashboard");
+  revalidatePath("/firm/client-accounts");
+  redirect("/firm/companies/deleted");
 }

@@ -3,9 +3,13 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { requireAuth } from "@/lib/auth/guards";
-import { NO_WORKPLACE_MANAGEMENT_NUMBER_LABEL } from "@/lib/companies/labels";
+import {
+  EMPTY_FIELD_LABEL,
+  NO_WORKPLACE_MANAGEMENT_NUMBER_LABEL,
+} from "@/lib/companies/labels";
 import { formatWorkplaceManagementNumber } from "@/lib/format/workplace-management-number";
 import { getCompanyById } from "@/modules/companies/companies";
+import { listFirmStaffUsers } from "@/modules/auth/staff-users";
 import {
   listCompanyNewHires,
   listCompanyTerminations,
@@ -36,11 +40,12 @@ export default async function FirmCompanyDetailPage({
   const session = await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
   const { companyId } = await params;
 
-  const [company, newHires, terminations, departments] = await Promise.all([
+  const [company, newHires, terminations, departments, staffUsers] = await Promise.all([
     getCompanyById(companyId),
     listCompanyNewHires(companyId),
     listCompanyTerminations(companyId),
     listDepartments(companyId),
+    listFirmStaffUsers(),
   ]);
   if (!company) {
     notFound();
@@ -77,17 +82,28 @@ export default async function FirmCompanyDetailPage({
                 id: company.id,
                 name: company.name,
                 workplaceManagementNumber: company.workplaceManagementNumber,
+                firmContactName: company.firmContactName,
                 isActive: company.isActive,
               }}
+              staffUsers={staffUsers.map((user) => ({
+                id: user.id,
+                name: user.name,
+                isActive: user.isActive,
+              }))}
               canDelete={canDelete}
             />
           </div>
         </div>
-        <p className="font-mono text-sm text-muted-foreground">
-          사업장관리번호:{" "}
-          {formatWorkplaceManagementNumber(company.workplaceManagementNumber) ??
-            NO_WORKPLACE_MANAGEMENT_NUMBER_LABEL}
-        </p>
+        <div className="space-y-1 text-sm text-muted-foreground">
+          <p>
+            담당 직원: {company.firmContactName ?? EMPTY_FIELD_LABEL}
+          </p>
+          <p className="font-mono">
+            사업장관리번호:{" "}
+            {formatWorkplaceManagementNumber(company.workplaceManagementNumber) ??
+              NO_WORKPLACE_MANAGEMENT_NUMBER_LABEL}
+          </p>
+        </div>
       </div>
 
       <Tabs defaultValue="new-hires">

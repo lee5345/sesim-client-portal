@@ -1,7 +1,12 @@
+"use client";
+
 import { NO_BUSINESS_NUMBER_LABEL } from "@/lib/companies/labels";
 import { formatBusinessNumber } from "@/lib/format/business-number";
 import { formatDateTime } from "@/lib/format/date";
-import { restoreCompanyAction } from "@/modules/companies/companies";
+import {
+  permanentlyDeleteCompanyAction,
+  restoreCompanyAction,
+} from "@/modules/companies/companies";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { EmptyState } from "@/components/dashboard/empty-state";
 
 type DeletedCompany = {
@@ -21,19 +27,20 @@ type DeletedCompany = {
 
 type DeletedCompaniesListProps = {
   companies: DeletedCompany[];
-  canRestore: boolean;
+  canManage: boolean;
 };
 
 export function DeletedCompaniesList({
   companies,
-  canRestore,
+  canManage,
 }: DeletedCompaniesListProps) {
   return (
     <Card>
       <CardHeader>
         <CardTitle>삭제된 고객사</CardTitle>
         <CardDescription>
-          최근 삭제된 고객사 목록입니다. 관리자는 복구할 수 있습니다.
+          최근 삭제된 고객사 목록입니다. 관리자는 복구하거나 영구 삭제할 수
+          있습니다.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -47,7 +54,7 @@ export function DeletedCompaniesList({
                   <th className="px-4 py-3 font-medium">회사명</th>
                   <th className="px-4 py-3 font-medium">사업자등록번호</th>
                   <th className="px-4 py-3 font-medium">삭제일</th>
-                  {canRestore ? (
+                  {canManage ? (
                     <th className="px-4 py-3 text-right font-medium">관리</th>
                   ) : null}
                 </tr>
@@ -68,18 +75,28 @@ export function DeletedCompaniesList({
                         ? formatDateTime(company.deletedAt)
                         : "—"}
                     </td>
-                    {canRestore ? (
+                    {canManage ? (
                       <td className="px-4 py-3 text-right">
-                        <form action={restoreCompanyAction}>
-                          <input
-                            type="hidden"
-                            name="companyId"
-                            value={company.id}
+                        <div className="flex justify-end gap-2">
+                          <form action={restoreCompanyAction}>
+                            <input
+                              type="hidden"
+                              name="companyId"
+                              value={company.id}
+                            />
+                            <Button type="submit" variant="outline" size="sm">
+                              복구
+                            </Button>
+                          </form>
+                          <ConfirmDeleteDialog
+                            title="고객사 영구 삭제"
+                            description={`"${company.name}" 고객사를 영구 삭제하시겠습니까? 연결된 입사·퇴사·급여 데이터와 클라이언트 계정이 모두 삭제되며 복구할 수 없습니다.`}
+                            action={permanentlyDeleteCompanyAction}
+                            hiddenFields={{ companyId: company.id }}
+                            triggerLabel="영구 삭제"
+                            confirmLabel="영구 삭제 확인"
                           />
-                          <Button type="submit" variant="outline" size="sm">
-                            복구
-                          </Button>
-                        </form>
+                        </div>
                       </td>
                     ) : null}
                   </tr>

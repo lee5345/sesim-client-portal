@@ -25,3 +25,16 @@ export function sortFirmStaffUsers<
     return compareKorean(a.name, b.name);
   });
 }
+
+export function sortByActivityThenKoreanName<
+  T extends { isActive: boolean; name: string },
+>(items: readonly T[]): T[] {
+  return [...items].sort((a, b) => {
+    if (a.isActive !== b.isActive) {
+      return a.isActive ? -1 : 1;
+    }
+    return compareKorean(a.name, b.name);
+  });
+}
+
+export const sortCompaniesByActivity = sortByActivityThenKoreanName;

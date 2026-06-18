@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { SessionAuthorityGate } from "@/components/auth/session-authority-gate";
 import { FirmBrandLockup } from "@/components/layout/firm-brand-lockup";
 import { UserChip } from "@/components/layout/user-chip";
 import { SidebarNav, type SidebarNavItem } from "@/components/layout/sidebar-nav";
@@ -29,6 +30,7 @@ export function PortalShell({
 }: PortalShellProps) {
   return (
     <div className="flex min-h-screen">
+      <SessionAuthorityGate />
       <aside className="fixed inset-y-0 left-0 z-30 flex w-64 flex-col bg-gradient-to-b from-[oklch(0.28_0.06_252)] to-sidebar text-sidebar-foreground shadow-xl shadow-sidebar/20">
         <div className="relative overflow-hidden border-b border-sidebar-border px-5 py-6">
           <div

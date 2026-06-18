@@ -26,7 +26,7 @@ const stickyActionCellClassName =
 export type HireIntakeTableRow = {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
   maskedRrn: string;
   hireDate: Date;
   department: string | null;
@@ -89,7 +89,6 @@ export function HireIntakesDataTable({
         <thead>
           <tr className="border-b bg-muted/40 text-left">
             <th className={headerCellClassName}>이름</th>
-            <th className={headerCellClassName}>이메일</th>
             <th className={headerCellClassName}>주민등록번호</th>
             <th className={headerCellClassName}>입사일</th>
             <th className={headerCellClassName}>부서</th>
@@ -100,6 +99,7 @@ export function HireIntakesDataTable({
             <th className={headerCellClassName}>비과세 항목</th>
             <th className={headerCellClassName}>은행</th>
             <th className={headerCellClassName}>계좌번호</th>
+            <th className={headerCellClassName}>이메일</th>
             <th className={headerCellClassName}>연락처</th>
             <th className={headerCellClassName}>비고</th>
             <th className={headerCellClassName}>등록자</th>
@@ -118,9 +118,6 @@ export function HireIntakesDataTable({
             >
               <td className={`${bodyCellClassName} font-medium`}>
                 {hireIntake.name}
-              </td>
-              <td className={`${bodyCellClassName} text-muted-foreground`}>
-                {hireIntake.email}
               </td>
               <td className={bodyCellClassName}>
                 <MaskedRrnCell
@@ -171,6 +168,9 @@ export function HireIntakesDataTable({
               </td>
               <td className={`${bodyCellClassName} text-muted-foreground`}>
                 {displayText(hireIntake.accountNumber)}
+              </td>
+              <td className={`${bodyCellClassName} text-muted-foreground`}>
+                {displayText(hireIntake.email)}
               </td>
               <td className={`${bodyCellClassName} text-muted-foreground`}>
                 {hireIntake.phone ? formatPhone(hireIntake.phone) : EMPTY_CELL}

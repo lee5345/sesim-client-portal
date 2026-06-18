@@ -34,7 +34,10 @@ export default async function FirmCompaniesPage() {
         </div>
       </div>
 
-      <CompaniesList companies={companies} />
+      <CompaniesList
+        companies={companies}
+        currentUserName={session.user.name ?? ""}
+      />
     </div>
   );
 }

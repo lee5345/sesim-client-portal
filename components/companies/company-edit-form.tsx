@@ -23,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatWorkplaceManagementNumber } from "@/lib/format/workplace-management-number";
+import { EMPTY_FIELD_LABEL } from "@/lib/companies/labels";
 
 const selectClassName =
   "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
@@ -32,20 +33,30 @@ type CompanyEditFormProps = {
     id: string;
     name: string;
     workplaceManagementNumber: string | null;
+    firmContactName: string | null;
     isActive: boolean;
   };
+  staffUsers: { id: string; name: string; isActive: boolean }[];
   canDelete: boolean;
 };
 
-export function CompanyEditForm({ company, canDelete }: CompanyEditFormProps) {
+export function CompanyEditForm({
+  company,
+  staffUsers,
+  canDelete,
+}: CompanyEditFormProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isActive, setIsActive] = useState(company.isActive ? "true" : "false");
   const [workplaceManagementNumber, setWorkplaceManagementNumber] = useState(
     formatWorkplaceManagementNumber(company.workplaceManagementNumber) ?? "",
   );
+  const [firmContactName, setFirmContactName] = useState(
+    company.firmContactName ?? "",
+  );
   const [formError, setFormError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const formId = `company-edit-form-${company.id}`;
 
   useEffect(() => {
     if (!open) {
@@ -56,8 +67,9 @@ export function CompanyEditForm({ company, canDelete }: CompanyEditFormProps) {
     setWorkplaceManagementNumber(
       formatWorkplaceManagementNumber(company.workplaceManagementNumber) ?? "",
     );
+    setFirmContactName(company.firmContactName ?? "");
     setFormError(null);
-  }, [open, company.workplaceManagementNumber, company.isActive]);
+  }, [open, company.workplaceManagementNumber, company.firmContactName, company.isActive]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -72,11 +84,12 @@ export function CompanyEditForm({ company, canDelete }: CompanyEditFormProps) {
         <DialogHeader>
           <DialogTitle>고객사 정보</DialogTitle>
           <DialogDescription>
-            회사명, 사업장관리번호, 운영 상태를 수정합니다.
+            회사명, 사업장관리번호, 사무실 담당자, 운영 상태를 수정합니다.
           </DialogDescription>
         </DialogHeader>
         <form
           className="space-y-4"
+          id={formId}
           noValidate
           onSubmit={(event) => {
             event.preventDefault();
@@ -102,6 +115,7 @@ export function CompanyEditForm({ company, canDelete }: CompanyEditFormProps) {
           ) : null}
           <input type="hidden" name="companyId" value={company.id} />
           <input type="hidden" name="isActive" value={isActive} />
+          <input type="hidden" name="firmContactName" value={firmContactName} />
 
           <div className="space-y-4">
             <div className="space-y-2">
@@ -114,6 +128,25 @@ export function CompanyEditForm({ company, canDelete }: CompanyEditFormProps) {
                 maxLength={100}
                 disabled={isPending}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`firmContactName-${company.id}`}>담당 직원</Label>
+              <select
+                id={`firmContactName-${company.id}`}
+                value={firmContactName}
+                onChange={(event) => setFirmContactName(event.target.value)}
+                className={selectClassName}
+                disabled={isPending}
+              >
+                <option value="">{EMPTY_FIELD_LABEL}</option>
+                {staffUsers
+                  .filter((user) => user.isActive)
+                  .map((user) => (
+                    <option key={user.id} value={user.name}>
+                      {user.name}
+                    </option>
+                  ))}
+              </select>
             </div>
             <div className="space-y-2">
               <Label>사업장관리번호</Label>
@@ -139,33 +172,38 @@ export function CompanyEditForm({ company, canDelete }: CompanyEditFormProps) {
               </select>
             </div>
           </div>
-
-          {canDelete ? (
-            <div className="border-t pt-4">
-              <p className="mb-3 text-sm text-muted-foreground">
-                고객사를 삭제하면 최근 삭제 목록으로 이동하며, 연결된 클라이언트
-                계정은 비활성화됩니다.
-              </p>
-              <ConfirmDeleteDialog
-                title="고객사 삭제"
-                description={`"${company.name}" 고객사를 삭제하시겠습니까? 삭제된 고객사는 최근 삭제 목록에서 확인할 수 있습니다.`}
-                action={softDeleteCompanyAction}
-                hiddenFields={{ companyId: company.id }}
-                triggerLabel="고객사 삭제"
-                confirmLabel="삭제 확인"
-              />
-            </div>
-          ) : null}
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
-              취소
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              저장
-            </Button>
-          </DialogFooter>
         </form>
+
+        {canDelete ? (
+          <div className="border-t pt-4">
+            <p className="mb-3 text-sm text-muted-foreground">
+              고객사를 삭제하면 최근 삭제 목록으로 이동하며, 연결된 클라이언트
+              계정은 비활성화됩니다.
+            </p>
+            <ConfirmDeleteDialog
+              title="고객사 삭제"
+              description={`"${company.name}" 고객사를 삭제하시겠습니까? 삭제된 고객사는 최근 삭제 목록에서 확인할 수 있습니다.`}
+              action={softDeleteCompanyAction}
+              hiddenFields={{ companyId: company.id }}
+              triggerLabel="고객사 삭제"
+              confirmLabel="삭제 확인"
+            />
+          </div>
+        ) : null}
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setOpen(false)}
+            disabled={isPending}
+          >
+            취소
+          </Button>
+          <Button type="submit" form={formId} disabled={isPending}>
+            저장
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

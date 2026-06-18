@@ -15,6 +15,7 @@ function redirectIfSelfTarget(actorId: string, targetUserId: string): void {
 }
 
 export async function listFirmStaffUsers() {
+  await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
   const users = await prisma.user.findMany({
     where: { role: { in: ["FIRM_STAFF", "FIRM_ADMIN"] } },
     select: {

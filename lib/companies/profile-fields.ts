@@ -81,11 +81,10 @@ export const COMPANY_PROFILE_SECTIONS: CompanyProfileSection[] = [
   },
   {
     id: "contacts",
-    title: "담당자 · 연락처",
+    title: "담당자 정보",
     fields: [
-      { key: "firmContactName", label: "담당자 (사무실)", type: "text", maxLength: 50 },
-      { key: "companyContactName", label: "담당자 (업체)", type: "text", maxLength: 50 },
-      { key: "companyContactTitle", label: "직급 (담당자)", type: "text", maxLength: 50 },
+      { key: "companyContactName", label: "이름", type: "text", maxLength: 50 },
+      { key: "companyContactTitle", label: "직급", type: "text", maxLength: 50 },
       { key: "phone", label: "전화번호", type: "phone", maxLength: 20 },
       { key: "mobile", label: "핸드폰번호", type: "phone", maxLength: 20 },
       { key: "fax", label: "팩스번호", type: "phone", maxLength: 20 },
@@ -100,7 +99,7 @@ export const COMPANY_PROFILE_SECTIONS: CompanyProfileSection[] = [
       { key: "managesFourMajorInsurance", label: "4대보험 관리", type: "boolean" },
       { key: "taxOfficeName", label: "세무사무실", type: "text", maxLength: 100 },
       { key: "taxOfficeContact", label: "세무사무실 연락처", type: "phone", maxLength: 50 },
-      { key: "certificatePassword", label: "인증서 비밀번호", type: "password", maxLength: 100 },
+      { key: "certificatePassword", label: "인증서 비밀번호", type: "text", maxLength: 100 },
     ],
   },
   {

@@ -1,5 +1,6 @@
+import { redirect } from "next/navigation";
+
 import { requireAuth } from "@/lib/auth/guards";
-import { ForbiddenError } from "@/lib/auth/errors";
 import type { UserRole } from "@/lib/generated/prisma/client";
 
 export const DATA_EDIT_ROLES = [
@@ -35,7 +36,7 @@ export function resolveCompanyId(
   }
 
   if (explicitCompanyId && explicitCompanyId !== companyId) {
-    throw new ForbiddenError("권한이 없습니다.");
+    redirect("/unauthorized");
   }
 
   return companyId;

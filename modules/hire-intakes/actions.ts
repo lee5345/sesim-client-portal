@@ -49,7 +49,7 @@ function toHireIntakeData(
 ) {
   return {
     name: input.name,
-    email: input.email,
+    email: input.email ?? null,
     rrnEncrypted,
     rrnIv,
     hireDate: input.hireDate,
@@ -157,8 +157,8 @@ export async function createHireIntake(
     const record = await tx.newHire.create({
       data: {
         ...toHireIntakeData(input, encrypted, iv),
-        companyId,
-        createdById: session.user.userId,
+        company: { connect: { id: companyId } },
+        createdBy: { connect: { id: session.user.userId } },
       },
     });
 

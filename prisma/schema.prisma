@@ -161,7 +161,7 @@ model NewHire {
   id            String      @id @default(uuid()) @db.Uuid
   companyId     String      @db.Uuid
   name          String
-  email         String
+  email         String?
   rrnEncrypted  String
   rrnIv         String
   hireDate      DateTime

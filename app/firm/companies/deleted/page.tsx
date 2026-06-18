@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 export default async function DeletedCompaniesPage() {
   const session = await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
   const companies = await listDeletedCompanies();
-  const canRestore = session.user.role === "FIRM_ADMIN";
+  const canManage = session.user.role === "FIRM_ADMIN";
 
   return (
     <div className="space-y-8">
@@ -33,7 +33,7 @@ export default async function DeletedCompaniesPage() {
         </div>
       </div>
 
-      <DeletedCompaniesList companies={companies} canRestore={canRestore} />
+      <DeletedCompaniesList companies={companies} canManage={canManage} />
     </div>
   );
 }

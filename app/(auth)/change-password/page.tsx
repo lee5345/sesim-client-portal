@@ -3,9 +3,9 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { prisma } from "@/lib/db/db";
-import { auth } from "@/auth";
-import { requireAuth } from "@/lib/auth/guards";
+import { requireAuth, requireValidSession } from "@/lib/auth/guards";
 import { logoutAction } from "@/lib/auth/logout";
+import { SessionAuthorityGate } from "@/components/auth/session-authority-gate";
 import { AuthShell } from "@/components/layout/auth-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,10 +37,7 @@ export default async function ChangePasswordPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  const session = await auth();
-  if (!session?.user) {
-    redirect("/login");
-  }
+  const session = await requireValidSession();
 
   if (!session.user.mustChangePassword) {
     redirect("/post-login");
@@ -83,6 +80,7 @@ export default async function ChangePasswordPage({
       title="비밀번호 변경"
       description="보안을 위해 새 비밀번호를 설정해 주세요."
     >
+      <SessionAuthorityGate />
       {errorMessage ? (
         <p className="mb-4 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {errorMessage}

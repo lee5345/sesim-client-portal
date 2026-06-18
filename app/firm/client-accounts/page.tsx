@@ -6,7 +6,7 @@ import { RegistrationRequestsList } from "@/components/firm/registration-request
 import { PageHeader } from "@/components/layout/page-header";
 import { prisma } from "@/lib/db/db";
 import { requireAuth } from "@/lib/auth/guards";
-import { sortByKoreanName } from "@/lib/sort/korean";
+import { sortByActivityThenKoreanName } from "@/lib/sort/korean";
 import {
   deleteClientUserAction,
   listClientAccountsByCompany,
@@ -42,12 +42,12 @@ export default async function ClientAccountsPage({
     }),
     prisma.company.findMany({
       where: { deletedAt: null },
-      select: { id: true, name: true },
+      select: { id: true, name: true, isActive: true },
     }),
     listClientAccountsByCompany(),
   ]);
 
-  const allCompanies = sortByKoreanName(allCompaniesRaw, (company) => company.name);
+  const allCompanies = sortByActivityThenKoreanName(allCompaniesRaw);
 
   async function toggleAction(formData: FormData) {
     "use server";
