@@ -1,18 +1,19 @@
 import { requireAuth } from "@/lib/auth/guards";
-import { EmptyState } from "@/components/dashboard/empty-state";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { TerminationsTable } from "@/components/client/terminations-table";
+import { listTerminations } from "@/modules/terminations/actions";
 
 export default async function ClientTerminationsPage() {
-  await requireAuth("CLIENT_ADMIN");
+  const session = await requireAuth("CLIENT_ADMIN");
+  const companyId = session.user.companyId;
+
+  if (!companyId) {
+    return <p className="text-muted-foreground">소속 회사 정보가 없습니다.</p>;
+  }
+
+  const terminations = await listTerminations(companyId);
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">퇴사자 정보</h1>
         <p className="mt-1 text-muted-foreground">
@@ -20,15 +21,7 @@ export default async function ClientTerminationsPage() {
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>퇴사자 목록</CardTitle>
-          <CardDescription>등록된 퇴사자 정보가 여기에 표시됩니다.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <EmptyState message="다음 단계에서 퇴사자 등록 기능이 추가됩니다." />
-        </CardContent>
-      </Card>
+      <TerminationsTable terminations={terminations} />
     </div>
   );
 }

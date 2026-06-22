@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Calculator } from "lucide-react";
 
 import { requireAuth } from "@/lib/auth/guards";
-import { formatDateTime } from "@/lib/format/date";
+import { CompactDateTime } from "@/components/ui/compact-datetime";
 import { getFirmDashboardData } from "@/modules/dashboard/firm";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { EmptyState } from "@/components/dashboard/empty-state";
@@ -102,8 +102,8 @@ export default async function FirmDashboardPage() {
                         <td className="px-4 py-3">
                           <Badge variant="secondary">{row.type}</Badge>
                         </td>
-                        <td className="px-4 py-3 text-muted-foreground">
-                          {formatDateTime(row.date)}
+                        <td className="px-4 py-3">
+                          <CompactDateTime date={row.date} />
                         </td>
                       </tr>
                     ))}

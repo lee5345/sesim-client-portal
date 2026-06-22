@@ -6,16 +6,23 @@ import { Eye, EyeOff } from "lucide-react";
 import { revealRRN } from "@/modules/hire-intakes/actions";
 import { Button } from "@/components/ui/button";
 
+type RevealRrnFn = (
+  id: string,
+  companyId?: string | null,
+) => Promise<{ rrn: string }>;
+
 type MaskedRrnCellProps = {
   id: string;
   maskedRrn: string;
   companyId?: string;
+  revealFn?: RevealRrnFn;
 };
 
 export function MaskedRrnCell({
   id,
   maskedRrn,
   companyId,
+  revealFn = revealRRN,
 }: MaskedRrnCellProps) {
   const [revealed, setRevealed] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +45,7 @@ export function MaskedRrnCell({
           setError(null);
           startTransition(async () => {
             try {
-              const result = await revealRRN(id, companyId);
+              const result = await revealFn(id, companyId);
               setRevealed(result.rrn);
             } catch {
               setError("주민등록번호를 불러오지 못했습니다.");

@@ -3,27 +3,25 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { Prisma } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/db/db";
+import { decryptRRN, encryptRRN, maskRRN } from "@/lib/encryption/rrn";
 import {
   isFirmRole,
   parseOptionalCompanyId,
   requireDataEditAuth,
   resolveCompanyId,
 } from "@/lib/permissions/crud";
-import { decryptRRN, encryptRRN, maskRRN } from "@/lib/encryption/rrn";
 import {
-  type CreateHireIntakeInput,
+  type CreateTerminationInput,
   normalizeRRN,
-  parseCreateHireIntakeFormData,
-  parseUpdateHireIntakeFormData,
-  parseStoredNonTaxableAllowances,
-  toAuditPayload,
-} from "@/lib/validation/hire-intake";
+  parseCreateTerminationFormData,
+  parseUpdateTerminationFormData,
+  toTerminationAuditPayload,
+} from "@/lib/validation/termination";
 
-const CLIENT_NEW_HIRES_PATH = "/client/new-hires";
+const CLIENT_TERMINATIONS_PATH = "/client/terminations";
 
-export type HireIntakeActionResult =
+export type TerminationActionResult =
   | { success: true }
   | { success: false; error: string };
 
@@ -31,84 +29,57 @@ const idSchema = z.object({
   id: z.string().uuid(),
 });
 
-function revalidateHireIntakePaths(
+function revalidateTerminationPaths(
   companyId: string,
   role: Awaited<ReturnType<typeof requireDataEditAuth>>["user"]["role"],
 ) {
   if (isFirmRole(role)) {
     revalidatePath(`/firm/companies/${companyId}`);
   } else {
-    revalidatePath(CLIENT_NEW_HIRES_PATH);
+    revalidatePath(CLIENT_TERMINATIONS_PATH);
   }
 }
 
-function toHireIntakeData(
-  input: Omit<CreateHireIntakeInput, "rrn">,
+function toTerminationData(
+  input: Omit<CreateTerminationInput, "rrn">,
   rrnEncrypted: string,
   rrnIv: string,
 ) {
   return {
     name: input.name,
-    email: input.email ?? null,
     rrnEncrypted,
     rrnIv,
-    hireDate: input.hireDate,
-    department: input.department,
-    salaryType: input.salaryType,
-    salaryBasis: input.salaryBasis,
-    salaryAmount: input.salaryAmount,
-    isContract: input.isContract,
-    contractStart: input.isContract ? input.contractStart! : null,
-    contractEnd: input.isContract ? input.contractEnd! : null,
-    nonTaxableAllowances:
-      input.nonTaxableAllowances && input.nonTaxableAllowances.length > 0
-        ? (input.nonTaxableAllowances as Prisma.InputJsonValue)
-        : Prisma.DbNull,
-    bankName: input.bankName ?? null,
-    accountNumber: input.accountNumber ?? null,
-    phone: input.phone ?? null,
-    notes: input.notes ?? null,
+    terminationDate: input.terminationDate,
+    reason: input.reason,
   };
 }
 
-async function getOwnedHireIntake(id: string, companyId: string) {
-  const record = await prisma.newHire.findFirst({
+async function getOwnedTermination(id: string, companyId: string) {
+  const record = await prisma.termination.findFirst({
     where: { id, companyId, deletedAt: null },
   });
 
   if (!record) {
-    throw new Error("입사자 정보를 찾을 수 없습니다.");
+    throw new Error("퇴사자 정보를 찾을 수 없습니다.");
   }
 
   return record;
 }
 
-export async function listHireIntakes(companyId: string) {
+export async function listTerminations(companyId: string) {
   const session = await requireDataEditAuth();
   resolveCompanyId(session, companyId);
 
-  const records = await prisma.newHire.findMany({
+  const records = await prisma.termination.findMany({
     where: { companyId, deletedAt: null },
-    orderBy: [{ hireDate: "desc" }, { createdAt: "desc" }],
+    orderBy: [{ terminationDate: "desc" }, { createdAt: "desc" }],
     select: {
       id: true,
       name: true,
-      email: true,
       rrnEncrypted: true,
       rrnIv: true,
-      hireDate: true,
-      department: true,
-      salaryType: true,
-      salaryBasis: true,
-      salaryAmount: true,
-      isContract: true,
-      contractStart: true,
-      contractEnd: true,
-      nonTaxableAllowances: true,
-      bankName: true,
-      accountNumber: true,
-      phone: true,
-      notes: true,
+      terminationDate: true,
+      reason: true,
       createdAt: true,
       createdBy: {
         select: { name: true },
@@ -126,24 +97,21 @@ export async function listHireIntakes(companyId: string) {
     } = record;
     return {
       ...rest,
-      nonTaxableAllowances: parseStoredNonTaxableAllowances(
-        record.nonTaxableAllowances,
-      ),
       createdByName: createdBy.name,
       maskedRrn: maskRRN(plaintext),
     };
   });
 }
 
-export async function createHireIntake(
+export async function createTermination(
   formData: FormData,
-): Promise<HireIntakeActionResult> {
+): Promise<TerminationActionResult> {
   const session = await requireDataEditAuth();
   const companyId = resolveCompanyId(
     session,
     parseOptionalCompanyId(formData),
   );
-  const parsed = parseCreateHireIntakeFormData(formData);
+  const parsed = parseCreateTerminationFormData(formData);
 
   if (!parsed.success) {
     return { success: false, error: parsed.error };
@@ -153,9 +121,9 @@ export async function createHireIntake(
   const { encrypted, iv } = encryptRRN(normalizeRRN(input.rrn));
 
   await prisma.$transaction(async (tx) => {
-    const record = await tx.newHire.create({
+    const record = await tx.termination.create({
       data: {
-        ...toHireIntakeData(input, encrypted, iv),
+        ...toTerminationData(input, encrypted, iv),
         company: { connect: { id: companyId } },
         createdBy: { connect: { id: session.user.userId } },
       },
@@ -166,29 +134,29 @@ export async function createHireIntake(
         actorId: session.user.userId,
         companyId,
         action: "CREATE",
-        tableName: "new_hires",
+        tableName: "terminations",
         recordId: record.id,
-        payload: toAuditPayload(input),
+        payload: toTerminationAuditPayload(input),
       },
     });
   });
 
-  revalidateHireIntakePaths(companyId, session.user.role);
+  revalidateTerminationPaths(companyId, session.user.role);
   return { success: true };
 }
 
-export async function updateHireIntake(
+export async function updateTermination(
   id: string,
   formData: FormData,
-): Promise<HireIntakeActionResult> {
+): Promise<TerminationActionResult> {
   const session = await requireDataEditAuth();
   const companyId = resolveCompanyId(
     session,
     parseOptionalCompanyId(formData),
   );
   const { id: parsedId } = idSchema.parse({ id });
-  const existing = await getOwnedHireIntake(parsedId, companyId);
-  const parsed = parseUpdateHireIntakeFormData(formData);
+  const existing = await getOwnedTermination(parsedId, companyId);
+  const parsed = parseUpdateTerminationFormData(formData);
 
   if (!parsed.success) {
     return { success: false, error: parsed.error };
@@ -205,10 +173,10 @@ export async function updateHireIntake(
     rrnIv = encrypted.iv;
   }
 
-  const data = toHireIntakeData(input, rrnEncrypted, rrnIv);
+  const data = toTerminationData(input, rrnEncrypted, rrnIv);
 
   await prisma.$transaction(async (tx) => {
-    await tx.newHire.update({
+    await tx.termination.update({
       where: { id: parsedId },
       data,
     });
@@ -218,28 +186,28 @@ export async function updateHireIntake(
         actorId: session.user.userId,
         companyId,
         action: "UPDATE",
-        tableName: "new_hires",
+        tableName: "terminations",
         recordId: parsedId,
-        payload: toAuditPayload(input),
+        payload: toTerminationAuditPayload(input),
       },
     });
   });
 
-  revalidateHireIntakePaths(companyId, session.user.role);
+  revalidateTerminationPaths(companyId, session.user.role);
   return { success: true };
 }
 
-export async function deleteHireIntake(
+export async function deleteTermination(
   id: string,
   explicitCompanyId?: string | null,
 ) {
   const session = await requireDataEditAuth();
   const companyId = resolveCompanyId(session, explicitCompanyId);
   const { id: parsedId } = idSchema.parse({ id });
-  const existing = await getOwnedHireIntake(parsedId, companyId);
+  const existing = await getOwnedTermination(parsedId, companyId);
 
   await prisma.$transaction(async (tx) => {
-    await tx.newHire.update({
+    await tx.termination.update({
       where: { id: parsedId },
       data: { deletedAt: new Date() },
     });
@@ -249,36 +217,35 @@ export async function deleteHireIntake(
         actorId: session.user.userId,
         companyId,
         action: "DELETE",
-        tableName: "new_hires",
+        tableName: "terminations",
         recordId: parsedId,
         payload: {
           name: existing.name,
-          email: existing.email,
         },
       },
     });
   });
 
-  revalidateHireIntakePaths(companyId, session.user.role);
+  revalidateTerminationPaths(companyId, session.user.role);
 }
 
-export async function revealRRN(
+export async function revealTerminationRRN(
   id: string,
   explicitCompanyId?: string | null,
 ) {
   const session = await requireDataEditAuth();
   const companyId = resolveCompanyId(session, explicitCompanyId);
   const { id: parsedId } = idSchema.parse({ id });
-  const record = await getOwnedHireIntake(parsedId, companyId);
+  const record = await getOwnedTermination(parsedId, companyId);
 
   return {
     rrn: decryptRRN(record.rrnEncrypted, record.rrnIv),
   };
 }
 
-export async function deleteHireIntakeAction(formData: FormData) {
+export async function deleteTerminationAction(formData: FormData) {
   const id = formData.get("id");
-  await deleteHireIntake(
+  await deleteTermination(
     String(id ?? ""),
     parseOptionalCompanyId(formData),
   );

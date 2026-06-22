@@ -5,7 +5,8 @@ import {
   SALARY_TYPE_LABELS,
 } from "@/modules/hire-intakes/labels";
 import { formatSalaryAmount } from "@/lib/format/currency";
-import { formatDate, formatDateTime } from "@/lib/format/date";
+import { CompactDateTime } from "@/components/ui/compact-datetime";
+import { formatDate } from "@/lib/format/date";
 import { formatPhone } from "@/lib/format/phone";
 import type { NonTaxableAllowance } from "@/lib/validation/hire-intake";
 import type { SalaryBasis, SalaryType } from "@/lib/generated/prisma/client";
@@ -21,7 +22,7 @@ const bodyCellClassName =
 const stickyActionHeaderClassName =
   "sticky right-0 z-30 border-l border-border bg-muted px-4 py-3 text-center font-medium whitespace-nowrap shadow-[-10px_0_20px_-10px_rgba(0,0,0,0.15)]";
 const stickyActionCellClassName =
-  "sticky right-0 z-20 border-l border-border bg-muted px-4 py-3 text-right whitespace-nowrap shadow-[-10px_0_20px_-10px_rgba(0,0,0,0.12)] group-hover:bg-muted";
+  "sticky right-0 z-20 border-l border-border bg-muted px-4 py-3 text-center whitespace-nowrap shadow-[-10px_0_20px_-10px_rgba(0,0,0,0.12)] group-hover:bg-muted";
 
 export type HireIntakeTableRow = {
   id: string;
@@ -42,7 +43,6 @@ export type HireIntakeTableRow = {
   phone: string | null;
   notes: string | null;
   createdAt: Date;
-  updatedAt: Date;
   createdByName: string;
 };
 
@@ -104,7 +104,6 @@ export function HireIntakesDataTable({
             <th className={headerCellClassName}>비고</th>
             <th className={headerCellClassName}>등록자</th>
             <th className={headerCellClassName}>등록일</th>
-            <th className={headerCellClassName}>수정일</th>
             {showActions ? (
               <th className={stickyActionHeaderClassName}>관리</th>
             ) : null}
@@ -179,15 +178,12 @@ export function HireIntakesDataTable({
                 {displayText(hireIntake.notes)}
               </td>
               <td className={bodyCellClassName}>{hireIntake.createdByName}</td>
-              <td className={`${bodyCellClassName} text-muted-foreground`}>
-                {formatDateTime(hireIntake.createdAt)}
-              </td>
-              <td className={`${bodyCellClassName} text-muted-foreground`}>
-                {formatDateTime(hireIntake.updatedAt)}
+              <td className={bodyCellClassName}>
+                <CompactDateTime date={hireIntake.createdAt} />
               </td>
               {showActions ? (
                 <td className={stickyActionCellClassName}>
-                  <div className="flex justify-end gap-2 whitespace-nowrap">
+                  <div className="flex justify-center gap-2 whitespace-nowrap">
                     {renderActions?.(hireIntake)}
                   </div>
                 </td>

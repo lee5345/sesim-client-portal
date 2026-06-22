@@ -20,6 +20,7 @@ import { CompanyInfoLink } from "@/components/companies/company-info-link";
 import { DepartmentManager } from "@/components/companies/department-manager";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { HireIntakesTable } from "@/components/client/hire-intakes-table";
+import { TerminationsTable } from "@/components/client/terminations-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,7 +31,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { formatDate, formatDateTime } from "@/lib/format/date";
 
 export default async function FirmCompanyDetailPage({
   params,
@@ -137,47 +137,11 @@ export default async function FirmCompanyDetailPage({
           />
         </TabsContent>
 
-        <TabsContent value="terminations">
-          <Card>
-            <CardHeader>
-              <CardTitle>퇴사자 정보</CardTitle>
-              <CardDescription>
-                {company.name}의 퇴사자 데이터입니다.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {terminations.length === 0 ? (
-                <EmptyState message="등록된 퇴사자 정보가 없습니다." />
-              ) : (
-                <div className="overflow-x-auto rounded-lg border">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b bg-muted/50 text-left">
-                        <th className="px-4 py-3 font-medium">이름</th>
-                        <th className="px-4 py-3 font-medium">퇴사일</th>
-                        <th className="px-4 py-3 font-medium">사유</th>
-                        <th className="px-4 py-3 font-medium">등록일</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {terminations.map((row) => (
-                        <tr key={row.id} className="border-b last:border-0">
-                          <td className="px-4 py-3">{row.name}</td>
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {formatDate(row.terminationDate)}
-                          </td>
-                          <td className="px-4 py-3">{row.reason ?? "-"}</td>
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {formatDateTime(row.createdAt)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <TabsContent value="terminations" className="space-y-4">
+          <TerminationsTable
+            terminations={terminations}
+            companyId={companyId}
+          />
         </TabsContent>
 
         <TabsContent value="compensation">

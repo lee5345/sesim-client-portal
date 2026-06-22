@@ -196,7 +196,7 @@ model Termination {
   rrnEncrypted    String
   rrnIv           String
   terminationDate DateTime
-  reason          String?
+  reason          String
   deletedAt       DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
