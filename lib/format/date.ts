@@ -29,12 +29,32 @@ const koreanTimeFormatter = new Intl.DateTimeFormat("ko-KR", {
   timeZone: DISPLAY_TIME_ZONE,
 });
 
+function toKoreanDayPeriod(value: string): string {
+  if (value === "오전" || value === "오후") return value;
+  const normalized = value.toLowerCase().replace(/\./g, "");
+  if (normalized === "am") return "오전";
+  if (normalized === "pm") return "오후";
+  return value;
+}
+
+function formatWithKoreanDayPeriod(
+  formatter: Intl.DateTimeFormat,
+  date: Date,
+): string {
+  return formatter
+    .formatToParts(date)
+    .map(({ type, value }) =>
+      type === "dayPeriod" ? toKoreanDayPeriod(value) : value,
+    )
+    .join("");
+}
+
 export function formatDate(date: Date): string {
   return dateFormatter.format(date);
 }
 
 export function formatDateTime(date: Date): string {
-  return dateTimeFormatter.format(date);
+  return formatWithKoreanDayPeriod(dateTimeFormatter, date);
 }
 
 export function formatKoreanDate(date: Date): string {
@@ -42,5 +62,5 @@ export function formatKoreanDate(date: Date): string {
 }
 
 export function formatKoreanTime(date: Date): string {
-  return koreanTimeFormatter.format(date);
+  return formatWithKoreanDayPeriod(koreanTimeFormatter, date);
 }
