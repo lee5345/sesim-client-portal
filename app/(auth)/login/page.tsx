@@ -2,10 +2,9 @@ import Link from "next/link";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { redirect } from "next/navigation";
 
-import { AuthError } from "next-auth";
-
 import { signIn, auth } from "@/auth";
 import {
+  DeactivatedAccountError,
   getLoginErrorMessage,
   LOGIN_ERROR_DEACTIVATED,
 } from "@/lib/auth/errors";
@@ -46,11 +45,7 @@ export default async function LoginPage({
       });
     } catch (error) {
       if (isRedirectError(error)) throw error;
-      if (
-        error instanceof AuthError &&
-        error.type === "CredentialsSignin" &&
-        error.code === LOGIN_ERROR_DEACTIVATED
-      ) {
+      if (error instanceof DeactivatedAccountError) {
         redirect(`/login?error=${LOGIN_ERROR_DEACTIVATED}`);
       }
       redirect("/login?error=1");
