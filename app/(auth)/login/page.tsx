@@ -2,7 +2,13 @@ import Link from "next/link";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { redirect } from "next/navigation";
 
+import { AuthError } from "next-auth";
+
 import { signIn, auth } from "@/auth";
+import {
+  getLoginErrorMessage,
+  LOGIN_ERROR_DEACTIVATED,
+} from "@/lib/auth/errors";
 import { SessionRevokedDialog } from "@/components/auth/session-revoked-dialog";
 import { AuthShell } from "@/components/layout/auth-shell";
 import { Button } from "@/components/ui/button";
@@ -28,6 +34,7 @@ export default async function LoginPage({
   }
 
   const { error, success, revoked } = await searchParams;
+  const loginErrorMessage = getLoginErrorMessage(error);
 
   async function loginAction(formData: FormData) {
     "use server";
@@ -39,6 +46,13 @@ export default async function LoginPage({
       });
     } catch (error) {
       if (isRedirectError(error)) throw error;
+      if (
+        error instanceof AuthError &&
+        error.type === "CredentialsSignin" &&
+        error.code === LOGIN_ERROR_DEACTIVATED
+      ) {
+        redirect(`/login?error=${LOGIN_ERROR_DEACTIVATED}`);
+      }
       redirect("/login?error=1");
     }
   }
@@ -65,9 +79,9 @@ export default async function LoginPage({
           비밀번호가 설정되었습니다. 로그인해 주세요.
         </p>
       ) : null}
-      {error ? (
+      {loginErrorMessage ? (
         <p className="mb-4 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          로그인에 실패했습니다. 이메일과 비밀번호를 확인해 주세요.
+          {loginErrorMessage}
         </p>
       ) : null}
 

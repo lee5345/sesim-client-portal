@@ -4,6 +4,7 @@ import { Calculator } from "lucide-react";
 import { requireAuth } from "@/lib/auth/guards";
 import { CompactDateTime } from "@/components/ui/compact-datetime";
 import { getFirmDashboardData } from "@/modules/dashboard/firm";
+import { ActivityTypeBadge } from "@/components/dashboard/activity-type-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Button } from "@/components/ui/button";
@@ -100,7 +101,7 @@ export default async function FirmDashboardPage() {
                         <td className="px-4 py-3">{row.name}</td>
                         <td className="px-4 py-3">{row.companyName}</td>
                         <td className="px-4 py-3">
-                          <Badge variant="secondary">{row.type}</Badge>
+                          <ActivityTypeBadge type={row.type} />
                         </td>
                         <td className="px-4 py-3">
                           <CompactDateTime date={row.date} />

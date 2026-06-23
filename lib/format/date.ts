@@ -1,7 +1,10 @@
+const DISPLAY_TIME_ZONE = "Asia/Seoul";
+
 const dateFormatter = new Intl.DateTimeFormat("sv-SE", {
   year: "numeric",
   month: "2-digit",
   day: "2-digit",
+  timeZone: DISPLAY_TIME_ZONE,
 });
 
 const dateTimeFormatter = new Intl.DateTimeFormat("ko-KR", {
@@ -10,17 +13,20 @@ const dateTimeFormatter = new Intl.DateTimeFormat("ko-KR", {
   day: "2-digit",
   hour: "2-digit",
   minute: "2-digit",
+  timeZone: DISPLAY_TIME_ZONE,
 });
 
 const koreanDateFormatter = new Intl.DateTimeFormat("ko-KR", {
   year: "numeric",
   month: "2-digit",
   day: "2-digit",
+  timeZone: DISPLAY_TIME_ZONE,
 });
 
 const koreanTimeFormatter = new Intl.DateTimeFormat("ko-KR", {
   hour: "2-digit",
   minute: "2-digit",
+  timeZone: DISPLAY_TIME_ZONE,
 });
 
 export function formatDate(date: Date): string {

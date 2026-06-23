@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 
+import { DeactivatedAccountError } from "@/lib/auth/errors";
 import { prisma } from "@/lib/db/db";
 
 const credentialsSchema = z.object({
@@ -40,7 +41,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         if (!user.isActive) {
-          throw new Error("Inactive account.");
+          throw new DeactivatedAccountError();
         }
 
         const ok = await bcrypt.compare(password, user.passwordHash);

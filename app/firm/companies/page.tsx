@@ -3,13 +3,17 @@ import { Trash2 } from "lucide-react";
 
 import { requireAuth } from "@/lib/auth/guards";
 import { listCompanies } from "@/modules/companies/companies";
+import { listFirmStaffUsers } from "@/modules/auth/staff-users";
 import { AddCompanyDialog } from "@/components/companies/add-company-dialog";
 import { CompaniesList } from "@/components/companies/companies-list";
 import { Button } from "@/components/ui/button";
 
 export default async function FirmCompaniesPage() {
   const session = await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
-  const companies = await listCompanies();
+  const [companies, staffUsers] = await Promise.all([
+    listCompanies(),
+    listFirmStaffUsers(),
+  ]);
   const isAdmin = session.user.role === "FIRM_ADMIN";
 
   return (
@@ -37,6 +41,11 @@ export default async function FirmCompaniesPage() {
       <CompaniesList
         companies={companies}
         currentUserName={session.user.name ?? ""}
+        staffUsers={staffUsers.map((user) => ({
+          id: user.id,
+          name: user.name,
+          isActive: user.isActive,
+        }))}
       />
     </div>
   );
