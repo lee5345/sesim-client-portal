@@ -70,12 +70,6 @@ export async function listCompanies() {
       workplaceManagementNumber: true,
       isActive: true,
       updatedAt: true,
-      _count: {
-        select: {
-          newHires: { where: { deletedAt: null } },
-          terminations: { where: { deletedAt: null } },
-        },
-      },
     },
   });
 

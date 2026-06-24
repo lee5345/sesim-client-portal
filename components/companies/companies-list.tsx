@@ -38,10 +38,6 @@ type CompanyListItem = {
   workplaceManagementNumber: string | null;
   isActive: boolean;
   updatedAt: Date | string;
-  _count: {
-    newHires: number;
-    terminations: number;
-  };
 };
 
 type CompaniesListProps = {
@@ -139,10 +135,7 @@ export function CompaniesList({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2 text-sm text-muted-foreground">
-              <p>
-                입사자 {company._count.newHires}건 · 퇴사자{" "}
-                {company._count.terminations}건
-              </p>
+              <p>담당 직원: {company.firmContactName ?? "없음"}</p>
               <p className="text-xs">
                 최종 수정: {formatDateTime(new Date(company.updatedAt))}
               </p>
@@ -174,7 +167,7 @@ export function CompaniesList({
             className={selectClassName}
           >
             <option value="">전체</option>
-            <option value={UNASSIGNED_STAFF_FILTER}>미배정</option>
+            <option value={UNASSIGNED_STAFF_FILTER}>없음</option>
             {staffUsers
               .filter((user) => user.isActive)
               .map((user) => (
