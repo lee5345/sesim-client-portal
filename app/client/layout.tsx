@@ -28,7 +28,7 @@ export default async function ClientLayout({
     { href: "/client/terminations", label: "퇴사자 정보", icon: "user-minus" as const },
     {
       href: "/client/compensation-changes",
-      label: "급여변경 내역",
+      label: "급여 정보",
       icon: "wallet" as const,
       disabled: true,
     },
