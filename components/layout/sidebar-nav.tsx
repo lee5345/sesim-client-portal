@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Building2,
   Calculator,
+  CalendarDays,
   ClipboardList,
   LayoutDashboard,
   Settings,
@@ -23,6 +24,7 @@ export const NAV_ICONS = {
   building2: Building2,
   "clipboard-list": ClipboardList,
   calculator: Calculator,
+  "calendar-days": CalendarDays,
   users: Users,
   "user-plus": UserPlus,
   "user-minus": UserMinus,

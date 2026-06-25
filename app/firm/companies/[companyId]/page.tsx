@@ -7,10 +7,12 @@ import {
   EMPTY_FIELD_LABEL,
   NO_WORKPLACE_MANAGEMENT_NUMBER_LABEL,
 } from "@/lib/companies/labels";
+import { parseYearMonthSearchParams } from "@/lib/daily-workers/period";
 import { formatWorkplaceManagementNumber } from "@/lib/format/workplace-management-number";
 import { getCompanyById } from "@/modules/companies/companies";
 import { listFirmStaffUsers } from "@/modules/auth/staff-users";
 import {
+  listCompanyDailyWorkers,
   listCompanyNewHires,
   listCompanyTerminations,
 } from "@/modules/companies/company-activity";
@@ -19,11 +21,13 @@ import { CompanyEditForm } from "@/components/companies/company-edit-form";
 import { CompanyInfoLink } from "@/components/companies/company-info-link";
 import { DepartmentManager } from "@/components/companies/department-manager";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { CompanyDetailTabs } from "@/components/firm/company-detail-tabs";
+import { DailyWorkersTable } from "@/components/client/daily-workers-table";
 import { HireIntakesTable } from "@/components/client/hire-intakes-table";
 import { TerminationsTable } from "@/components/client/terminations-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
   CardContent,
@@ -34,16 +38,22 @@ import {
 
 export default async function FirmCompanyDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ companyId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const session = await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
   const { companyId } = await params;
+  const query = await searchParams;
+  const { year, month } = parseYearMonthSearchParams(query);
+  const firmDailyWorkersBasePath = `/firm/companies/${companyId}`;
 
-  const [company, newHires, terminations, departments, staffUsers] = await Promise.all([
+  const [company, newHires, terminations, dailyWorkers, departments, staffUsers] = await Promise.all([
     getCompanyById(companyId),
     listCompanyNewHires(companyId),
     listCompanyTerminations(companyId),
+    listCompanyDailyWorkers(companyId, year, month),
     listDepartments(companyId),
     listFirmStaffUsers(),
   ]);
@@ -53,6 +63,7 @@ export default async function FirmCompanyDetailPage({
 
   const newHireCount = company._count.newHires;
   const terminationCount = company._count.terminations;
+  const dailyWorkerCount = company._count.dailyWorkers;
   const compensationCount = company._count.compensationChanges;
   const canDelete = session.user.role === "FIRM_ADMIN";
 
@@ -106,7 +117,7 @@ export default async function FirmCompanyDetailPage({
         </div>
       </div>
 
-      <Tabs defaultValue="new-hires">
+      <CompanyDetailTabs>
         <TabsList>
           <TabsTrigger value="new-hires">
             입사자 정보
@@ -118,6 +129,12 @@ export default async function FirmCompanyDetailPage({
             퇴사자 정보
             <Badge variant="secondary" className="ml-2">
               {terminationCount}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="daily-workers">
+            일용직 정보
+            <Badge variant="secondary" className="ml-2">
+              {dailyWorkerCount}
             </Badge>
           </TabsTrigger>
           <TabsTrigger value="compensation">
@@ -144,6 +161,16 @@ export default async function FirmCompanyDetailPage({
           />
         </TabsContent>
 
+        <TabsContent value="daily-workers" className="space-y-4">
+          <DailyWorkersTable
+            dailyWorkers={dailyWorkers}
+            year={year}
+            month={month}
+            companyId={companyId}
+            basePath={firmDailyWorkersBasePath}
+          />
+        </TabsContent>
+
         <TabsContent value="compensation">
           <Card>
             <CardHeader>
@@ -155,7 +182,7 @@ export default async function FirmCompanyDetailPage({
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+      </CompanyDetailTabs>
     </div>
   );
 }

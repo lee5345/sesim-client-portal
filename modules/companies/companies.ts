@@ -50,6 +50,7 @@ const activeCompanySelect = {
       newHires: { where: { deletedAt: null } },
       terminations: { where: { deletedAt: null } },
       compensationChanges: { where: { deletedAt: null } },
+      dailyWorkers: { where: { deletedAt: null } },
     },
   },
 } as const;

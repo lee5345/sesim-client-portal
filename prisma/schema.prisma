@@ -25,6 +25,16 @@ enum SalaryBasis {
   NET
 }
 
+enum DailyWorkerOccupation {
+  MEDICAL_DOCTOR
+  VETERINARIAN
+  PHARMACIST
+  NURSE
+  NUTRITIONIST
+  MEDICAL_TECHNICIAN
+  HEALTHCARE_WORKER
+}
+
 enum AuditAction {
   CREATE
   UPDATE
@@ -84,6 +94,7 @@ model Company {
   newHires            NewHire[]
   terminations        Termination[]
   compensationChanges CompensationChange[]
+  dailyWorkers        DailyWorker[]
 
   @@index([deletedAt])
 }
@@ -118,6 +129,7 @@ model User {
   createdNewHires            NewHire[]            @relation("NewHireCreatedBy")
   createdTerminations        Termination[]        @relation("TerminationCreatedBy")
   createdCompensationChanges CompensationChange[] @relation("CompChangeCreatedBy")
+  createdDailyWorkers        DailyWorker[]        @relation("DailyWorkerCreatedBy")
   auditLogs                  AuditLog[]           @relation("AuditLogActor")
   reviewedRegistrationRequests RegistrationRequest[] @relation("RegistrationRequestReviewedBy")
   passwordSetupTokens        PasswordSetupToken[]
@@ -231,6 +243,63 @@ model CompensationChange {
   createdBy User    @relation("CompChangeCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
 
   @@index([companyId])
+  @@index([companyId, deletedAt])
+}
+
+model DailyWorker {
+  id              String                @id @default(uuid()) @db.Uuid
+  companyId       String                @db.Uuid
+  year            Int
+  month           Int
+  name            String
+  rrnEncrypted    String
+  rrnIv           String
+  occupation      DailyWorkerOccupation
+  occupationCode  String
+  hoursDay1       Decimal?              @db.Decimal(4, 1)
+  hoursDay2       Decimal?              @db.Decimal(4, 1)
+  hoursDay3       Decimal?              @db.Decimal(4, 1)
+  hoursDay4       Decimal?              @db.Decimal(4, 1)
+  hoursDay5       Decimal?              @db.Decimal(4, 1)
+  hoursDay6       Decimal?              @db.Decimal(4, 1)
+  hoursDay7       Decimal?              @db.Decimal(4, 1)
+  hoursDay8       Decimal?              @db.Decimal(4, 1)
+  hoursDay9       Decimal?              @db.Decimal(4, 1)
+  hoursDay10      Decimal?              @db.Decimal(4, 1)
+  hoursDay11      Decimal?              @db.Decimal(4, 1)
+  hoursDay12      Decimal?              @db.Decimal(4, 1)
+  hoursDay13      Decimal?              @db.Decimal(4, 1)
+  hoursDay14      Decimal?              @db.Decimal(4, 1)
+  hoursDay15      Decimal?              @db.Decimal(4, 1)
+  hoursDay16      Decimal?              @db.Decimal(4, 1)
+  hoursDay17      Decimal?              @db.Decimal(4, 1)
+  hoursDay18      Decimal?              @db.Decimal(4, 1)
+  hoursDay19      Decimal?              @db.Decimal(4, 1)
+  hoursDay20      Decimal?              @db.Decimal(4, 1)
+  hoursDay21      Decimal?              @db.Decimal(4, 1)
+  hoursDay22      Decimal?              @db.Decimal(4, 1)
+  hoursDay23      Decimal?              @db.Decimal(4, 1)
+  hoursDay24      Decimal?              @db.Decimal(4, 1)
+  hoursDay25      Decimal?              @db.Decimal(4, 1)
+  hoursDay26      Decimal?              @db.Decimal(4, 1)
+  hoursDay27      Decimal?              @db.Decimal(4, 1)
+  hoursDay28      Decimal?              @db.Decimal(4, 1)
+  hoursDay29      Decimal?              @db.Decimal(4, 1)
+  hoursDay30      Decimal?              @db.Decimal(4, 1)
+  hoursDay31      Decimal?              @db.Decimal(4, 1)
+  daysWorked      Int                   @default(0)
+  avgHoursPerDay  Int                   @default(0)
+  salaryBasis     SalaryBasis
+  totalWage       Int
+  deletedAt       DateTime?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  createdById     String                @db.Uuid
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  createdBy User    @relation("DailyWorkerCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([companyId, year, month, deletedAt])
   @@index([companyId, deletedAt])
 }
 

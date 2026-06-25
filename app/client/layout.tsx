@@ -26,6 +26,7 @@ export default async function ClientLayout({
     { href: "/client/dashboard", label: "대시보드", icon: "layout-dashboard" as const },
     { href: "/client/new-hires", label: "입사자 정보", icon: "user-plus" as const },
     { href: "/client/terminations", label: "퇴사자 정보", icon: "user-minus" as const },
+    { href: "/client/daily-workers", label: "일용직 정보", icon: "calendar-days" as const },
     {
       href: "/client/compensation-changes",
       label: "급여 정보",
