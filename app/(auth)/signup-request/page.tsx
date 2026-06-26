@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { createSignupRequestAction } from "@/modules/auth/registration-requests";
 import { AuthShell } from "@/components/layout/auth-shell";
+import { PhoneInput } from "@/components/client/phone-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,7 +66,7 @@ export default async function SignupRequestPage({
         </div>
         <div className="space-y-2">
           <Label htmlFor="phone">전화번호 (선택)</Label>
-          <Input id="phone" name="phone" type="tel" />
+          <PhoneInput id="phone" name="phone" />
         </div>
         <div className="space-y-2">
           <Label htmlFor="note">비고 (선택)</Label>

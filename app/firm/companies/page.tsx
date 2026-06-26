@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "고객사 목록",
+};
 import { Trash2 } from "lucide-react";
 
 import { requireAuth } from "@/lib/auth/guards";

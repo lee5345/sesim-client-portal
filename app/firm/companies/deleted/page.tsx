@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "최근 삭제된 고객사",
+};
 import { ArrowLeft } from "lucide-react";
 
 import { requireAuth } from "@/lib/auth/guards";

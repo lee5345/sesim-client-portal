@@ -32,7 +32,7 @@ export default async function FirmLayout({
           {
             href: "/firm/admin/users",
             label: "직원 계정 관리",
-            icon: "users" as const,
+            icon: "user-cog" as const,
           },
         ]
       : []),

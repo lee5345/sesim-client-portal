@@ -25,6 +25,12 @@ enum SalaryBasis {
   NET
 }
 
+enum RetirementPayType {
+  NOT_APPLICABLE
+  SEVERANCE_PAY
+  SEVERANCE_PENSION
+}
+
 enum DailyWorkerOccupation {
   MEDICAL_DOCTOR
   VETERINARIAN
@@ -202,14 +208,17 @@ model NewHire {
 }
 
 model Termination {
-  id              String    @id @default(uuid()) @db.Uuid
-  companyId       String    @db.Uuid
-  name            String
-  rrnEncrypted    String
-  rrnIv           String
-  terminationDate DateTime
-  reason          String
-  deletedAt       DateTime?
+  id                String            @id @default(uuid()) @db.Uuid
+  companyId         String            @db.Uuid
+  name              String
+  rrnEncrypted      String
+  rrnIv             String
+  hireDate          DateTime?
+  terminationDate   DateTime
+  reason            String
+  retirementPayType RetirementPayType
+  notes             String?
+  deletedAt         DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   createdById     String    @db.Uuid
@@ -291,6 +300,7 @@ model DailyWorker {
   avgHoursPerDay  Int                   @default(0)
   salaryBasis     SalaryBasis
   totalWage       Int
+  notes           String?
   deletedAt       DateTime?
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt

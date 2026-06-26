@@ -16,6 +16,8 @@ import { revealDailyWorkerRRN } from "@/modules/daily-workers/actions";
 
 export type { DailyWorkerTableRow };
 
+const EMPTY_CELL = "—";
+
 const headerCellClassName =
   "border-r border-border/30 px-4 py-3 font-medium whitespace-nowrap last:border-r-0";
 const bodyCellClassName =
@@ -25,6 +27,10 @@ const dayHeaderClassName =
   "border-r border-border/30 px-4 py-3 text-center font-medium whitespace-nowrap last:border-r-0";
 const dayCellClassName =
   "border-r border-border/30 px-4 py-3 text-center font-mono whitespace-nowrap last:border-r-0";
+const stickyNameHeaderClassName =
+  "sticky left-0 z-40 border-r border-border bg-muted px-4 py-3 font-medium whitespace-nowrap shadow-[10px_0_20px_-10px_rgba(0,0,0,0.15)]";
+const stickyNameCellClassName =
+  "sticky left-0 z-30 border-r border-border bg-muted px-4 py-3 text-muted-foreground whitespace-nowrap shadow-[10px_0_20px_-10px_rgba(0,0,0,0.12)] group-hover:bg-muted";
 const stickyActionHeaderClassName =
   "sticky right-0 z-30 border-l border-border bg-muted px-4 py-3 text-center font-medium whitespace-nowrap shadow-[-10px_0_20px_-10px_rgba(0,0,0,0.15)]";
 const stickyActionCellClassName =
@@ -37,6 +43,10 @@ type DailyWorkersDataTableProps = {
   companyId?: string;
   renderActions?: (dailyWorker: DailyWorkerTableRow) => ReactNode;
 };
+
+function displayText(value: string | null | undefined) {
+  return value?.trim() ? value : EMPTY_CELL;
+}
 
 export function DailyWorkersDataTable({
   dailyWorkers,
@@ -53,7 +63,7 @@ export function DailyWorkersDataTable({
       <table className="w-max min-w-full text-sm">
         <thead>
           <tr className="border-b bg-muted/40 text-left">
-            <th className={headerCellClassName}>이름</th>
+            <th className={stickyNameHeaderClassName}>이름</th>
             <th className={headerCellClassName}>주민등록번호</th>
             <th className={headerCellClassName}>직종</th>
             <th className={headerCellClassName}>직종코드</th>
@@ -66,6 +76,7 @@ export function DailyWorkersDataTable({
             <th className={`${headerCellClassName} bg-muted/60`}>일평균 근로시간</th>
             <th className={headerCellClassName}>기준</th>
             <th className={headerCellClassName}>임금총액</th>
+            <th className={headerCellClassName}>비고</th>
             <th className={headerCellClassName}>등록자</th>
             <th className={headerCellClassName}>등록일</th>
             {showActions ? (
@@ -79,9 +90,7 @@ export function DailyWorkersDataTable({
               key={dailyWorker.id}
               className="group border-b last:border-0 hover:bg-muted/20"
             >
-              <td className={`${bodyCellClassName} font-medium`}>
-                {dailyWorker.name}
-              </td>
+              <td className={stickyNameCellClassName}>{dailyWorker.name}</td>
               <td className={bodyCellClassName}>
                 <MaskedRrnCell
                   id={dailyWorker.id}
@@ -112,6 +121,9 @@ export function DailyWorkersDataTable({
               </td>
               <td className={bodyCellClassName}>
                 {formatSalaryAmount(dailyWorker.totalWage)}
+              </td>
+              <td className={`${bodyCellClassName} text-muted-foreground`}>
+                {displayText(dailyWorker.notes)}
               </td>
               <td className={bodyCellClassName}>{dailyWorker.createdByName}</td>
               <td className={bodyCellClassName}>

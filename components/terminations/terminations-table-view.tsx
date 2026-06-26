@@ -82,8 +82,11 @@ export function TerminationsTableView({
           termination={{
             id: termination.id,
             name: termination.name,
+            hireDate: toFormDateValue(termination.hireDate),
             terminationDate: toFormDateValue(termination.terminationDate) ?? "",
             reason: termination.reason,
+            retirementPayType: termination.retirementPayType,
+            notes: termination.notes,
           }}
         />
         <ConfirmDeleteDialog

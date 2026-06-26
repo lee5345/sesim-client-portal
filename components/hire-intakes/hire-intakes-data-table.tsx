@@ -19,6 +19,10 @@ const headerCellClassName =
   "border-r border-border/30 px-4 py-3 font-medium whitespace-nowrap last:border-r-0";
 const bodyCellClassName =
   "border-r border-border/30 px-4 py-3 whitespace-nowrap last:border-r-0";
+const stickyNameHeaderClassName =
+  "sticky left-0 z-40 border-r border-border bg-muted px-4 py-3 font-medium whitespace-nowrap shadow-[10px_0_20px_-10px_rgba(0,0,0,0.15)]";
+const stickyNameCellClassName =
+  "sticky left-0 z-30 border-r border-border bg-muted px-4 py-3 text-muted-foreground whitespace-nowrap shadow-[10px_0_20px_-10px_rgba(0,0,0,0.12)] group-hover:bg-muted";
 const stickyActionHeaderClassName =
   "sticky right-0 z-30 border-l border-border bg-muted px-4 py-3 text-center font-medium whitespace-nowrap shadow-[-10px_0_20px_-10px_rgba(0,0,0,0.15)]";
 const stickyActionCellClassName =
@@ -88,7 +92,7 @@ export function HireIntakesDataTable({
       <table className="w-max min-w-full text-sm">
         <thead>
           <tr className="border-b bg-muted/40 text-left">
-            <th className={headerCellClassName}>이름</th>
+            <th className={stickyNameHeaderClassName}>이름</th>
             <th className={headerCellClassName}>주민등록번호</th>
             <th className={headerCellClassName}>입사일</th>
             <th className={headerCellClassName}>부서</th>
@@ -115,9 +119,7 @@ export function HireIntakesDataTable({
               key={hireIntake.id}
               className="group border-b last:border-0 hover:bg-muted/20"
             >
-              <td className={`${bodyCellClassName} font-medium`}>
-                {hireIntake.name}
-              </td>
+              <td className={stickyNameCellClassName}>{hireIntake.name}</td>
               <td className={bodyCellClassName}>
                 <MaskedRrnCell
                   id={hireIntake.id}

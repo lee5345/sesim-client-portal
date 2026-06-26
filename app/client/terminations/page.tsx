@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
+
 import { requireAuth } from "@/lib/auth/guards";
+
+export const metadata: Metadata = {
+  title: "퇴사자 정보",
+};
 import { TerminationsTable } from "@/components/client/terminations-table";
 import { listTerminations } from "@/modules/terminations/actions";
 

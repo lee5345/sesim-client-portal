@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -6,6 +7,19 @@ import { CompanyProfileView } from "@/components/companies/company-profile-view"
 import { requireAuth } from "@/lib/auth/guards";
 import { getCompanyProfile } from "@/modules/companies/company-profile";
 import { Button } from "@/components/ui/button";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ companyId: string }>;
+}): Promise<Metadata> {
+  const { companyId } = await params;
+  const profile = await getCompanyProfile(companyId);
+
+  return {
+    title: profile ? `${profile.name} 등록 정보` : "고객사 등록 정보",
+  };
+}
 
 export default async function FirmCompanyInfoPage({
   params,

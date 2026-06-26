@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition, type ReactNode } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Eye, Pencil, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -33,6 +33,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { FieldLabel } from "@/components/ui/field-label";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -50,28 +51,6 @@ const selectClassName =
 
 const textareaClassName =
   "w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
-
-function FieldLabel({
-  htmlFor,
-  required = false,
-  children,
-}: {
-  htmlFor?: string;
-  required?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <Label htmlFor={htmlFor}>
-      {children}
-      {required ? (
-        <span className="text-destructive" aria-hidden="true">
-          {" "}
-          *
-        </span>
-      ) : null}
-    </Label>
-  );
-}
 
 type DepartmentOption = {
   id: string;

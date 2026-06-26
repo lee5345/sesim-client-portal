@@ -52,6 +52,13 @@ const occupationSchema = z
   .min(1, "직종을 선택해 주세요.")
   .refine(isDailyWorkerOccupation, "직종을 선택해 주세요.");
 
+const notesSchema = z
+  .string()
+  .trim()
+  .max(500, "비고는 500자 이하여야 합니다.")
+  .optional()
+  .transform((value) => (value ? value : undefined));
+
 const dailyWorkerFieldsSchema = z.object({
   year: yearSchema,
   month: monthSchema,
@@ -62,6 +69,7 @@ const dailyWorkerFieldsSchema = z.object({
     .number()
     .int("임금총액은 정수로 입력해 주세요.")
     .positive("임금총액은 0보다 커야 합니다."),
+  notes: notesSchema,
 });
 
 export type DailyWorkerCoreInput = {
@@ -75,6 +83,7 @@ export type DailyWorkerCoreInput = {
   avgHoursPerDay: number;
   salaryBasis: SalaryBasis;
   totalWage: number;
+  notes?: string;
 };
 
 export type CreateDailyWorkerInput = DailyWorkerCoreInput & { rrn: string };
@@ -130,7 +139,13 @@ function buildDailyWorkerCoreInput(
     avgHoursPerDay: calculateAvgHoursPerDay(hours),
     salaryBasis: fields.salaryBasis,
     totalWage: fields.totalWage,
+    notes: fields.notes,
   };
+}
+
+function emptyToUndefined(value: FormDataEntryValue | null): string | undefined {
+  const text = String(value ?? "").trim();
+  return text ? text : undefined;
 }
 
 function parseDailyWorkerFormData<T extends CreateDailyWorkerInput | UpdateDailyWorkerInput>(
@@ -146,6 +161,7 @@ function parseDailyWorkerFormData<T extends CreateDailyWorkerInput | UpdateDaily
       occupation: formData.get("occupation"),
       salaryBasis: formData.get("salaryBasis"),
       totalWage: formData.get("totalWage"),
+      notes: emptyToUndefined(formData.get("notes")),
     });
 
     if (!fieldsResult.success) {
@@ -200,6 +216,7 @@ export function toDailyWorkerAuditPayload(data: DailyWorkerCoreInput) {
     avgHoursPerDay: data.avgHoursPerDay,
     salaryBasis: data.salaryBasis,
     totalWage: data.totalWage,
+    notes: data.notes ?? null,
   };
 }
 

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -35,6 +36,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ companyId: string }>;
+}): Promise<Metadata> {
+  const { companyId } = await params;
+  const company = await getCompanyById(companyId);
+
+  return {
+    title: company?.name ?? "고객사 상세",
+  };
+}
 
 export default async function FirmCompanyDetailPage({
   params,

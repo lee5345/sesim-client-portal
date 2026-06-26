@@ -2,6 +2,7 @@ import { CheckCircle2, ClipboardList } from "lucide-react";
 
 import { EMPTY_FIELD_LABEL } from "@/lib/companies/labels";
 import { formatDate } from "@/lib/format/date";
+import { formatPhone } from "@/lib/format/phone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -94,7 +95,7 @@ export function RegistrationRequestsList({
                       <dt className="text-muted-foreground">전화번호</dt>
                       <dd className="mt-0.5">
                         {request.phone?.trim()
-                          ? request.phone
+                          ? formatPhone(request.phone)
                           : EMPTY_FIELD_LABEL}
                       </dd>
                     </div>

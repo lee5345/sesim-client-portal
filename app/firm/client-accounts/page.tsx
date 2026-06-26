@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "고객 계정 관리",
+};
 import { redirect } from "next/navigation";
 
 import { ClientAccountsList } from "@/components/firm/client-accounts-list";

@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
+
 import { requireAuth } from "@/lib/auth/guards";
+
+export const metadata: Metadata = {
+  title: "일용직 정보",
+};
 import { parseYearMonthSearchParams } from "@/lib/daily-workers/period";
 import { DailyWorkersTable } from "@/components/client/daily-workers-table";
 import { listDailyWorkers } from "@/modules/daily-workers/actions";

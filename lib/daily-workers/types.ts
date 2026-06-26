@@ -14,6 +14,7 @@ export type DailyWorkerTableRow = {
   avgHoursPerDay: number;
   salaryBasis: SalaryBasis;
   totalWage: number;
+  notes: string | null;
   createdAt: Date;
   createdByName: string;
 };

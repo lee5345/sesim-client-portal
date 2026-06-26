@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
+
 import { requireAuth } from "@/lib/auth/guards";
+
+export const metadata: Metadata = {
+  title: "설정",
+};
 import { listDepartments } from "@/modules/companies/departments";
 import { DepartmentManager } from "@/components/companies/department-manager";
 import {

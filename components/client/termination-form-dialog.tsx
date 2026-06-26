@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition, type ReactNode } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Eye, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -17,7 +17,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FieldLabel } from "@/components/ui/field-label";
 import {
   joinRrnSegments,
   RRN_SEGMENT_LENGTHS,
@@ -29,42 +29,28 @@ import {
   updateTermination,
 } from "@/modules/terminations/actions";
 import {
+  RETIREMENT_PAY_TYPE_OPTIONS,
   TERMINATION_REASON_CUSTOM_VALUE,
   TERMINATION_REASON_PRESETS,
   getReasonFormValues,
 } from "@/modules/terminations/constants";
+import type { RetirementPayType } from "@/lib/generated/prisma/client";
+
+const textareaClassName =
+  "w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
 
 const selectClassName =
   "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
 
-function FieldLabel({
-  htmlFor,
-  required = false,
-  children,
-}: {
-  htmlFor?: string;
-  required?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <Label htmlFor={htmlFor}>
-      {children}
-      {required ? (
-        <span className="text-destructive" aria-hidden="true">
-          {" "}
-          *
-        </span>
-      ) : null}
-    </Label>
-  );
-}
-
 type TerminationFormValues = {
   name: string;
   rrnSegments: string[];
+  hireDate: string;
   terminationDate: string;
   reasonPreset: string;
   reasonCustom: string;
+  retirementPayType: RetirementPayType | "";
+  notes: string;
 };
 
 type TerminationFormDialogProps = {
@@ -73,8 +59,11 @@ type TerminationFormDialogProps = {
   termination?: {
     id: string;
     name: string;
+    hireDate: string | null;
     terminationDate: string;
     reason: string;
+    retirementPayType: RetirementPayType;
+    notes: string | null;
   };
 };
 
@@ -90,9 +79,12 @@ function getInitialFormValues(
   return {
     name: termination?.name ?? "",
     rrnSegments: createEmptyRrnSegments(),
+    hireDate: termination?.hireDate ?? "",
     terminationDate: termination?.terminationDate ?? "",
     reasonPreset,
     reasonCustom,
+    retirementPayType: termination?.retirementPayType ?? "",
+    notes: termination?.notes ?? "",
   };
 }
 
@@ -107,9 +99,12 @@ function buildFormData(
   }
 
   formData.set("name", values.name);
+  formData.set("hireDate", values.hireDate);
   formData.set("terminationDate", values.terminationDate);
   formData.set("reasonPreset", values.reasonPreset);
   formData.set("reasonCustom", values.reasonCustom);
+  formData.set("retirementPayType", values.retirementPayType);
+  formData.set("notes", values.notes);
 
   if (options.includeRrn) {
     formData.set(
@@ -323,6 +318,16 @@ export function TerminationFormDialog({
             </div>
 
             <div className="space-y-2">
+              <FieldLabel htmlFor={`hireDate-${formId}`}>입사일</FieldLabel>
+              <DateInput
+                id={`hireDate-${formId}`}
+                value={formValues.hireDate}
+                onChange={(value) => updateFormValue("hireDate", value)}
+                disabled={isPending}
+              />
+            </div>
+
+            <div className="space-y-2">
               <FieldLabel htmlFor={`terminationDate-${formId}`} required>
                 퇴사일
               </FieldLabel>
@@ -335,28 +340,56 @@ export function TerminationFormDialog({
               />
             </div>
 
-            <div className="space-y-2">
-              <FieldLabel htmlFor={`reasonPreset-${formId}`} required>
-                퇴사 사유
-              </FieldLabel>
-              <select
-                id={`reasonPreset-${formId}`}
-                value={formValues.reasonPreset}
-                onChange={(event) =>
-                  updateFormValue("reasonPreset", event.target.value)
-                }
-                className={selectClassName}
-                required
-                disabled={isPending}
-              >
-                <option value="">선택</option>
-                {TERMINATION_REASON_PRESETS.map((preset) => (
-                  <option key={preset} value={preset}>
-                    {preset}
-                  </option>
-                ))}
-                <option value={TERMINATION_REASON_CUSTOM_VALUE}>직접입력</option>
-              </select>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <FieldLabel htmlFor={`reasonPreset-${formId}`} required>
+                  퇴사 사유
+                </FieldLabel>
+                <select
+                  id={`reasonPreset-${formId}`}
+                  value={formValues.reasonPreset}
+                  onChange={(event) =>
+                    updateFormValue("reasonPreset", event.target.value)
+                  }
+                  className={selectClassName}
+                  required
+                  disabled={isPending}
+                >
+                  <option value="">선택</option>
+                  {TERMINATION_REASON_PRESETS.map((preset) => (
+                    <option key={preset} value={preset}>
+                      {preset}
+                    </option>
+                  ))}
+                  <option value={TERMINATION_REASON_CUSTOM_VALUE}>직접입력</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <FieldLabel htmlFor={`retirementPayType-${formId}`} required>
+                  퇴직 급여
+                </FieldLabel>
+                <select
+                  id={`retirementPayType-${formId}`}
+                  value={formValues.retirementPayType}
+                  onChange={(event) =>
+                    updateFormValue(
+                      "retirementPayType",
+                      event.target.value as RetirementPayType,
+                    )
+                  }
+                  className={selectClassName}
+                  required
+                  disabled={isPending}
+                >
+                  <option value="">선택</option>
+                  {RETIREMENT_PAY_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {isCustomReason ? (
@@ -376,6 +409,19 @@ export function TerminationFormDialog({
                 />
               </div>
             ) : null}
+
+            <div className="space-y-2">
+              <FieldLabel htmlFor={`notes-${formId}`}>비고</FieldLabel>
+              <textarea
+                id={`notes-${formId}`}
+                value={formValues.notes}
+                onChange={(event) => updateFormValue("notes", event.target.value)}
+                disabled={isPending}
+                maxLength={500}
+                rows={3}
+                className={textareaClassName}
+              />
+            </div>
           </div>
 
           <DialogFooter>

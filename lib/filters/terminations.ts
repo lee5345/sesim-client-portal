@@ -1,15 +1,18 @@
+import type { RetirementPayType } from "@/lib/generated/prisma/client";
 import type { TerminationTableRow } from "@/lib/terminations/types";
 
 export type TerminationFilterValues = {
   name: string;
   terminationDateFrom: string;
   terminationDateTo: string;
+  retirementPayTypes: RetirementPayType[];
 };
 
 export const EMPTY_TERMINATION_FILTERS: TerminationFilterValues = {
   name: "",
   terminationDateFrom: "",
   terminationDateTo: "",
+  retirementPayTypes: [],
 };
 
 function parseFilterDate(value: string, endOfDay = false) {
@@ -36,6 +39,7 @@ export function filterTerminations(
   const nameQuery = filters.name.trim().toLowerCase();
   const terminationDateFrom = parseFilterDate(filters.terminationDateFrom);
   const terminationDateTo = parseFilterDate(filters.terminationDateTo, true);
+  const selectedRetirementPayTypes = new Set(filters.retirementPayTypes);
 
   return terminations.filter((termination) => {
     if (nameQuery && !termination.name.toLowerCase().includes(nameQuery)) {
@@ -47,6 +51,13 @@ export function filterTerminations(
     }
 
     if (terminationDateTo && termination.terminationDate > terminationDateTo) {
+      return false;
+    }
+
+    if (
+      selectedRetirementPayTypes.size > 0 &&
+      !selectedRetirementPayTypes.has(termination.retirementPayType)
+    ) {
       return false;
     }
 

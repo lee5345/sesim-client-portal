@@ -92,6 +92,7 @@ function toDailyWorkerData(input: Omit<CreateDailyWorkerInput, "rrn">) {
     avgHoursPerDay: input.avgHoursPerDay,
     salaryBasis: input.salaryBasis,
     totalWage: input.totalWage,
+    notes: input.notes ?? null,
   };
 }
 
@@ -151,6 +152,7 @@ const dailyWorkerSelect = {
   avgHoursPerDay: true,
   salaryBasis: true,
   totalWage: true,
+  notes: true,
   createdAt: true,
   createdBy: {
     select: { name: true },

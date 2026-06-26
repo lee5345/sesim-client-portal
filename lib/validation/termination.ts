@@ -5,6 +5,7 @@ import { normalizeRRN } from "@/lib/validation/hire-intake";
 import { translateZodErrorMessage } from "@/lib/validation/zod-korean";
 import {
   TERMINATION_REASON_CUSTOM_VALUE,
+  isRetirementPayType,
   isTerminationReasonPreset,
 } from "@/modules/terminations/constants";
 
@@ -35,8 +36,42 @@ const optionalRrnSchema = z
     message: "주민등록번호 형식이 올바르지 않습니다.",
   });
 
+function optionalDateSchema() {
+  return z.preprocess(
+    (value) => {
+      if (value === "" || value === null || value === undefined) {
+        return undefined;
+      }
+
+      return String(value).trim();
+    },
+    z.union([
+      z.undefined(),
+      z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, "날짜 형식은 YYYY-MM-DD여야 합니다.")
+        .refine(isValidDateString, "올바른 날짜를 입력해 주세요.")
+        .transform(parseDateString),
+    ]),
+  );
+}
+
+const notesSchema = z
+  .string()
+  .trim()
+  .max(500, "비고는 500자 이하여야 합니다.")
+  .optional()
+  .transform((value) => (value ? value : undefined));
+
+const retirementPayTypeSchema = z
+  .string({ error: "퇴직 급여를 선택해 주세요." })
+  .trim()
+  .min(1, "퇴직 급여를 선택해 주세요.")
+  .refine(isRetirementPayType, "퇴직 급여를 선택해 주세요.");
+
 const terminationReasonInputSchema = z.object({
   name: z.string().trim().min(1, "이름을 입력해 주세요."),
+  hireDate: optionalDateSchema(),
   terminationDate: requiredDateSchema("퇴사일"),
   reasonPreset: z
     .string({ error: "퇴사 사유를 선택해 주세요." })
@@ -48,6 +83,8 @@ const terminationReasonInputSchema = z.object({
     .max(200, "퇴사 사유는 200자 이하여야 합니다.")
     .optional()
     .transform((value) => (value ? value : undefined)),
+  retirementPayType: retirementPayTypeSchema,
+  notes: notesSchema,
 });
 
 function refineTerminationReason(
@@ -80,11 +117,14 @@ function resolveTerminationReason(
 ) {
   return {
     name: data.name,
+    hireDate: data.hireDate,
     terminationDate: data.terminationDate,
     reason:
       data.reasonPreset === TERMINATION_REASON_CUSTOM_VALUE
         ? data.reasonCustom!
         : data.reasonPreset,
+    retirementPayType: data.retirementPayType,
+    notes: data.notes,
   };
 }
 
@@ -127,9 +167,12 @@ export function parseCreateTerminationFormData(
   const result = createTerminationSchema.safeParse({
     name: formData.get("name"),
     rrn: formData.get("rrn"),
+    hireDate: emptyToUndefined(formData.get("hireDate")),
     terminationDate: formData.get("terminationDate"),
     reasonPreset: formData.get("reasonPreset"),
     reasonCustom: emptyToUndefined(formData.get("reasonCustom")),
+    retirementPayType: formData.get("retirementPayType"),
+    notes: emptyToUndefined(formData.get("notes")),
   });
 
   if (!result.success) {
@@ -145,9 +188,12 @@ export function parseUpdateTerminationFormData(
   const result = updateTerminationSchema.safeParse({
     name: formData.get("name"),
     rrn: emptyToUndefined(formData.get("rrn")),
+    hireDate: emptyToUndefined(formData.get("hireDate")),
     terminationDate: formData.get("terminationDate"),
     reasonPreset: formData.get("reasonPreset"),
     reasonCustom: emptyToUndefined(formData.get("reasonCustom")),
+    retirementPayType: formData.get("retirementPayType"),
+    notes: emptyToUndefined(formData.get("notes")),
   });
 
   if (!result.success) {
@@ -162,8 +208,11 @@ export function toTerminationAuditPayload(
 ) {
   return {
     name: data.name,
+    hireDate: data.hireDate?.toISOString() ?? null,
     terminationDate: data.terminationDate.toISOString(),
     reason: data.reason,
+    retirementPayType: data.retirementPayType,
+    notes: data.notes ?? null,
   };
 }
 

@@ -5,6 +5,7 @@ import { Building2, Users } from "lucide-react";
 
 import { EMPTY_FIELD_LABEL } from "@/lib/companies/labels";
 import { formatDate } from "@/lib/format/date";
+import { formatPhone } from "@/lib/format/phone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,7 +31,8 @@ type ClientAccount = {
 };
 
 function formatSignupPhone(signupPhone: string | null) {
-  return signupPhone?.trim() ? signupPhone : EMPTY_FIELD_LABEL;
+  const trimmed = signupPhone?.trim();
+  return trimmed ? formatPhone(trimmed) : EMPTY_FIELD_LABEL;
 }
 
 type CompanyGroup = {

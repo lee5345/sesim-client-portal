@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { Eye, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FieldLabel } from "@/components/ui/field-label";
 import {
   calculateAvgHoursPerDay,
   calculateDaysWorked,
@@ -54,30 +54,11 @@ const selectClassName =
 const dayInputClassName =
   "h-7 w-full min-w-0 rounded-md border border-input bg-transparent px-1 text-center text-xs font-mono outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
 
+const textareaClassName =
+  "w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
+
 const HOURS_ERROR_MESSAGE =
   "근로시간은 0~24 사이에서 소수점 첫째 자리까지만 입력할 수 있습니다.";
-
-function FieldLabel({
-  htmlFor,
-  required = false,
-  children,
-}: {
-  htmlFor?: string;
-  required?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <Label htmlFor={htmlFor}>
-      {children}
-      {required ? (
-        <span className="text-destructive" aria-hidden="true">
-          {" "}
-          *
-        </span>
-      ) : null}
-    </Label>
-  );
-}
 
 type DailyWorkerFormValues = {
   name: string;
@@ -86,6 +67,7 @@ type DailyWorkerFormValues = {
   salaryBasis: SalaryBasis;
   totalWage: string;
   hours: DailyHoursInput;
+  notes: string;
 };
 
 type DailyWorkerFormDialogProps = {
@@ -100,6 +82,7 @@ type DailyWorkerFormDialogProps = {
     salaryBasis: SalaryBasis;
     totalWage: number;
     hours: DailyHoursInput;
+    notes: string | null;
   };
 };
 
@@ -120,6 +103,7 @@ function getInitialFormValues(
         ? String(dailyWorker.totalWage)
         : "",
     hours: dailyWorker?.hours ?? createEmptyDailyHours(),
+    notes: dailyWorker?.notes ?? "",
   };
 }
 
@@ -144,6 +128,7 @@ function buildFormData(
   formData.set("occupation", values.occupation);
   formData.set("salaryBasis", values.salaryBasis);
   formData.set("totalWage", values.totalWage);
+  formData.set("notes", values.notes);
 
   for (const fieldName of DAILY_HOUR_FIELD_NAMES) {
     const value = values.hours[fieldName];
@@ -626,6 +611,19 @@ export function DailyWorkerFormDialog({
                   );
                 })}
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <FieldLabel htmlFor={`notes-${formId}`}>비고</FieldLabel>
+              <textarea
+                id={`notes-${formId}`}
+                value={formValues.notes}
+                onChange={(event) => updateFormValue("notes", event.target.value)}
+                disabled={isPending}
+                maxLength={500}
+                rows={3}
+                className={textareaClassName}
+              />
             </div>
           </div>
 

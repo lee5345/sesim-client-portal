@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
+
 import { requireAuth } from "@/lib/auth/guards";
+
+export const metadata: Metadata = {
+  title: "입사자 정보",
+};
 import { listDepartments } from "@/modules/companies/departments";
 import { listHireIntakes } from "@/modules/hire-intakes/actions";
 import { HireIntakesTable } from "@/components/client/hire-intakes-table";

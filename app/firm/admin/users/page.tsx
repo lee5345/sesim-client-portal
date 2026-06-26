@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import { AlertCircle } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "직원 계정 관리",
+};
 import { redirect } from "next/navigation";
 
 import { CreateStaffUserForm } from "@/components/firm/create-staff-user-form";

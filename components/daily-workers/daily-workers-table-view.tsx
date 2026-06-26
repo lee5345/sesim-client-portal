@@ -88,6 +88,7 @@ export function DailyWorkersTableView({
             salaryBasis: dailyWorker.salaryBasis,
             totalWage: dailyWorker.totalWage,
             hours: dailyWorker.hours,
+            notes: dailyWorker.notes,
           }}
         />
         <ConfirmDeleteDialog

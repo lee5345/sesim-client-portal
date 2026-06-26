@@ -1,29 +1,28 @@
 "use client";
 
-import { Search, X } from "lucide-react";
+import { useState } from "react";
+import { ChevronDown, Search, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import type { DailyWorkerFilterValues } from "@/lib/filters/daily-workers";
 import type { DailyWorkerOccupation, SalaryBasis } from "@/lib/generated/prisma/client";
+import { cn } from "@/lib/utils";
 import {
   DAILY_WORKER_OCCUPATIONS,
   DAILY_WORKER_OCCUPATION_LABELS,
 } from "@/modules/daily-workers/constants";
 import { SALARY_BASIS_LABELS } from "@/modules/hire-intakes/labels";
 
-export type DailyWorkersFilterValues = {
-  name: string;
-  occupation: DailyWorkerOccupation | "";
-  salaryBasis: SalaryBasis | "";
-};
+export type DailyWorkersFilterValues = DailyWorkerFilterValues;
 
-export const EMPTY_DAILY_WORKER_FILTERS: DailyWorkersFilterValues = {
-  name: "",
-  occupation: "",
-  salaryBasis: "",
-};
+export { EMPTY_DAILY_WORKER_FILTERS } from "@/lib/filters/daily-workers";
 
 type DailyWorkersFiltersProps = {
   draft: DailyWorkersFilterValues;
@@ -41,6 +40,20 @@ export function DailyWorkersFilters({
   onSearch,
   onClear,
 }: DailyWorkersFiltersProps) {
+  const [occupationMenuOpen, setOccupationMenuOpen] = useState(false);
+
+  const occupationLabel =
+    draft.occupations.length === 0
+      ? "직종"
+      : `직종 (${draft.occupations.length})`;
+
+  function toggleOccupation(occupation: DailyWorkerOccupation) {
+    const next = draft.occupations.includes(occupation)
+      ? draft.occupations.filter((value) => value !== occupation)
+      : [...draft.occupations, occupation];
+    onDraftChange({ ...draft, occupations: next });
+  }
+
   return (
     <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
@@ -65,25 +78,42 @@ export function DailyWorkersFilters({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="daily-worker-occupation-filter">직종</Label>
-          <select
-            id="daily-worker-occupation-filter"
-            className={cn(selectClassName, draft.occupation && "border-primary/30")}
-            value={draft.occupation}
-            onChange={(event) =>
-              onDraftChange({
-                ...draft,
-                occupation: event.target.value as DailyWorkerOccupation | "",
-              })
-            }
-          >
-            <option value="">전체</option>
-            {DAILY_WORKER_OCCUPATIONS.map((occupation) => (
-              <option key={occupation.value} value={occupation.value}>
-                {DAILY_WORKER_OCCUPATION_LABELS[occupation.value]}
-              </option>
-            ))}
-          </select>
+          <Label>직종</Label>
+          <Popover open={occupationMenuOpen} onOpenChange={setOccupationMenuOpen}>
+            <PopoverTrigger
+              className={cn(
+                selectClassName,
+                draft.occupations.length > 0 && "border-primary/30",
+              )}
+            >
+              <span className="truncate">{occupationLabel}</span>
+              <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-72 p-2">
+              <div className="max-h-56 space-y-0.5 overflow-y-auto">
+                {DAILY_WORKER_OCCUPATIONS.map((occupation) => {
+                  const checked = draft.occupations.includes(occupation.value);
+
+                  return (
+                    <label
+                      key={occupation.value}
+                      className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                    >
+                      <input
+                        type="checkbox"
+                        className="size-3.5 rounded border-input accent-primary"
+                        checked={checked}
+                        onChange={() => toggleOccupation(occupation.value)}
+                      />
+                      <span className="truncate">
+                        {DAILY_WORKER_OCCUPATION_LABELS[occupation.value]}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="space-y-1.5">
@@ -119,4 +149,3 @@ export function DailyWorkersFilters({
     </div>
   );
 }
-

@@ -49,8 +49,11 @@ function toTerminationData(
     name: input.name,
     rrnEncrypted,
     rrnIv,
+    hireDate: input.hireDate ?? null,
     terminationDate: input.terminationDate,
     reason: input.reason,
+    retirementPayType: input.retirementPayType,
+    notes: input.notes ?? null,
   };
 }
 
@@ -78,8 +81,11 @@ export async function listTerminations(companyId: string) {
       name: true,
       rrnEncrypted: true,
       rrnIv: true,
+      hireDate: true,
       terminationDate: true,
       reason: true,
+      retirementPayType: true,
+      notes: true,
       createdAt: true,
       createdBy: {
         select: { name: true },
