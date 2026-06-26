@@ -128,7 +128,7 @@ export async function createCompanyAction(
 export async function updateCompanyAction(
   formData: FormData,
 ): Promise<CompanyActionResult> {
-  await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
+  await requireAuth("FIRM_ADMIN");
 
   const parsed = updateCompanySchema.safeParse({
     companyId: formData.get("companyId"),

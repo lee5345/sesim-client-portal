@@ -62,6 +62,7 @@ export default async function FirmCompanyDetailPage({
   const query = await searchParams;
   const { year, month } = parseYearMonthSearchParams(query);
   const firmDailyWorkersBasePath = `/firm/companies/${companyId}`;
+  const isFirmAdmin = session.user.role === "FIRM_ADMIN";
 
   const [company, newHires, terminations, dailyWorkers, departments, staffUsers] = await Promise.all([
     getCompanyById(companyId),
@@ -69,7 +70,7 @@ export default async function FirmCompanyDetailPage({
     listCompanyTerminations(companyId),
     listCompanyDailyWorkers(companyId, year, month),
     listDepartments(companyId),
-    listFirmStaffUsers(),
+    isFirmAdmin ? listFirmStaffUsers() : Promise.resolve([]),
   ]);
   if (!company) {
     notFound();
@@ -79,7 +80,6 @@ export default async function FirmCompanyDetailPage({
   const terminationCount = company._count.terminations;
   const dailyWorkerCount = company._count.dailyWorkers;
   const compensationCount = company._count.compensationChanges;
-  const canDelete = session.user.role === "FIRM_ADMIN";
 
   return (
     <div className="min-w-0 space-y-6">
@@ -102,21 +102,23 @@ export default async function FirmCompanyDetailPage({
           </Badge>
           <div className="flex items-center gap-2">
             <CompanyInfoLink companyId={company.id} />
-            <CompanyEditForm
-              company={{
-                id: company.id,
-                name: company.name,
-                workplaceManagementNumber: company.workplaceManagementNumber,
-                firmContactName: company.firmContactName,
-                isActive: company.isActive,
-              }}
-              staffUsers={staffUsers.map((user) => ({
-                id: user.id,
-                name: user.name,
-                isActive: user.isActive,
-              }))}
-              canDelete={canDelete}
-            />
+            {isFirmAdmin ? (
+              <CompanyEditForm
+                company={{
+                  id: company.id,
+                  name: company.name,
+                  workplaceManagementNumber: company.workplaceManagementNumber,
+                  firmContactName: company.firmContactName,
+                  isActive: company.isActive,
+                }}
+                staffUsers={staffUsers.map((user) => ({
+                  id: user.id,
+                  name: user.name,
+                  isActive: user.isActive,
+                }))}
+                canDelete
+              />
+            ) : null}
           </div>
         </div>
         <div className="space-y-1 text-sm text-muted-foreground">
