@@ -6,6 +6,10 @@ import { z } from "zod";
 import { prisma } from "@/lib/db/db";
 import { decryptRRN, encryptRRN, maskRRN } from "@/lib/encryption/rrn";
 import {
+  decryptRrnsForIds,
+  rrnRecordIdsSchema,
+} from "@/lib/encryption/reveal-rrns-bulk";
+import {
   isFirmRole,
   parseOptionalCompanyId,
   requireDataEditAuth,
@@ -239,13 +243,34 @@ export async function revealTerminationRRN(
   id: string,
   explicitCompanyId?: string | null,
 ) {
+  const { rrnsById } = await revealTerminationRRNs([id], explicitCompanyId);
+  return { rrn: rrnsById[id]! };
+}
+
+export async function revealTerminationRRNs(
+  ids: string[],
+  explicitCompanyId?: string | null,
+) {
   const session = await requireDataEditAuth();
   const companyId = resolveCompanyId(session, explicitCompanyId);
-  const { id: parsedId } = idSchema.parse({ id });
-  const record = await getOwnedTermination(parsedId, companyId);
+  const parsedIds = rrnRecordIdsSchema.parse(ids);
+
+  if (parsedIds.length === 0) {
+    return { rrnsById: {} };
+  }
+
+  const uniqueIds = [...new Set(parsedIds)];
+  const records = await prisma.termination.findMany({
+    where: { id: { in: uniqueIds }, companyId, deletedAt: null },
+    select: { id: true, rrnEncrypted: true, rrnIv: true },
+  });
 
   return {
-    rrn: decryptRRN(record.rrnEncrypted, record.rrnIv),
+    rrnsById: decryptRrnsForIds(
+      records,
+      uniqueIds,
+      "퇴사자 정보를 찾을 수 없습니다.",
+    ),
   };
 }
 

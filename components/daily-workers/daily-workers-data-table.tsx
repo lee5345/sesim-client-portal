@@ -16,7 +16,7 @@ import { formatSalaryAmount } from "@/lib/format/currency";
 import type { DailyWorkerTableRow } from "@/lib/daily-workers/types";
 import { SALARY_BASIS_LABELS } from "@/modules/hire-intakes/labels";
 import { DAILY_WORKER_OCCUPATION_LABELS } from "@/modules/daily-workers/constants";
-import { revealDailyWorkerRRN } from "@/modules/daily-workers/actions";
+import { revealDailyWorkerRRNs } from "@/modules/daily-workers/actions";
 
 export type { DailyWorkerTableRow };
 
@@ -66,7 +66,7 @@ export function DailyWorkersDataTable({
     <MaskedRrnProvider
       entries={dailyWorkers.map((dailyWorker) => ({ id: dailyWorker.id }))}
       companyId={companyId}
-      revealFn={revealDailyWorkerRRN}
+      revealBulkFn={revealDailyWorkerRRNs}
     >
       <div className="max-w-full min-w-0 overflow-x-auto">
         <table className="w-max min-w-full text-sm">

@@ -9,7 +9,7 @@ import { RetirementPayTypeIndicator } from "@/components/terminations/retirement
 import { CompactDateTime } from "@/components/ui/compact-datetime";
 import { formatDate } from "@/lib/format/date";
 import type { TerminationTableRow } from "@/lib/terminations/types";
-import { revealTerminationRRN } from "@/modules/terminations/actions";
+import { revealTerminationRRNs } from "@/modules/terminations/actions";
 
 export type { TerminationTableRow };
 
@@ -49,7 +49,7 @@ export function TerminationsDataTable({
     <MaskedRrnProvider
       entries={terminations.map((termination) => ({ id: termination.id }))}
       companyId={companyId}
-      revealFn={revealTerminationRRN}
+      revealBulkFn={revealTerminationRRNs}
     >
       <div className="max-w-full min-w-0 overflow-x-auto">
         <table className="w-max min-w-full text-sm">

@@ -10,13 +10,13 @@ import {
 } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
-import { revealRRN } from "@/modules/hire-intakes/actions";
+import { revealRRNs } from "@/modules/hire-intakes/actions";
 import { Button } from "@/components/ui/button";
 
-type RevealRrnFn = (
-  id: string,
+type RevealRrnsBulkFn = (
+  ids: string[],
   companyId?: string | null,
-) => Promise<{ rrn: string }>;
+) => Promise<{ rrnsById: Record<string, string> }>;
 
 type MaskedRrnEntry = {
   id: string;
@@ -42,14 +42,14 @@ function useMaskedRrnContext() {
 type MaskedRrnProviderProps = {
   entries: MaskedRrnEntry[];
   companyId?: string;
-  revealFn?: RevealRrnFn;
+  revealBulkFn?: RevealRrnsBulkFn;
   children: ReactNode;
 };
 
 export function MaskedRrnProvider({
   entries,
   companyId,
-  revealFn = revealRRN,
+  revealBulkFn = revealRRNs,
   children,
 }: MaskedRrnProviderProps) {
   const [revealedById, setRevealedById] = useState<Record<string, string> | null>(
@@ -74,13 +74,9 @@ export function MaskedRrnProvider({
     setError(null);
     startTransition(async () => {
       try {
-        const results = await Promise.all(
-          entries.map(async (entry) => {
-            const result = await revealFn(entry.id, companyId);
-            return [entry.id, result.rrn] as const;
-          }),
-        );
-        setRevealedById(Object.fromEntries(results));
+        const ids = entries.map((entry) => entry.id);
+        const result = await revealBulkFn(ids, companyId);
+        setRevealedById(result.rrnsById);
       } catch {
         setRevealedById(null);
         setError("주민등록번호를 불러오지 못했습니다.");
