@@ -6,7 +6,6 @@ import { DailyWorkerFormDialog } from "@/components/client/daily-worker-form-dia
 import { DailyWorkersDataTable } from "@/components/daily-workers/daily-workers-data-table";
 import {
   DailyWorkersFilters,
-  EMPTY_DAILY_WORKER_FILTERS,
   type DailyWorkersFilterValues,
 } from "@/components/daily-workers/daily-workers-filters";
 import { DailyWorkersMonthSelector } from "@/components/daily-workers/daily-workers-month-selector";
@@ -23,6 +22,11 @@ type DailyWorkersTableViewProps = {
   month: number;
   companyId?: string;
   basePath: string;
+  draftFilters: DailyWorkersFilterValues;
+  appliedFilters: DailyWorkersFilterValues;
+  onDraftChange: (next: DailyWorkersFilterValues) => void;
+  onSearch: () => void;
+  onClear: () => void;
 };
 
 export function DailyWorkersTableView({
@@ -31,13 +35,12 @@ export function DailyWorkersTableView({
   month,
   companyId,
   basePath,
+  draftFilters,
+  appliedFilters,
+  onDraftChange,
+  onSearch,
+  onClear,
 }: DailyWorkersTableViewProps) {
-  const [draftFilters, setDraftFilters] = useState<DailyWorkersFilterValues>(
-    EMPTY_DAILY_WORKER_FILTERS,
-  );
-  const [appliedFilters, setAppliedFilters] = useState<DailyWorkersFilterValues>(
-    EMPTY_DAILY_WORKER_FILTERS,
-  );
   const [page, setPage] = useState(1);
 
   const filteredDailyWorkers = useMemo(
@@ -55,23 +58,6 @@ export function DailyWorkersTableView({
       setPage(pagination.totalPages);
     }
   }, [page, pagination.totalPages]);
-
-  function handleDraftChange(next: DailyWorkersFilterValues) {
-    setDraftFilters(next);
-    setAppliedFilters(next);
-    setPage(1);
-  }
-
-  function handleSearch() {
-    setAppliedFilters(draftFilters);
-    setPage(1);
-  }
-
-  function handleClear() {
-    setDraftFilters(EMPTY_DAILY_WORKER_FILTERS);
-    setAppliedFilters(EMPTY_DAILY_WORKER_FILTERS);
-    setPage(1);
-  }
 
   function renderActions(dailyWorker: DailyWorkerTableRow) {
     return (
@@ -111,9 +97,9 @@ export function DailyWorkersTableView({
 
       <DailyWorkersFilters
         draft={draftFilters}
-        onDraftChange={handleDraftChange}
-        onSearch={handleSearch}
-        onClear={handleClear}
+        onDraftChange={onDraftChange}
+        onSearch={onSearch}
+        onClear={onClear}
       />
 
       {filteredDailyWorkers.length === 0 ? (

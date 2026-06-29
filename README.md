@@ -440,6 +440,30 @@ Example:
 
 ---
 
+# Running Tests
+
+Tests use [Vitest](https://vitest.dev/). Run the full suite:
+
+```bash
+npm test
+```
+
+Run a single file:
+
+```bash
+npm test -- lib/encryption/rrn.test.ts
+```
+
+Watch mode while developing:
+
+```bash
+npx vitest lib/encryption/rrn.test.ts
+```
+
+`vitest.config.ts` loads `.env` automatically. Encryption tests require `ENCRYPTION_KEY` to be set.
+
+---
+
 # Testing Priorities
 
 ## Critical

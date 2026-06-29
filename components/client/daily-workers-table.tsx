@@ -1,10 +1,21 @@
+"use client";
+
+import { useMemo, useState } from "react";
 import { CalendarDays } from "lucide-react";
 
 import { DailyWorkerFormDialog } from "@/components/client/daily-worker-form-dialog";
+import { ExcelExportDialog } from "@/components/export/excel-export-dialog";
 import { DailyWorkersTableView } from "@/components/daily-workers/daily-workers-table-view";
 import { DailyWorkersMonthSelector } from "@/components/daily-workers/daily-workers-month-selector";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import {
+  EMPTY_DAILY_WORKER_FILTERS,
+  type DailyWorkersFilterValues,
+} from "@/components/daily-workers/daily-workers-filters";
 import type { DailyWorkerTableRow } from "@/lib/daily-workers/types";
+import { summarizeDailyWorkerFilters } from "@/lib/export/filter-summaries";
+import { filterDailyWorkers } from "@/lib/filters/daily-workers";
+import { exportDailyWorkersExcel } from "@/modules/daily-workers/export";
 import {
   Card,
   CardContent,
@@ -28,6 +39,39 @@ export function DailyWorkersTable({
   companyId,
   basePath = "/client/daily-workers",
 }: DailyWorkersTableProps) {
+  const [draftFilters, setDraftFilters] = useState<DailyWorkersFilterValues>(
+    EMPTY_DAILY_WORKER_FILTERS,
+  );
+  const [appliedFilters, setAppliedFilters] = useState<DailyWorkersFilterValues>(
+    EMPTY_DAILY_WORKER_FILTERS,
+  );
+
+  const defaultTitle = `${year}년 ${month}월 일용직 정보`;
+
+  const filteredDailyWorkers = useMemo(
+    () => filterDailyWorkers(dailyWorkers, appliedFilters),
+    [dailyWorkers, appliedFilters],
+  );
+
+  const filterSummary = useMemo(
+    () => summarizeDailyWorkerFilters(year, month, appliedFilters),
+    [year, month, appliedFilters],
+  );
+
+  function handleDraftChange(next: DailyWorkersFilterValues) {
+    setDraftFilters(next);
+    setAppliedFilters(next);
+  }
+
+  function handleSearch() {
+    setAppliedFilters(draftFilters);
+  }
+
+  function handleClear() {
+    setDraftFilters(EMPTY_DAILY_WORKER_FILTERS);
+    setAppliedFilters(EMPTY_DAILY_WORKER_FILTERS);
+  }
+
   return (
     <Card className="min-w-0">
       <CardHeader className="flex shrink-0 flex-row items-start justify-between gap-4">
@@ -40,12 +84,30 @@ export function DailyWorkersTable({
             {year}년 {month}월 일용직 근로시간과 임금 정보를 관리합니다.
           </CardDescription>
         </div>
-        <DailyWorkerFormDialog
-          mode="create"
-          year={year}
-          month={month}
-          companyId={companyId}
-        />
+        <div className="flex shrink-0 items-center gap-2">
+          <ExcelExportDialog
+            moduleLabel="일용직 정보"
+            defaultTitle={defaultTitle}
+            filterSummary={filterSummary}
+            entryCount={filteredDailyWorkers.length}
+            companyId={companyId}
+            onExport={({ title }) =>
+              exportDailyWorkersExcel({
+                title,
+                year,
+                month,
+                filters: appliedFilters,
+                companyId,
+              })
+            }
+          />
+          <DailyWorkerFormDialog
+            mode="create"
+            year={year}
+            month={month}
+            companyId={companyId}
+          />
+        </div>
       </CardHeader>
       <CardContent className="min-w-0">
         {dailyWorkers.length === 0 ? (
@@ -60,6 +122,11 @@ export function DailyWorkersTable({
             month={month}
             companyId={companyId}
             basePath={basePath}
+            draftFilters={draftFilters}
+            appliedFilters={appliedFilters}
+            onDraftChange={handleDraftChange}
+            onSearch={handleSearch}
+            onClear={handleClear}
           />
         )}
       </CardContent>

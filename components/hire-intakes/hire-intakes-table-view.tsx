@@ -10,7 +10,6 @@ import {
   type HireIntakeTableRow,
 } from "@/components/hire-intakes/hire-intakes-data-table";
 import {
-  EMPTY_HIRE_INTAKE_FILTERS,
   HireIntakesFilters,
   type HireIntakeFilterValues,
 } from "@/components/hire-intakes/hire-intakes-filters";
@@ -27,6 +26,11 @@ type HireIntakesTableViewProps = {
   hireIntakes: HireIntakeTableRow[];
   departments: DepartmentOption[];
   companyId?: string;
+  draftFilters: HireIntakeFilterValues;
+  appliedFilters: HireIntakeFilterValues;
+  onDraftChange: (next: HireIntakeFilterValues) => void;
+  onSearch: () => void;
+  onClear: () => void;
 };
 
 function toFormDateValue(date: Date | null) {
@@ -40,13 +44,12 @@ export function HireIntakesTableView({
   hireIntakes,
   departments,
   companyId,
+  draftFilters,
+  appliedFilters,
+  onDraftChange,
+  onSearch,
+  onClear,
 }: HireIntakesTableViewProps) {
-  const [draftFilters, setDraftFilters] = useState<HireIntakeFilterValues>(
-    EMPTY_HIRE_INTAKE_FILTERS,
-  );
-  const [appliedFilters, setAppliedFilters] = useState<HireIntakeFilterValues>(
-    EMPTY_HIRE_INTAKE_FILTERS,
-  );
   const [page, setPage] = useState(1);
 
   const filteredHireIntakes = useMemo(
@@ -64,23 +67,6 @@ export function HireIntakesTableView({
       setPage(pagination.totalPages);
     }
   }, [page, pagination.totalPages]);
-
-  function handleDraftChange(next: HireIntakeFilterValues) {
-    setDraftFilters(next);
-    setAppliedFilters(next);
-    setPage(1);
-  }
-
-  function handleSearch() {
-    setAppliedFilters(draftFilters);
-    setPage(1);
-  }
-
-  function handleClear() {
-    setDraftFilters(EMPTY_HIRE_INTAKE_FILTERS);
-    setAppliedFilters(EMPTY_HIRE_INTAKE_FILTERS);
-    setPage(1);
-  }
 
   function renderActions(hireIntake: HireIntakeTableRow) {
     return (
@@ -127,9 +113,9 @@ export function HireIntakesTableView({
       <HireIntakesFilters
         departments={departments}
         draft={draftFilters}
-        onDraftChange={handleDraftChange}
-        onSearch={handleSearch}
-        onClear={handleClear}
+        onDraftChange={onDraftChange}
+        onSearch={onSearch}
+        onClear={onClear}
       />
 
       {filteredHireIntakes.length === 0 ? (

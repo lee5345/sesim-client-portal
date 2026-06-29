@@ -6,7 +6,6 @@ import { TerminationFormDialog } from "@/components/client/termination-form-dial
 import { TerminationsDataTable } from "@/components/terminations/terminations-data-table";
 import { TerminationsFilters } from "@/components/terminations/terminations-filters";
 import {
-  EMPTY_TERMINATION_FILTERS,
   filterTerminations,
   type TerminationFilterValues,
 } from "@/lib/filters/terminations";
@@ -19,6 +18,11 @@ import { deleteTerminationAction } from "@/modules/terminations/actions";
 type TerminationsTableViewProps = {
   terminations: TerminationTableRow[];
   companyId?: string;
+  draftFilters: TerminationFilterValues;
+  appliedFilters: TerminationFilterValues;
+  onDraftChange: (next: TerminationFilterValues) => void;
+  onSearch: () => void;
+  onClear: () => void;
 };
 
 function toFormDateValue(date: Date | null) {
@@ -31,13 +35,12 @@ function toFormDateValue(date: Date | null) {
 export function TerminationsTableView({
   terminations,
   companyId,
+  draftFilters,
+  appliedFilters,
+  onDraftChange,
+  onSearch,
+  onClear,
 }: TerminationsTableViewProps) {
-  const [draftFilters, setDraftFilters] = useState<TerminationFilterValues>(
-    EMPTY_TERMINATION_FILTERS,
-  );
-  const [appliedFilters, setAppliedFilters] = useState<TerminationFilterValues>(
-    EMPTY_TERMINATION_FILTERS,
-  );
   const [page, setPage] = useState(1);
 
   const filteredTerminations = useMemo(
@@ -55,23 +58,6 @@ export function TerminationsTableView({
       setPage(pagination.totalPages);
     }
   }, [page, pagination.totalPages]);
-
-  function handleDraftChange(next: TerminationFilterValues) {
-    setDraftFilters(next);
-    setAppliedFilters(next);
-    setPage(1);
-  }
-
-  function handleSearch() {
-    setAppliedFilters(draftFilters);
-    setPage(1);
-  }
-
-  function handleClear() {
-    setDraftFilters(EMPTY_TERMINATION_FILTERS);
-    setAppliedFilters(EMPTY_TERMINATION_FILTERS);
-    setPage(1);
-  }
 
   function renderActions(termination: TerminationTableRow) {
     return (
@@ -107,9 +93,9 @@ export function TerminationsTableView({
     <div className="space-y-3">
       <TerminationsFilters
         draft={draftFilters}
-        onDraftChange={handleDraftChange}
-        onSearch={handleSearch}
-        onClear={handleClear}
+        onDraftChange={onDraftChange}
+        onSearch={onSearch}
+        onClear={onClear}
       />
 
       {filteredTerminations.length === 0 ? (
