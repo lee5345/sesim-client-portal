@@ -11,7 +11,11 @@ import { formatPhone } from "@/lib/format/phone";
 import type { NonTaxableAllowance } from "@/lib/validation/hire-intake";
 import type { SalaryBasis, SalaryType } from "@/lib/generated/prisma/client";
 import { Badge } from "@/components/ui/badge";
-import { MaskedRrnCell } from "@/components/client/masked-rrn-cell";
+import {
+  MaskedRrnCell,
+  MaskedRrnColumnHeader,
+  MaskedRrnProvider,
+} from "@/components/client/masked-rrn-cell";
 
 const EMPTY_CELL = "—";
 
@@ -88,12 +92,18 @@ export function HireIntakesDataTable({
   const showActions = Boolean(renderActions);
 
   return (
-    <div className="max-w-full min-w-0 overflow-x-auto">
-      <table className="w-max min-w-full text-sm">
-        <thead>
-          <tr className="border-b bg-muted/40 text-left">
-            <th className={stickyNameHeaderClassName}>이름</th>
-            <th className={headerCellClassName}>주민등록번호</th>
+    <MaskedRrnProvider
+      entries={hireIntakes.map((hireIntake) => ({ id: hireIntake.id }))}
+      companyId={companyId}
+    >
+      <div className="max-w-full min-w-0 overflow-x-auto">
+        <table className="w-max min-w-full text-sm">
+          <thead>
+            <tr className="border-b bg-muted/40 text-left">
+              <th className={stickyNameHeaderClassName}>이름</th>
+              <th className={headerCellClassName}>
+                <MaskedRrnColumnHeader />
+              </th>
             <th className={headerCellClassName}>입사일</th>
             <th className={headerCellClassName}>부서</th>
             <th className={headerCellClassName}>급여</th>
@@ -124,7 +134,6 @@ export function HireIntakesDataTable({
                 <MaskedRrnCell
                   id={hireIntake.id}
                   maskedRrn={hireIntake.maskedRrn}
-                  companyId={companyId}
                 />
               </td>
               <td className={`${bodyCellClassName} text-muted-foreground`}>
@@ -195,5 +204,6 @@ export function HireIntakesDataTable({
         </tbody>
       </table>
     </div>
+    </MaskedRrnProvider>
   );
 }

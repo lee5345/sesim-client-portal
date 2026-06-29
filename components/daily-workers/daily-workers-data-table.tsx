@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
 
-import { MaskedRrnCell } from "@/components/client/masked-rrn-cell";
+import {
+  MaskedRrnCell,
+  MaskedRrnColumnHeader,
+  MaskedRrnProvider,
+} from "@/components/client/masked-rrn-cell";
 import { Badge } from "@/components/ui/badge";
 import { CompactDateTime } from "@/components/ui/compact-datetime";
 import {
@@ -59,12 +63,19 @@ export function DailyWorkersDataTable({
   const dayNumbers = getDailyHourDayNumbers();
 
   return (
-    <div className="max-w-full min-w-0 overflow-x-auto">
-      <table className="w-max min-w-full text-sm">
-        <thead>
-          <tr className="border-b bg-muted/40 text-left">
-            <th className={stickyNameHeaderClassName}>이름</th>
-            <th className={headerCellClassName}>주민등록번호</th>
+    <MaskedRrnProvider
+      entries={dailyWorkers.map((dailyWorker) => ({ id: dailyWorker.id }))}
+      companyId={companyId}
+      revealFn={revealDailyWorkerRRN}
+    >
+      <div className="max-w-full min-w-0 overflow-x-auto">
+        <table className="w-max min-w-full text-sm">
+          <thead>
+            <tr className="border-b bg-muted/40 text-left">
+              <th className={stickyNameHeaderClassName}>이름</th>
+              <th className={headerCellClassName}>
+                <MaskedRrnColumnHeader />
+              </th>
             <th className={headerCellClassName}>직종</th>
             <th className={headerCellClassName}>직종코드</th>
             {dayNumbers.map((day) => (
@@ -95,8 +106,6 @@ export function DailyWorkersDataTable({
                 <MaskedRrnCell
                   id={dailyWorker.id}
                   maskedRrn={dailyWorker.maskedRrn}
-                  companyId={companyId}
-                  revealFn={revealDailyWorkerRRN}
                 />
               </td>
               <td className={`${bodyCellClassName} max-w-40 truncate`}>
@@ -141,5 +150,6 @@ export function DailyWorkersDataTable({
         </tbody>
       </table>
     </div>
+    </MaskedRrnProvider>
   );
 }

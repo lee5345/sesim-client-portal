@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
 
-import { MaskedRrnCell } from "@/components/client/masked-rrn-cell";
+import {
+  MaskedRrnCell,
+  MaskedRrnColumnHeader,
+  MaskedRrnProvider,
+} from "@/components/client/masked-rrn-cell";
 import { RetirementPayTypeIndicator } from "@/components/terminations/retirement-pay-type-indicator";
 import { CompactDateTime } from "@/components/ui/compact-datetime";
 import { formatDate } from "@/lib/format/date";
@@ -42,12 +46,19 @@ export function TerminationsDataTable({
   const showActions = Boolean(renderActions);
 
   return (
-    <div className="max-w-full min-w-0 overflow-x-auto">
-      <table className="w-max min-w-full text-sm">
-        <thead>
-          <tr className="border-b bg-muted/40 text-left">
-            <th className={stickyNameHeaderClassName}>이름</th>
-            <th className={headerCellClassName}>주민등록번호</th>
+    <MaskedRrnProvider
+      entries={terminations.map((termination) => ({ id: termination.id }))}
+      companyId={companyId}
+      revealFn={revealTerminationRRN}
+    >
+      <div className="max-w-full min-w-0 overflow-x-auto">
+        <table className="w-max min-w-full text-sm">
+          <thead>
+            <tr className="border-b bg-muted/40 text-left">
+              <th className={stickyNameHeaderClassName}>이름</th>
+              <th className={headerCellClassName}>
+                <MaskedRrnColumnHeader />
+              </th>
             <th className={headerCellClassName}>입사일</th>
             <th className={headerCellClassName}>퇴사일</th>
             <th className={headerCellClassName}>퇴사 사유</th>
@@ -71,8 +82,6 @@ export function TerminationsDataTable({
                 <MaskedRrnCell
                   id={termination.id}
                   maskedRrn={termination.maskedRrn}
-                  companyId={companyId}
-                  revealFn={revealTerminationRRN}
                 />
               </td>
               <td className={`${bodyCellClassName} text-muted-foreground`}>
@@ -106,5 +115,6 @@ export function TerminationsDataTable({
         </tbody>
       </table>
     </div>
+    </MaskedRrnProvider>
   );
 }
