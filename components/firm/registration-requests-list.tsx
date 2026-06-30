@@ -139,8 +139,10 @@ export function RegistrationRequestsList({
                       기존 고객사를 선택하거나, 신규 고객사명 중 하나를
                       입력해 주세요.
                     </p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <Button type="submit">승인</Button>
+                    <div className="mt-4 grid grid-cols-2 gap-2 sm:max-w-[240px]">
+                      <Button type="submit" size="sm" className="w-full">
+                        승인
+                      </Button>
                       <ConfirmDeleteDialog
                         title="가입 신청 거절"
                         description={`"${request.name}" (${request.email})의 가입 신청을 거절하시겠습니까?`}
@@ -148,6 +150,7 @@ export function RegistrationRequestsList({
                         hiddenFields={{ requestId: request.id }}
                         triggerLabel="거절"
                         confirmLabel="거절 확인"
+                        triggerClassName="w-full"
                       />
                     </div>
                   </form>
