@@ -1,16 +1,14 @@
-import { CheckCircle2, ClipboardList } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
+
+import { RegistrationRequestsCardHeader } from "@/components/firm/registration-requests-card-header";
 
 import { EMPTY_FIELD_LABEL } from "@/lib/companies/labels";
 import { formatDate } from "@/lib/format/date";
 import { formatPhone } from "@/lib/format/phone";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Input } from "@/components/ui/input";
@@ -51,18 +49,7 @@ export function RegistrationRequestsList({
 }: RegistrationRequestsListProps) {
   return (
     <Card className="shadow-sm">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <ClipboardList className="size-4 text-primary" />
-          대기 중인 신청
-          {requests.length > 0 ? (
-            <Badge variant="secondary">{requests.length}건</Badge>
-          ) : null}
-        </CardTitle>
-        <CardDescription>
-          고객사 관리자 가입 신청을 검토하고 승인 또는 거절합니다.
-        </CardDescription>
-      </CardHeader>
+      <RegistrationRequestsCardHeader />
       <CardContent>
         {requests.length === 0 ? (
           <EmptyState message="대기 중인 가입 신청이 없습니다." />

@@ -9,6 +9,7 @@ import { requireAuth } from "@/lib/auth/guards";
 import { sortCompaniesByActivity } from "@/lib/sort/korean";
 import { optionalWorkplaceManagementNumberSchema } from "@/lib/validation/workplace-management-number";
 import { getFirstZodErrorMessage } from "@/lib/validation/zod-korean";
+import { afterDataMutation, afterFirmScopeMutation } from "@/modules/realtime/post-mutation";
 
 export type CompanyActionResult =
   | { success: true }
@@ -120,6 +121,8 @@ export async function createCompanyAction(
     },
   });
 
+  await afterFirmScopeMutation();
+
   revalidatePath("/firm/companies");
   revalidatePath("/firm/dashboard");
   return { success: true };
@@ -128,7 +131,7 @@ export async function createCompanyAction(
 export async function updateCompanyAction(
   formData: FormData,
 ): Promise<CompanyActionResult> {
-  await requireAuth("FIRM_ADMIN");
+  const session = await requireAuth("FIRM_ADMIN");
 
   const parsed = updateCompanySchema.safeParse({
     companyId: formData.get("companyId"),
@@ -162,10 +165,21 @@ export async function updateCompanyAction(
     },
   });
 
+  await afterDataMutation({
+    session,
+    companyId: input.companyId,
+    entityType: "COMPANY_PROFILE",
+    entityId: input.companyId,
+    action: "UPDATE",
+  });
+
   revalidatePath("/firm/companies");
   revalidatePath(`/firm/companies/${input.companyId}`);
   revalidatePath(`/firm/companies/${input.companyId}/info`);
   revalidatePath("/firm/dashboard");
+  revalidatePath("/client/settings");
+  revalidatePath("/client", "layout");
+  revalidatePath("/firm", "layout");
   return { success: true };
 }
 

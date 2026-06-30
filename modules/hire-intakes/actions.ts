@@ -6,7 +6,6 @@ import { z } from "zod";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/db/db";
 import {
-  isFirmRole,
   parseOptionalCompanyId,
   requireDataEditAuth,
   resolveCompanyId,
@@ -24,6 +23,7 @@ import {
   parseStoredNonTaxableAllowances,
   toAuditPayload,
 } from "@/lib/validation/hire-intake";
+import { afterDataMutation } from "@/modules/realtime/post-mutation";
 
 const CLIENT_NEW_HIRES_PATH = "/client/new-hires";
 
@@ -35,15 +35,12 @@ const idSchema = z.object({
   id: z.string().uuid(),
 });
 
-function revalidateHireIntakePaths(
-  companyId: string,
-  role: Awaited<ReturnType<typeof requireDataEditAuth>>["user"]["role"],
-) {
-  if (isFirmRole(role)) {
-    revalidatePath(`/firm/companies/${companyId}`);
-  } else {
-    revalidatePath(CLIENT_NEW_HIRES_PATH);
-  }
+function revalidateHireIntakePaths(companyId: string) {
+  revalidatePath(`/firm/companies/${companyId}`);
+  revalidatePath(CLIENT_NEW_HIRES_PATH);
+  revalidatePath("/firm/companies");
+  revalidatePath("/firm", "layout");
+  revalidatePath("/client", "layout");
 }
 
 function toHireIntakeData(
@@ -156,6 +153,8 @@ export async function createHireIntake(
   const input = parsed.data;
   const { encrypted, iv } = encryptRRN(normalizeRRN(input.rrn));
 
+  let createdId: string | undefined;
+
   await prisma.$transaction(async (tx) => {
     const record = await tx.newHire.create({
       data: {
@@ -164,6 +163,7 @@ export async function createHireIntake(
         createdBy: { connect: { id: session.user.userId } },
       },
     });
+    createdId = record.id;
 
     await tx.auditLog.create({
       data: {
@@ -177,7 +177,15 @@ export async function createHireIntake(
     });
   });
 
-  revalidateHireIntakePaths(companyId, session.user.role);
+  await afterDataMutation({
+    session,
+    companyId,
+    entityType: "NEW_HIRE",
+    entityId: createdId,
+    action: "CREATE",
+  });
+
+  revalidateHireIntakePaths(companyId);
   return { success: true };
 }
 
@@ -229,7 +237,15 @@ export async function updateHireIntake(
     });
   });
 
-  revalidateHireIntakePaths(companyId, session.user.role);
+  await afterDataMutation({
+    session,
+    companyId,
+    entityType: "NEW_HIRE",
+    entityId: parsedId,
+    action: "UPDATE",
+  });
+
+  revalidateHireIntakePaths(companyId);
   return { success: true };
 }
 
@@ -263,7 +279,15 @@ export async function deleteHireIntake(
     });
   });
 
-  revalidateHireIntakePaths(companyId, session.user.role);
+  await afterDataMutation({
+    session,
+    companyId,
+    entityType: "NEW_HIRE",
+    entityId: parsedId,
+    action: "DELETE",
+  });
+
+  revalidateHireIntakePaths(companyId);
 }
 
 export async function revealRRN(

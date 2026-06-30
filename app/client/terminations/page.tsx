@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "퇴사자 정보",
 };
 import { TerminationsTable } from "@/components/client/terminations-table";
+import { getCompanyById } from "@/modules/companies/companies";
 import { listTerminations } from "@/modules/terminations/actions";
 
 export default async function ClientTerminationsPage() {
@@ -16,7 +17,10 @@ export default async function ClientTerminationsPage() {
     return <p className="text-muted-foreground">소속 회사 정보가 없습니다.</p>;
   }
 
-  const terminations = await listTerminations(companyId);
+  const [terminations, company] = await Promise.all([
+    listTerminations(companyId),
+    getCompanyById(companyId),
+  ]);
 
   return (
     <div className="min-w-0 space-y-6">
@@ -27,7 +31,11 @@ export default async function ClientTerminationsPage() {
         </p>
       </div>
 
-      <TerminationsTable terminations={terminations} />
+      <TerminationsTable
+        terminations={terminations}
+        companyId={companyId}
+        companyName={company?.name}
+      />
     </div>
   );
 }

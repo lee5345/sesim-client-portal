@@ -2,6 +2,7 @@ import { requireAuth } from "@/lib/auth/guards";
 import { getAvatarInitials, getRoleLabel } from "@/lib/auth/roles";
 import { getFirmName, getFirmTagline } from "@/lib/config/branding";
 import { getPendingRegistrationRequestCount } from "@/modules/companies/companies";
+import { getInitialRealtimeSyncState } from "@/modules/realtime/initial-state";
 import { PortalShell } from "@/components/layout/portal-shell";
 
 export default async function FirmLayout({
@@ -10,7 +11,14 @@ export default async function FirmLayout({
   children: React.ReactNode;
 }) {
   const session = await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
-  const pendingCount = await getPendingRegistrationRequestCount();
+  const [pendingCount, realtimeState] = await Promise.all([
+    getPendingRegistrationRequestCount(),
+    getInitialRealtimeSyncState({
+      userId: session.user.userId,
+      role: session.user.role,
+      companyId: session.user.companyId,
+    }),
+  ]);
 
   const navItems = [
     { href: "/firm/dashboard", label: "대시보드", icon: "layout-dashboard" as const },
@@ -20,6 +28,7 @@ export default async function FirmLayout({
       label: "고객 계정 관리",
       icon: "users" as const,
       badge: pendingCount,
+      badgeVariant: "registration" as const,
     },
     {
       href: "/firm/calculator",
@@ -48,6 +57,7 @@ export default async function FirmLayout({
       userName={session.user.name ?? "사용자"}
       userRoleLabel={getRoleLabel(session.user.role)}
       avatarText={getAvatarInitials(session.user.name ?? "")}
+      realtimeState={realtimeState}
     >
       {children}
     </PortalShell>

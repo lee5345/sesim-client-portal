@@ -5,6 +5,7 @@ import {
 } from "@/lib/auth/roles";
 import { getFirmName, getFirmTagline } from "@/lib/config/branding";
 import { prisma } from "@/lib/db/db";
+import { getInitialRealtimeSyncState } from "@/modules/realtime/initial-state";
 import { PortalShell } from "@/components/layout/portal-shell";
 
 export default async function ClientLayout({
@@ -21,6 +22,12 @@ export default async function ClientLayout({
         select: { name: true },
       })
     : null;
+
+  const realtimeState = await getInitialRealtimeSyncState({
+    userId: session.user.userId,
+    role: session.user.role,
+    companyId,
+  });
 
   const navItems = [
     { href: "/client/dashboard", label: "대시보드", icon: "layout-dashboard" as const },
@@ -46,6 +53,7 @@ export default async function ClientLayout({
       userName={session.user.name ?? "사용자"}
       userRoleLabel={getRoleLabel(session.user.role)}
       avatarText={getAvatarInitials(session.user.name ?? "")}
+      realtimeState={realtimeState}
     >
       {children}
     </PortalShell>

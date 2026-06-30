@@ -17,6 +17,7 @@ import {
 } from "@/lib/filters/terminations";
 import { summarizeTerminationFilters } from "@/lib/export/filter-summaries";
 import { exportTerminationsExcel } from "@/modules/terminations/export";
+import { NewEntriesControls } from "@/components/layout/new-entries-controls";
 import {
   Card,
   CardContent,
@@ -28,12 +29,15 @@ import {
 type TerminationsTableProps = {
   terminations: TerminationTableRow[];
   companyId?: string;
+  companyName?: string;
 };
 
 export function TerminationsTable({
   terminations,
   companyId,
+  companyName,
 }: TerminationsTableProps) {
+  const [unreadIds, setUnreadIds] = useState<Set<string> | null>(null);
   const [draftFilters, setDraftFilters] = useState<TerminationFilterValues>(
     EMPTY_TERMINATION_FILTERS,
   );
@@ -45,6 +49,13 @@ export function TerminationsTable({
     () => filterTerminations(terminations, appliedFilters),
     [terminations, appliedFilters],
   );
+
+  const visibleTerminations = useMemo(() => {
+    if (!unreadIds) {
+      return filteredTerminations;
+    }
+    return filteredTerminations.filter((row) => unreadIds.has(row.id));
+  }, [filteredTerminations, unreadIds]);
 
   const filterSummary = useMemo(
     () => summarizeTerminationFilters(appliedFilters),
@@ -76,11 +87,24 @@ export function TerminationsTable({
           <CardDescription>등록된 퇴사자 정보를 확인하고 관리합니다.</CardDescription>
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          {companyId ? (
+            <NewEntriesControls
+              companyId={companyId}
+              entityTypes={["TERMINATION"]}
+              onShowUnreadEntries={(ids) => {
+                setDraftFilters(EMPTY_TERMINATION_FILTERS);
+                setAppliedFilters(EMPTY_TERMINATION_FILTERS);
+                setUnreadIds(new Set(ids));
+              }}
+              onClearUnreadFilter={() => setUnreadIds(null)}
+            />
+          ) : null}
           <ExcelExportDialog
             moduleLabel="퇴사자 정보"
             defaultTitle="퇴사자 정보"
+            companyName={companyName}
             filterSummary={filterSummary}
-            entryCount={filteredTerminations.length}
+            entryCount={visibleTerminations.length}
             companyId={companyId}
             onExport={({ title }) =>
               exportTerminationsExcel({
@@ -98,7 +122,7 @@ export function TerminationsTable({
           <EmptyState message="등록된 퇴사자가 없습니다. 퇴사자 등록 버튼으로 첫 항목을 추가해 주세요." />
         ) : (
           <TerminationsTableView
-            terminations={terminations}
+            terminations={visibleTerminations}
             companyId={companyId}
             draftFilters={draftFilters}
             appliedFilters={appliedFilters}

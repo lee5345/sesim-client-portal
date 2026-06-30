@@ -12,7 +12,6 @@ import {
 } from "@/lib/encryption/reveal-rrns-bulk";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import {
-  isFirmRole,
   parseOptionalCompanyId,
   requireDataEditAuth,
   resolveCompanyId,
@@ -26,6 +25,7 @@ import {
   toDailyWorkerAuditPayload,
 } from "@/lib/validation/daily-worker";
 import { DAILY_HOUR_FIELD_NAMES } from "@/modules/daily-workers/constants";
+import { afterDataMutation } from "@/modules/realtime/post-mutation";
 
 const CLIENT_DAILY_WORKERS_PATH = "/client/daily-workers";
 
@@ -42,15 +42,12 @@ const periodSchema = z.object({
   month: z.coerce.number().int().min(1).max(12),
 });
 
-function revalidateDailyWorkerPaths(
-  companyId: string,
-  role: Awaited<ReturnType<typeof requireDataEditAuth>>["user"]["role"],
-) {
-  if (isFirmRole(role)) {
-    revalidatePath(`/firm/companies/${companyId}`);
-  } else {
-    revalidatePath(CLIENT_DAILY_WORKERS_PATH);
-  }
+function revalidateDailyWorkerPaths(companyId: string) {
+  revalidatePath(`/firm/companies/${companyId}`);
+  revalidatePath(CLIENT_DAILY_WORKERS_PATH);
+  revalidatePath("/firm/companies");
+  revalidatePath("/firm", "layout");
+  revalidatePath("/client", "layout");
 }
 
 function decimalToHours(value: { toNumber(): number } | null): number | null {
@@ -266,6 +263,8 @@ export async function createDailyWorker(
   const input = parsed.data;
   const { encrypted, iv } = encryptRRN(normalizeRRN(input.rrn));
 
+  let createdId: string | undefined;
+
   await prisma.$transaction(async (tx) => {
     const record = await tx.dailyWorker.create({
       data: {
@@ -276,6 +275,7 @@ export async function createDailyWorker(
         createdBy: { connect: { id: session.user.userId } },
       },
     });
+    createdId = record.id;
 
     await tx.auditLog.create({
       data: {
@@ -289,7 +289,15 @@ export async function createDailyWorker(
     });
   });
 
-  revalidateDailyWorkerPaths(companyId, session.user.role);
+  await afterDataMutation({
+    session,
+    companyId,
+    entityType: "DAILY_WORKER",
+    entityId: createdId,
+    action: "CREATE",
+  });
+
+  revalidateDailyWorkerPaths(companyId);
   return { success: true };
 }
 
@@ -345,7 +353,15 @@ export async function updateDailyWorker(
     });
   });
 
-  revalidateDailyWorkerPaths(companyId, session.user.role);
+  await afterDataMutation({
+    session,
+    companyId,
+    entityType: "DAILY_WORKER",
+    entityId: parsedId,
+    action: "UPDATE",
+  });
+
+  revalidateDailyWorkerPaths(companyId);
   return { success: true };
 }
 
@@ -380,7 +396,15 @@ export async function deleteDailyWorker(
     });
   });
 
-  revalidateDailyWorkerPaths(companyId, session.user.role);
+  await afterDataMutation({
+    session,
+    companyId,
+    entityType: "DAILY_WORKER",
+    entityId: parsedId,
+    action: "DELETE",
+  });
+
+  revalidateDailyWorkerPaths(companyId);
 }
 
 export async function revealDailyWorkerRRN(

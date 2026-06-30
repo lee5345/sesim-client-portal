@@ -1,15 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { UserCheck, X } from "lucide-react";
+import { MoreHorizontal, UserCheck, X } from "lucide-react";
 
+import { NotificationCountBadge } from "@/components/layout/notification-count-badge";
+import { useOptionalRealtimeSync } from "@/components/layout/realtime-sync-provider";
+import { acknowledgeTenantChangesAction } from "@/lib/realtime/sync-actions";
 import { NO_WORKPLACE_MANAGEMENT_NUMBER_LABEL } from "@/lib/companies/labels";
 import { formatWorkplaceManagementNumber } from "@/lib/format/workplace-management-number";
 import { formatDateTime } from "@/lib/format/date";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -19,6 +22,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const selectClassName =
   "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
@@ -106,42 +115,7 @@ export function CompaniesList({
   const CompanyGrid = ({ list }: { list: CompanyListItem[] }) => (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {list.map((company) => (
-        <Link key={company.id} href={`/firm/companies/${company.id}`}>
-          <Card className="h-full transition-shadow hover:shadow-md">
-            <CardHeader>
-              <div className="flex items-start justify-between gap-2">
-                <CardTitle className="text-lg">{company.name}</CardTitle>
-                <div className="flex items-center gap-2">
-                  {company.isActive &&
-                  currentUserName &&
-                  company.firmContactName === currentUserName ? (
-                    <Badge
-                      variant="outline"
-                      className="gap-1 border-orange-200 bg-orange-50 text-orange-700"
-                    >
-                      <UserCheck className="size-3.5" />
-                      담당
-                    </Badge>
-                  ) : null}
-                  <Badge variant={company.isActive ? "default" : "secondary"}>
-                    {company.isActive ? "활성" : "비활성"}
-                  </Badge>
-                </div>
-              </div>
-              <CardDescription className="font-mono">
-                {formatWorkplaceManagementNumber(
-                  company.workplaceManagementNumber,
-                ) ?? NO_WORKPLACE_MANAGEMENT_NUMBER_LABEL}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm text-muted-foreground">
-              <p>담당 직원: {company.firmContactName ?? "없음"}</p>
-              <p className="text-xs">
-                최종 수정: {formatDateTime(new Date(company.updatedAt))}
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
+        <CompanyCard key={company.id} company={company} currentUserName={currentUserName} />
       ))}
     </div>
   );
@@ -223,5 +197,102 @@ export function CompaniesList({
         </div>
       </div>
     </div>
+  );
+}
+
+function CompanyCard({
+  company,
+  currentUserName,
+}: {
+  company: CompanyListItem;
+  currentUserName: string;
+}) {
+  const realtime = useOptionalRealtimeSync();
+  const unreadCount = realtime?.getCompanyBadge(company.id) ?? 0;
+  const [isPending, startTransition] = useTransition();
+  const canMarkRead = unreadCount > 0;
+
+  return (
+    <Link href={`/firm/companies/${company.id}`}>
+      <Card className="relative h-full transition-shadow hover:shadow-md">
+        <CardHeader>
+          <div className="flex items-start justify-between gap-2">
+            <CardTitle className="text-lg">{company.name}</CardTitle>
+            <div className="flex items-center gap-2">
+              <NotificationCountBadge count={unreadCount} variant="change" />
+              {company.isActive &&
+              currentUserName &&
+              company.firmContactName === currentUserName ? (
+                <Badge
+                  variant="outline"
+                  className="gap-1 border-orange-200 bg-orange-50 text-orange-700"
+                >
+                  <UserCheck className="size-3.5" />
+                  담당
+                </Badge>
+              ) : null}
+              <Badge variant={company.isActive ? "default" : "secondary"}>
+                {company.isActive ? "활성" : "비활성"}
+              </Badge>
+            </div>
+          </div>
+          <CardDescription className="font-mono">
+            {formatWorkplaceManagementNumber(
+              company.workplaceManagementNumber,
+            ) ?? NO_WORKPLACE_MANAGEMENT_NUMBER_LABEL}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm text-muted-foreground">
+          <p>담당 직원: {company.firmContactName ?? "없음"}</p>
+          <p className="text-xs">
+            최종 수정: {formatDateTime(new Date(company.updatedAt))}
+          </p>
+        </CardContent>
+
+        <div className="absolute right-3 bottom-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              disabled={!canMarkRead || isPending}
+              className={buttonVariants({
+                variant: "ghost",
+                size: "icon-sm",
+                className:
+                  "text-muted-foreground hover:text-foreground disabled:text-muted-foreground/50",
+              })}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+              }}
+            >
+              <MoreHorizontal />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                disabled={!canMarkRead || isPending}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  startTransition(async () => {
+                    await acknowledgeTenantChangesAction({
+                      companyId: company.id,
+                      entityTypes: [
+                        "NEW_HIRE",
+                        "TERMINATION",
+                        "DAILY_WORKER",
+                        "COMPANY_PROFILE",
+                        "DEPARTMENT",
+                      ],
+                    });
+                    await realtime?.refreshNow?.();
+                  });
+                }}
+              >
+                변경 알림 무시하기
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </Card>
+    </Link>
   );
 }

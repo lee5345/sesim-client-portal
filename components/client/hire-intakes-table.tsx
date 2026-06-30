@@ -15,6 +15,7 @@ import { HireIntakesTableView } from "@/components/hire-intakes/hire-intakes-tab
 import { summarizeHireIntakeFilters } from "@/lib/export/filter-summaries";
 import { filterHireIntakes } from "@/lib/filters/hire-intakes";
 import { exportHireIntakesExcel } from "@/modules/hire-intakes/export";
+import { NewEntriesControls } from "@/components/layout/new-entries-controls";
 import {
   Card,
   CardContent,
@@ -32,13 +33,16 @@ type HireIntakesTableProps = {
   hireIntakes: HireIntakeTableRow[];
   departments: DepartmentOption[];
   companyId?: string;
+  companyName?: string;
 };
 
 export function HireIntakesTable({
   hireIntakes,
   departments,
   companyId,
+  companyName,
 }: HireIntakesTableProps) {
+  const [unreadIds, setUnreadIds] = useState<Set<string> | null>(null);
   const [draftFilters, setDraftFilters] = useState<HireIntakeFilterValues>(
     EMPTY_HIRE_INTAKE_FILTERS,
   );
@@ -50,6 +54,13 @@ export function HireIntakesTable({
     () => filterHireIntakes(hireIntakes, appliedFilters),
     [hireIntakes, appliedFilters],
   );
+
+  const visibleHireIntakes = useMemo(() => {
+    if (!unreadIds) {
+      return filteredHireIntakes;
+    }
+    return filteredHireIntakes.filter((row) => unreadIds.has(row.id));
+  }, [filteredHireIntakes, unreadIds]);
 
   const filterSummary = useMemo(
     () => summarizeHireIntakeFilters(appliedFilters),
@@ -81,11 +92,24 @@ export function HireIntakesTable({
           <CardDescription>등록된 입사자 정보를 확인하고 관리합니다.</CardDescription>
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          {companyId ? (
+            <NewEntriesControls
+              companyId={companyId}
+              entityTypes={["NEW_HIRE"]}
+              onShowUnreadEntries={(ids) => {
+                setDraftFilters(EMPTY_HIRE_INTAKE_FILTERS);
+                setAppliedFilters(EMPTY_HIRE_INTAKE_FILTERS);
+                setUnreadIds(new Set(ids));
+              }}
+              onClearUnreadFilter={() => setUnreadIds(null)}
+            />
+          ) : null}
           <ExcelExportDialog
             moduleLabel="입사자 정보"
             defaultTitle="입사자 정보"
+            companyName={companyName}
             filterSummary={filterSummary}
-            entryCount={filteredHireIntakes.length}
+            entryCount={visibleHireIntakes.length}
             companyId={companyId}
             onExport={({ title }) =>
               exportHireIntakesExcel({
@@ -107,7 +131,7 @@ export function HireIntakesTable({
           <EmptyState message="등록된 입사자가 없습니다. 입사자 등록 버튼으로 첫 항목을 추가해 주세요." />
         ) : (
           <HireIntakesTableView
-            hireIntakes={hireIntakes}
+            hireIntakes={visibleHireIntakes}
             departments={departments}
             companyId={companyId}
             draftFilters={draftFilters}

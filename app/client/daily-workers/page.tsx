@@ -7,6 +7,7 @@ export const metadata: Metadata = {
 };
 import { parseYearMonthSearchParams } from "@/lib/daily-workers/period";
 import { DailyWorkersTable } from "@/components/client/daily-workers-table";
+import { getCompanyById } from "@/modules/companies/companies";
 import { listDailyWorkers } from "@/modules/daily-workers/actions";
 
 export default async function ClientDailyWorkersPage({
@@ -23,7 +24,10 @@ export default async function ClientDailyWorkersPage({
     return <p className="text-muted-foreground">소속 회사 정보가 없습니다.</p>;
   }
 
-  const dailyWorkers = await listDailyWorkers(companyId, year, month);
+  const [dailyWorkers, company] = await Promise.all([
+    listDailyWorkers(companyId, year, month),
+    getCompanyById(companyId),
+  ]);
 
   return (
     <div className="min-w-0 space-y-6">
@@ -34,7 +38,13 @@ export default async function ClientDailyWorkersPage({
         </p>
       </div>
 
-      <DailyWorkersTable dailyWorkers={dailyWorkers} year={year} month={month} />
+      <DailyWorkersTable
+        dailyWorkers={dailyWorkers}
+        year={year}
+        month={month}
+        companyId={companyId}
+        companyName={company?.name}
+      />
     </div>
   );
 }

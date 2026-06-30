@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { prisma } from "@/lib/db/db";
+import { afterFirmScopeMutation } from "@/modules/realtime/post-mutation";
 import { requireAuth } from "@/lib/auth/guards";
 import { createPasswordSetupTokenTx } from "@/lib/auth/password-setup";
 import { sendPasswordSetupEmail } from "@/lib/auth/email";
@@ -104,6 +105,8 @@ export async function approveRegistrationRequestAction(formData: FormData) {
   if (emailFailed) {
     redirect("/firm/client-accounts?approved=1&emailError=1");
   }
+
+  await afterFirmScopeMutation();
   redirect("/firm/client-accounts?approved=1");
 }
 
@@ -127,6 +130,7 @@ export async function rejectRegistrationRequestAction(formData: FormData) {
     },
   });
 
+  await afterFirmScopeMutation();
   redirect("/firm/client-accounts");
 }
 

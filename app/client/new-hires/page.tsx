@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "입사자 정보",
 };
 import { listDepartments } from "@/modules/companies/departments";
+import { getCompanyById } from "@/modules/companies/companies";
 import { listHireIntakes } from "@/modules/hire-intakes/actions";
 import { HireIntakesTable } from "@/components/client/hire-intakes-table";
 
@@ -17,9 +18,10 @@ export default async function ClientNewHiresPage() {
     return <p className="text-muted-foreground">소속 회사 정보가 없습니다.</p>;
   }
 
-  const [hireIntakes, departments] = await Promise.all([
+  const [hireIntakes, departments, company] = await Promise.all([
     listHireIntakes(companyId),
     listDepartments(companyId),
+    getCompanyById(companyId),
   ]);
 
   return (
@@ -31,7 +33,12 @@ export default async function ClientNewHiresPage() {
         </p>
       </div>
 
-      <HireIntakesTable hireIntakes={hireIntakes} departments={departments} />
+      <HireIntakesTable
+        hireIntakes={hireIntakes}
+        departments={departments}
+        companyId={companyId}
+        companyName={company?.name}
+      />
     </div>
   );
 }

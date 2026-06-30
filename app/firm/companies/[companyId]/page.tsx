@@ -23,6 +23,7 @@ import { CompanyInfoLink } from "@/components/companies/company-info-link";
 import { DepartmentManager } from "@/components/companies/department-manager";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { CompanyDetailTabs } from "@/components/firm/company-detail-tabs";
+import { CompanyTabIndicator } from "@/components/firm/company-tab-indicator";
 import { DailyWorkersTable } from "@/components/client/daily-workers-table";
 import { HireIntakesTable } from "@/components/client/hire-intakes-table";
 import { TerminationsTable } from "@/components/client/terminations-table";
@@ -133,25 +134,31 @@ export default async function FirmCompanyDetailPage({
         </div>
       </div>
 
-      <CompanyDetailTabs>
+      <CompanyDetailTabs companyId={companyId}>
         <TabsList>
           <TabsTrigger value="new-hires">
             입사자 정보
-            <Badge variant="secondary" className="ml-2">
-              {newHireCount}
-            </Badge>
+            <CompanyTabIndicator
+              companyId={companyId}
+              entityType="NEW_HIRE"
+              totalCount={newHireCount}
+            />
           </TabsTrigger>
           <TabsTrigger value="terminations">
             퇴사자 정보
-            <Badge variant="secondary" className="ml-2">
-              {terminationCount}
-            </Badge>
+            <CompanyTabIndicator
+              companyId={companyId}
+              entityType="TERMINATION"
+              totalCount={terminationCount}
+            />
           </TabsTrigger>
           <TabsTrigger value="daily-workers">
             일용직 정보
-            <Badge variant="secondary" className="ml-2">
-              {dailyWorkerCount}
-            </Badge>
+            <CompanyTabIndicator
+              companyId={companyId}
+              entityType="DAILY_WORKER"
+              totalCount={dailyWorkerCount}
+            />
           </TabsTrigger>
           <TabsTrigger value="compensation">
             급여 정보
@@ -167,6 +174,7 @@ export default async function FirmCompanyDetailPage({
             hireIntakes={newHires}
             departments={departments}
             companyId={companyId}
+            companyName={company.name}
           />
         </TabsContent>
 
@@ -174,6 +182,7 @@ export default async function FirmCompanyDetailPage({
           <TerminationsTable
             terminations={terminations}
             companyId={companyId}
+            companyName={company.name}
           />
         </TabsContent>
 
@@ -183,6 +192,7 @@ export default async function FirmCompanyDetailPage({
             year={year}
             month={month}
             companyId={companyId}
+            companyName={company.name}
             basePath={firmDailyWorkersBasePath}
           />
         </TabsContent>

@@ -16,6 +16,7 @@ import type { DailyWorkerTableRow } from "@/lib/daily-workers/types";
 import { summarizeDailyWorkerFilters } from "@/lib/export/filter-summaries";
 import { filterDailyWorkers } from "@/lib/filters/daily-workers";
 import { exportDailyWorkersExcel } from "@/modules/daily-workers/export";
+import { NewEntriesControls } from "@/components/layout/new-entries-controls";
 import {
   Card,
   CardContent,
@@ -29,6 +30,7 @@ type DailyWorkersTableProps = {
   year: number;
   month: number;
   companyId?: string;
+  companyName?: string;
   basePath?: string;
 };
 
@@ -37,8 +39,10 @@ export function DailyWorkersTable({
   year,
   month,
   companyId,
+  companyName,
   basePath = "/client/daily-workers",
 }: DailyWorkersTableProps) {
+  const [unreadIds, setUnreadIds] = useState<Set<string> | null>(null);
   const [draftFilters, setDraftFilters] = useState<DailyWorkersFilterValues>(
     EMPTY_DAILY_WORKER_FILTERS,
   );
@@ -52,6 +56,13 @@ export function DailyWorkersTable({
     () => filterDailyWorkers(dailyWorkers, appliedFilters),
     [dailyWorkers, appliedFilters],
   );
+
+  const visibleDailyWorkers = useMemo(() => {
+    if (!unreadIds) {
+      return filteredDailyWorkers;
+    }
+    return filteredDailyWorkers.filter((row) => unreadIds.has(row.id));
+  }, [filteredDailyWorkers, unreadIds]);
 
   const filterSummary = useMemo(
     () => summarizeDailyWorkerFilters(year, month, appliedFilters),
@@ -85,11 +96,24 @@ export function DailyWorkersTable({
           </CardDescription>
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          {companyId ? (
+            <NewEntriesControls
+              companyId={companyId}
+              entityTypes={["DAILY_WORKER"]}
+              onShowUnreadEntries={(ids) => {
+                setDraftFilters(EMPTY_DAILY_WORKER_FILTERS);
+                setAppliedFilters(EMPTY_DAILY_WORKER_FILTERS);
+                setUnreadIds(new Set(ids));
+              }}
+              onClearUnreadFilter={() => setUnreadIds(null)}
+            />
+          ) : null}
           <ExcelExportDialog
             moduleLabel="일용직 정보"
             defaultTitle={defaultTitle}
+            companyName={companyName}
             filterSummary={filterSummary}
-            entryCount={filteredDailyWorkers.length}
+            entryCount={visibleDailyWorkers.length}
             companyId={companyId}
             onExport={({ title }) =>
               exportDailyWorkersExcel({
@@ -117,7 +141,7 @@ export function DailyWorkersTable({
           </div>
         ) : (
           <DailyWorkersTableView
-            dailyWorkers={dailyWorkers}
+            dailyWorkers={visibleDailyWorkers}
             year={year}
             month={month}
             companyId={companyId}

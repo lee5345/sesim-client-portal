@@ -5,11 +5,11 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/db/db";
 import {
-  isFirmRole,
   parseOptionalCompanyId,
   requireDataEditAuth,
   resolveCompanyId,
 } from "@/lib/permissions/crud";
+import { afterDataMutation } from "@/modules/realtime/post-mutation";
 
 const departmentNameSchema = z
   .string()
@@ -27,16 +27,13 @@ const deleteDepartmentSchema = z.object({
   companyId: z.string().uuid(),
 });
 
-function revalidateDepartmentPaths(
-  companyId: string,
-  role: Awaited<ReturnType<typeof requireDataEditAuth>>["user"]["role"],
-) {
-  if (isFirmRole(role)) {
-    revalidatePath(`/firm/companies/${companyId}`);
-  } else {
-    revalidatePath("/client/settings");
-    revalidatePath("/client/new-hires");
-  }
+function revalidateDepartmentPaths(companyId: string) {
+  revalidatePath(`/firm/companies/${companyId}`);
+  revalidatePath("/client/settings");
+  revalidatePath("/client/new-hires");
+  revalidatePath("/firm/companies");
+  revalidatePath("/firm", "layout");
+  revalidatePath("/client", "layout");
 }
 
 export async function listDepartments(companyId: string) {
@@ -71,14 +68,22 @@ export async function createDepartment(name: string, companyId: string) {
     throw new Error("이미 등록된 부서명입니다.");
   }
 
-  await prisma.department.create({
+  const department = await prisma.department.create({
     data: {
       name: input.name,
       companyId: input.companyId,
     },
   });
 
-  revalidateDepartmentPaths(scopedCompanyId, session.user.role);
+  await afterDataMutation({
+    session,
+    companyId: scopedCompanyId,
+    entityType: "DEPARTMENT",
+    entityId: department.id,
+    action: "CREATE",
+  });
+
+  revalidateDepartmentPaths(scopedCompanyId);
 }
 
 export async function deleteDepartment(id: string, companyId: string) {
@@ -107,7 +112,15 @@ export async function deleteDepartment(id: string, companyId: string) {
     data: { deletedAt: new Date() },
   });
 
-  revalidateDepartmentPaths(scopedCompanyId, session.user.role);
+  await afterDataMutation({
+    session,
+    companyId: scopedCompanyId,
+    entityType: "DEPARTMENT",
+    entityId: input.id,
+    action: "DELETE",
+  });
+
+  revalidateDepartmentPaths(scopedCompanyId);
 }
 
 export async function createDepartmentAction(formData: FormData) {

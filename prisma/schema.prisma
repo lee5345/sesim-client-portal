@@ -55,6 +55,19 @@ enum RegistrationRequestStatus {
   REJECTED
 }
 
+enum TenantChangeEntityType {
+  NEW_HIRE
+  TERMINATION
+  DAILY_WORKER
+  COMPANY_PROFILE
+  DEPARTMENT
+}
+
+enum TenantChangeAudience {
+  FIRM
+  CLIENT
+}
+
 model Company {
   id             String    @id @default(uuid()) @db.Uuid
   name           String
@@ -101,6 +114,7 @@ model Company {
   terminations        Termination[]
   compensationChanges CompensationChange[]
   dailyWorkers        DailyWorker[]
+  tenantChanges       TenantChange[]
 
   @@index([deletedAt])
 }
@@ -139,6 +153,8 @@ model User {
   auditLogs                  AuditLog[]           @relation("AuditLogActor")
   reviewedRegistrationRequests RegistrationRequest[] @relation("RegistrationRequestReviewedBy")
   passwordSetupTokens        PasswordSetupToken[]
+  tenantChanges              TenantChange[]          @relation("TenantChangeActor")
+  tenantChangeReadCursors    TenantChangeReadCursor[]
 
   @@index([companyId])
 }
@@ -311,6 +327,42 @@ model DailyWorker {
 
   @@index([companyId, year, month, deletedAt])
   @@index([companyId, deletedAt])
+}
+
+model PortalSyncCursor {
+  scope     String   @id
+  version   BigInt   @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+model TenantChange {
+  id         String                 @id @default(uuid()) @db.Uuid
+  companyId  String                 @db.Uuid
+  entityType TenantChangeEntityType
+  entityId   String?                @db.Uuid
+  action     AuditAction
+  audience   TenantChangeAudience
+  actorId    String                 @db.Uuid
+  createdAt  DateTime               @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  actor   User    @relation("TenantChangeActor", fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([companyId, audience, entityType, createdAt])
+  @@index([audience, createdAt])
+}
+
+model TenantChangeReadCursor {
+  id         String                 @id @default(uuid()) @db.Uuid
+  userId     String                 @db.Uuid
+  companyId  String                 @db.Uuid
+  entityType TenantChangeEntityType
+  lastReadAt DateTime               @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId, entityType])
+  @@index([userId, companyId])
 }
 
 model AuditLog {

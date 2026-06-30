@@ -10,7 +10,6 @@ import {
   rrnRecordIdsSchema,
 } from "@/lib/encryption/reveal-rrns-bulk";
 import {
-  isFirmRole,
   parseOptionalCompanyId,
   requireDataEditAuth,
   resolveCompanyId,
@@ -22,6 +21,7 @@ import {
   parseUpdateTerminationFormData,
   toTerminationAuditPayload,
 } from "@/lib/validation/termination";
+import { afterDataMutation } from "@/modules/realtime/post-mutation";
 
 const CLIENT_TERMINATIONS_PATH = "/client/terminations";
 
@@ -33,15 +33,12 @@ const idSchema = z.object({
   id: z.string().uuid(),
 });
 
-function revalidateTerminationPaths(
-  companyId: string,
-  role: Awaited<ReturnType<typeof requireDataEditAuth>>["user"]["role"],
-) {
-  if (isFirmRole(role)) {
-    revalidatePath(`/firm/companies/${companyId}`);
-  } else {
-    revalidatePath(CLIENT_TERMINATIONS_PATH);
-  }
+function revalidateTerminationPaths(companyId: string) {
+  revalidatePath(`/firm/companies/${companyId}`);
+  revalidatePath(CLIENT_TERMINATIONS_PATH);
+  revalidatePath("/firm/companies");
+  revalidatePath("/firm", "layout");
+  revalidatePath("/client", "layout");
 }
 
 function toTerminationData(
@@ -130,6 +127,8 @@ export async function createTermination(
   const input = parsed.data;
   const { encrypted, iv } = encryptRRN(normalizeRRN(input.rrn));
 
+  let createdId: string | undefined;
+
   await prisma.$transaction(async (tx) => {
     const record = await tx.termination.create({
       data: {
@@ -138,6 +137,7 @@ export async function createTermination(
         createdBy: { connect: { id: session.user.userId } },
       },
     });
+    createdId = record.id;
 
     await tx.auditLog.create({
       data: {
@@ -151,7 +151,15 @@ export async function createTermination(
     });
   });
 
-  revalidateTerminationPaths(companyId, session.user.role);
+  await afterDataMutation({
+    session,
+    companyId,
+    entityType: "TERMINATION",
+    entityId: createdId,
+    action: "CREATE",
+  });
+
+  revalidateTerminationPaths(companyId);
   return { success: true };
 }
 
@@ -203,7 +211,15 @@ export async function updateTermination(
     });
   });
 
-  revalidateTerminationPaths(companyId, session.user.role);
+  await afterDataMutation({
+    session,
+    companyId,
+    entityType: "TERMINATION",
+    entityId: parsedId,
+    action: "UPDATE",
+  });
+
+  revalidateTerminationPaths(companyId);
   return { success: true };
 }
 
@@ -236,7 +252,15 @@ export async function deleteTermination(
     });
   });
 
-  revalidateTerminationPaths(companyId, session.user.role);
+  await afterDataMutation({
+    session,
+    companyId,
+    entityType: "TERMINATION",
+    entityId: parsedId,
+    action: "DELETE",
+  });
+
+  revalidateTerminationPaths(companyId);
 }
 
 export async function revealTerminationRRN(

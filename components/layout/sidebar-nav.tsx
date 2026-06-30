@@ -17,6 +17,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { NotificationCountBadge } from "@/components/layout/notification-count-badge";
+import { useOptionalRealtimeSync } from "@/components/layout/realtime-sync-provider";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
@@ -42,6 +44,7 @@ export type SidebarNavItem = {
   icon: NavIconName;
   disabled?: boolean;
   badge?: number;
+  badgeVariant?: "registration" | "change";
 };
 
 type SidebarNavProps = {
@@ -50,6 +53,7 @@ type SidebarNavProps = {
 
 export function SidebarNav({ items }: SidebarNavProps) {
   const pathname = usePathname();
+  const realtime = useOptionalRealtimeSync();
 
   return (
     <nav className="flex flex-1 flex-col gap-1 px-3 py-4">
@@ -58,6 +62,10 @@ export function SidebarNav({ items }: SidebarNavProps) {
           !item.disabled &&
           (pathname === item.href || pathname.startsWith(`${item.href}/`));
         const Icon: LucideIcon = NAV_ICONS[item.icon];
+        const liveBadge = realtime?.getNavBadge(item.href);
+        const badgeCount = liveBadge ?? item.badge ?? 0;
+        const badgeVariant =
+          item.href === "/firm/client-accounts" ? "registration" : "change";
 
         if (item.disabled) {
           return (
@@ -91,11 +99,10 @@ export function SidebarNav({ items }: SidebarNavProps) {
           >
             <Icon className="size-4 shrink-0" />
             <span className="flex-1">{item.label}</span>
-            {item.badge != null && item.badge > 0 ? (
-              <Badge className="bg-brand-gold text-sidebar font-semibold">
-                {item.badge}
-              </Badge>
-            ) : null}
+            <NotificationCountBadge
+              count={badgeCount}
+              variant={item.badgeVariant ?? badgeVariant}
+            />
           </Link>
         );
       })}

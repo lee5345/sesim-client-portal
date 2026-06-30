@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatExportDefaultTitle } from "@/lib/export/default-title";
 import { downloadExcelExport } from "@/lib/export/download";
 import type { ExportFilterSummaryItem } from "@/lib/export/filter-summaries";
 import type { ExcelExportResult } from "@/lib/export/types";
@@ -21,6 +22,7 @@ import type { ExcelExportResult } from "@/lib/export/types";
 type ExcelExportDialogProps = {
   moduleLabel: string;
   defaultTitle: string;
+  companyName?: string;
   filterSummary: ExportFilterSummaryItem[];
   entryCount: number;
   disabled?: boolean;
@@ -31,6 +33,7 @@ type ExcelExportDialogProps = {
 export function ExcelExportDialog({
   moduleLabel,
   defaultTitle,
+  companyName,
   filterSummary,
   entryCount,
   disabled = false,
@@ -39,7 +42,8 @@ export function ExcelExportDialog({
 }: ExcelExportDialogProps) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"confirm" | "title">("confirm");
-  const [title, setTitle] = useState(defaultTitle);
+  const initialTitle = formatExportDefaultTitle(defaultTitle, companyName);
+  const [title, setTitle] = useState(initialTitle);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -48,9 +52,9 @@ export function ExcelExportDialog({
       return;
     }
     setStep("confirm");
-    setTitle(defaultTitle);
+    setTitle(formatExportDefaultTitle(defaultTitle, companyName));
     setError(null);
-  }, [open, defaultTitle]);
+  }, [open, defaultTitle, companyName]);
 
   function handleClose() {
     setOpen(false);

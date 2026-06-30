@@ -3,6 +3,7 @@
 import { z } from "zod";
 
 import { prisma } from "@/lib/db/db";
+import { afterFirmScopeMutation } from "@/modules/realtime/post-mutation";
 
 const signupRequestSchema = z.object({
   name: z.string().min(1),
@@ -53,6 +54,8 @@ export async function createSignupRequestAction(
       status: "PENDING",
     },
   });
+
+  await afterFirmScopeMutation();
 
   return { ok: true as const };
 }

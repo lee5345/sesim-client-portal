@@ -16,6 +16,7 @@ import { optionalWorkplaceManagementNumberSchema } from "@/lib/validation/workpl
 import { getFirstZodErrorMessage } from "@/lib/validation/zod-korean";
 import { prisma } from "@/lib/db/db";
 import { requireAuth } from "@/lib/auth/guards";
+import { afterDataMutation } from "@/modules/realtime/post-mutation";
 
 export type CompanyProfileFieldActionResult =
   | { success: true }
@@ -118,7 +119,7 @@ export async function getCompanyProfile(
 export async function updateCompanyProfileFieldAction(
   formData: FormData,
 ): Promise<CompanyProfileFieldActionResult> {
-  await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
+  const session = await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
 
   const companyIdResult = z.string().uuid().safeParse(formData.get("companyId"));
   if (!companyIdResult.success) {
@@ -156,9 +157,20 @@ export async function updateCompanyProfileFieldAction(
     data: { [field]: parsedValue },
   });
 
+  await afterDataMutation({
+    session,
+    companyId,
+    entityType: "COMPANY_PROFILE",
+    entityId: companyId,
+    action: "UPDATE",
+  });
+
   revalidatePath("/firm/companies");
   revalidatePath(`/firm/companies/${companyId}`);
   revalidatePath(`/firm/companies/${companyId}/info`);
   revalidatePath("/firm/dashboard");
+  revalidatePath("/client/settings");
+  revalidatePath("/client", "layout");
+  revalidatePath("/firm", "layout");
   return { success: true };
 }

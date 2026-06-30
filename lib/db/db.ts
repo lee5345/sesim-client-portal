@@ -14,7 +14,16 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter });
+const cachedPrisma = globalForPrisma.prisma;
+const staleGlobal =
+  cachedPrisma !== undefined &&
+  typeof (cachedPrisma as { portalSyncCursor?: unknown }).portalSyncCursor ===
+    "undefined";
+
+const prismaInstance =
+  cachedPrisma && !staleGlobal ? cachedPrisma : new PrismaClient({ adapter });
+
+export const prisma = prismaInstance;
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
