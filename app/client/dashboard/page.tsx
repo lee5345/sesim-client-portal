@@ -45,12 +45,7 @@ export default async function ClientDashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard title="총 입사자" value={`${data.newHireCount}건`} />
         <StatCard title="총 퇴사자" value={`${data.terminationCount}건`} />
-        <StatCard
-          title="급여변경"
-          value="—"
-          description="준비 중"
-          disabled
-        />
+        <StatCard title="총 일용직" value={`${data.dailyWorkerCount}건`} />
       </div>
 
       <div className="flex flex-wrap gap-3">
@@ -71,7 +66,7 @@ export default async function ClientDashboardPage() {
       <Card>
         <CardHeader>
           <CardTitle>최근 제출 내역</CardTitle>
-          <CardDescription>최근 등록된 입사·퇴사 기록입니다.</CardDescription>
+          <CardDescription>최근 등록된 입사·퇴사·일용직 기록입니다.</CardDescription>
         </CardHeader>
         <CardContent>
           {data.recentSubmissions.length === 0 ? (

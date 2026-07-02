@@ -9,6 +9,7 @@ import { listDepartments } from "@/modules/companies/departments";
 import { getCompanyById } from "@/modules/companies/companies";
 import { listHireIntakes } from "@/modules/hire-intakes/actions";
 import { HireIntakesTable } from "@/components/client/hire-intakes-table";
+import { DepartmentManager } from "@/components/companies/department-manager";
 
 export default async function ClientNewHiresPage() {
   const session = await requireAuth("CLIENT_ADMIN");
@@ -33,6 +34,7 @@ export default async function ClientNewHiresPage() {
         </p>
       </div>
 
+      <DepartmentManager departments={departments} companyId={companyId} />
       <HireIntakesTable
         hireIntakes={hireIntakes}
         departments={departments}

@@ -40,7 +40,6 @@ export default async function ClientLayout({
       icon: "wallet" as const,
       disabled: true,
     },
-    { href: "/client/settings", label: "설정", icon: "settings" as const },
   ];
 
   return (

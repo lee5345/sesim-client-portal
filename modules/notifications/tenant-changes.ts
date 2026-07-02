@@ -26,6 +26,11 @@ const FIRM_TAB_ENTITY_MAP: Record<string, TenantChangeEntityType> = {
   "daily-workers": "DAILY_WORKER",
 };
 
+const NOTIFICATION_ENTITY_TYPES = ["NEW_HIRE", "TERMINATION", "DAILY_WORKER"] as const;
+type NotificationEntityType = (typeof NOTIFICATION_ENTITY_TYPES)[number];
+
+const NOTIFICATION_ACTIONS = ["CREATE", "UPDATE"] as const;
+
 function audienceForRole(role: UserRole): TenantChangeAudience {
   return isFirmRole(role) ? "FIRM" : "CLIENT";
 }
@@ -86,16 +91,20 @@ export async function acknowledgeTenantChanges(input: {
 async function getUnreadByCompany(
   userId: string,
   audience: TenantChangeAudience,
+  entityTypes: NotificationEntityType[],
   companyIds?: string[],
 ): Promise<Record<string, Partial<Record<TenantChangeEntityType, number>>>> {
   const changes = await prisma.tenantChange.findMany({
     where: {
       audience,
+      action: { in: [...NOTIFICATION_ACTIONS] },
+      entityType: { in: entityTypes },
       ...(companyIds ? { companyId: { in: companyIds } } : {}),
     },
     select: {
       companyId: true,
       entityType: true,
+      entityId: true,
       createdAt: true,
     },
     orderBy: { createdAt: "asc" },
@@ -126,8 +135,10 @@ async function getUnreadByCompany(
     ]),
   );
 
-  const result: Record<string, Partial<Record<TenantChangeEntityType, number>>> =
-    {};
+  const unreadEntityIdsByCompanyType = new Map<
+    string,
+    Map<TenantChangeEntityType, Set<string>>
+  >();
 
   for (const change of changes) {
     const cursorKey = `${change.companyId}:${change.entityType}`;
@@ -136,9 +147,28 @@ async function getUnreadByCompany(
       continue;
     }
 
-    const companyCounts = result[change.companyId] ?? {};
-    companyCounts[change.entityType] = (companyCounts[change.entityType] ?? 0) + 1;
-    result[change.companyId] = companyCounts;
+    if (!change.entityId) {
+      continue;
+    }
+
+    const byType =
+      unreadEntityIdsByCompanyType.get(change.companyId) ??
+      new Map<TenantChangeEntityType, Set<string>>();
+    const ids = byType.get(change.entityType) ?? new Set<string>();
+    ids.add(change.entityId);
+    byType.set(change.entityType, ids);
+    unreadEntityIdsByCompanyType.set(change.companyId, byType);
+  }
+
+  const result: Record<string, Partial<Record<TenantChangeEntityType, number>>> =
+    {};
+
+  for (const [companyId, byType] of unreadEntityIdsByCompanyType.entries()) {
+    const companyCounts: Partial<Record<TenantChangeEntityType, number>> = {};
+    for (const [entityType, ids] of byType.entries()) {
+      companyCounts[entityType] = ids.size;
+    }
+    result[companyId] = companyCounts;
   }
 
   return result;
@@ -183,6 +213,7 @@ export async function listUnreadTenantChangeEntityIds(input: {
     where: {
       audience,
       companyId: input.companyId,
+      action: { in: [...NOTIFICATION_ACTIONS] },
       entityType: { in: input.entityTypes },
     },
     select: { entityType: true, entityId: true, createdAt: true },
@@ -219,6 +250,7 @@ export async function getNotificationCounts(input: {
   const unreadByCompany = await getUnreadByCompany(
     input.userId,
     audience,
+    [...NOTIFICATION_ENTITY_TYPES],
     companyIds,
   );
 

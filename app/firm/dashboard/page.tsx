@@ -58,7 +58,7 @@ export default async function FirmDashboardPage() {
         <StatCard
           title="최근 7일 활동"
           value={`${data.recentActivityCount}건`}
-          description="입사·퇴사 등록 합계"
+          description="입사·퇴사·일용직 등록 합계"
         />
       </div>
 
@@ -80,7 +80,7 @@ export default async function FirmDashboardPage() {
           <CardHeader>
             <CardTitle>최근 활동</CardTitle>
             <CardDescription>
-              전체 고객사의 최근 입사·퇴사 등록 내역입니다.
+              전체 고객사의 최근 입사·퇴사·일용직 등록 내역입니다.
             </CardDescription>
           </CardHeader>
           <CardContent>

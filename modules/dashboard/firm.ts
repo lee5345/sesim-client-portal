@@ -9,8 +9,10 @@ export async function getFirmDashboardData() {
     pendingRequestCount,
     recentNewHires,
     recentTerminations,
+    recentDailyWorkers,
     recentNewHireCount,
     recentTerminationCount,
+    recentDailyWorkerCount,
   ] = await Promise.all([
     prisma.company.count({ where: { deletedAt: null } }),
     prisma.registrationRequest.count({
@@ -36,15 +38,29 @@ export async function getFirmDashboardData() {
         company: { select: { name: true } },
       },
     }),
+    prisma.dailyWorker.findMany({
+      where: { deletedAt: null },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      select: {
+        name: true,
+        createdAt: true,
+        company: { select: { name: true } },
+      },
+    }),
     prisma.newHire.count({
       where: { deletedAt: null, createdAt: { gte: sevenDaysAgo } },
     }),
     prisma.termination.count({
       where: { deletedAt: null, createdAt: { gte: sevenDaysAgo } },
     }),
+    prisma.dailyWorker.count({
+      where: { deletedAt: null, createdAt: { gte: sevenDaysAgo } },
+    }),
   ]);
 
-  const recentActivityCount = recentNewHireCount + recentTerminationCount;
+  const recentActivityCount =
+    recentNewHireCount + recentTerminationCount + recentDailyWorkerCount;
 
   const recentActivity = [
     ...recentNewHires.map((r) => ({
@@ -57,6 +73,12 @@ export async function getFirmDashboardData() {
       name: r.name,
       companyName: r.company.name,
       type: "퇴사자" as const,
+      date: r.createdAt,
+    })),
+    ...recentDailyWorkers.map((r) => ({
+      name: r.name,
+      companyName: r.company.name,
+      type: "일용직" as const,
       date: r.createdAt,
     })),
   ]

@@ -58,7 +58,7 @@ export function NewEntriesControls({
         }}
       >
         <BellOff />
-        확인 완료
+        조회 완료
       </Button>
     );
   }
@@ -81,7 +81,7 @@ export function NewEntriesControls({
       }}
     >
       <Bell />
-      변경 항목 확인 ({count})
+      변경사항 조회 ({count})
     </Button>
   );
 }
