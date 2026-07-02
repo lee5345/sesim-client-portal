@@ -7,7 +7,6 @@ export const metadata: Metadata = {
 };
 import { listDepartments } from "@/modules/companies/departments";
 import { DepartmentManager } from "@/components/companies/department-manager";
-import { AcknowledgeChangesOnMount } from "@/components/layout/acknowledge-changes-on-mount";
 import {
   Card,
   CardContent,
@@ -28,10 +27,6 @@ export default async function ClientSettingsPage() {
 
   return (
     <div className="space-y-8">
-      <AcknowledgeChangesOnMount
-        companyId={companyId}
-        entityTypes={["COMPANY_PROFILE", "DEPARTMENT"]}
-      />
       <div>
         <h1 className="text-2xl font-bold tracking-tight">설정</h1>
         <p className="mt-1 text-muted-foreground">

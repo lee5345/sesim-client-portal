@@ -279,15 +279,13 @@ function CompanyCard({
                         "NEW_HIRE",
                         "TERMINATION",
                         "DAILY_WORKER",
-                        "COMPANY_PROFILE",
-                        "DEPARTMENT",
                       ],
                     });
                     await realtime?.refreshNow?.();
                   });
                 }}
               >
-                변경 알림 무시하기
+                알림 무시하기
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

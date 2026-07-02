@@ -9,7 +9,8 @@ import { requireAuth } from "@/lib/auth/guards";
 import { sortCompaniesByActivity } from "@/lib/sort/korean";
 import { optionalWorkplaceManagementNumberSchema } from "@/lib/validation/workplace-management-number";
 import { getFirstZodErrorMessage } from "@/lib/validation/zod-korean";
-import { afterDataMutation, afterFirmScopeMutation } from "@/modules/realtime/post-mutation";
+import { afterFirmScopeMutation } from "@/modules/realtime/post-mutation";
+import { bumpSyncCursors } from "@/modules/realtime/sync";
 
 export type CompanyActionResult =
   | { success: true }
@@ -131,7 +132,7 @@ export async function createCompanyAction(
 export async function updateCompanyAction(
   formData: FormData,
 ): Promise<CompanyActionResult> {
-  const session = await requireAuth("FIRM_ADMIN");
+  await requireAuth("FIRM_ADMIN");
 
   const parsed = updateCompanySchema.safeParse({
     companyId: formData.get("companyId"),
@@ -165,13 +166,7 @@ export async function updateCompanyAction(
     },
   });
 
-  await afterDataMutation({
-    session,
-    companyId: input.companyId,
-    entityType: "COMPANY_PROFILE",
-    entityId: input.companyId,
-    action: "UPDATE",
-  });
+  await bumpSyncCursors(input.companyId);
 
   revalidatePath("/firm/companies");
   revalidatePath(`/firm/companies/${input.companyId}`);

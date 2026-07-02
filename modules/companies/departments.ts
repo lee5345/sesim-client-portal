@@ -9,7 +9,7 @@ import {
   requireDataEditAuth,
   resolveCompanyId,
 } from "@/lib/permissions/crud";
-import { afterDataMutation } from "@/modules/realtime/post-mutation";
+import { bumpSyncCursors } from "@/modules/realtime/sync";
 
 const departmentNameSchema = z
   .string()
@@ -75,13 +75,7 @@ export async function createDepartment(name: string, companyId: string) {
     },
   });
 
-  await afterDataMutation({
-    session,
-    companyId: scopedCompanyId,
-    entityType: "DEPARTMENT",
-    entityId: department.id,
-    action: "CREATE",
-  });
+  await bumpSyncCursors(scopedCompanyId);
 
   revalidateDepartmentPaths(scopedCompanyId);
 }
@@ -112,13 +106,7 @@ export async function deleteDepartment(id: string, companyId: string) {
     data: { deletedAt: new Date() },
   });
 
-  await afterDataMutation({
-    session,
-    companyId: scopedCompanyId,
-    entityType: "DEPARTMENT",
-    entityId: input.id,
-    action: "DELETE",
-  });
+  await bumpSyncCursors(scopedCompanyId);
 
   revalidateDepartmentPaths(scopedCompanyId);
 }

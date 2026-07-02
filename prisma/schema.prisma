@@ -7,6 +7,302 @@ datasource db {
   provider = "postgresql"
 }
 
+model Company {
+  id                        String                @id @default(uuid()) @db.Uuid
+  name                      String
+  businessNumber            String?
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime              @updatedAt
+  isActive                  Boolean               @default(true)
+  deletedAt                 DateTime?
+  businessAddress           String?
+  certificatePassword       String?
+  companyContactName        String?
+  companyContactTitle       String?
+  email                     String?
+  employmentCenterFax       String?
+  employmentCenterPhone     String?
+  fax                       String?
+  firmContactName           String?
+  mobile                    String?
+  nhisFax                   String?
+  nhisPhone                 String?
+  notes                     String?
+  npsFax                    String?
+  npsPhone                  String?
+  phone                     String?
+  representativeName        String?
+  retirementPensionContact  String?
+  retirementPensionPhone    String?
+  taxOfficeContact          String?
+  taxOfficeName             String?
+  workersCompFax            String?
+  workersCompPhone          String?
+  workplaceManagementNumber String?
+  managesFourMajorInsurance Boolean?
+  managesPayroll            Boolean?
+  compensationChanges       CompensationChange[]
+  dailyWorkers              DailyWorker[]
+  departments               Department[]
+  newHires                  NewHire[]
+  registrationRequests      RegistrationRequest[]
+  tenantChanges             TenantChange[]
+  terminations              Termination[]
+  users                     User[]
+
+  @@index([deletedAt])
+}
+
+model Department {
+  id        String    @id @default(uuid()) @db.Uuid
+  companyId String    @db.Uuid
+  name      String
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  company   Company   @relation(fields: [companyId], references: [id])
+
+  @@index([companyId, deletedAt])
+}
+
+model User {
+  id                           String                   @id @default(uuid()) @db.Uuid
+  email                        String                   @unique
+  passwordHash                 String
+  role                         UserRole
+  companyId                    String?                  @db.Uuid
+  createdAt                    DateTime                 @default(now())
+  updatedAt                    DateTime                 @updatedAt
+  isActive                     Boolean                  @default(true)
+  mustChangePassword           Boolean                  @default(false)
+  name                         String
+  auditLogs                    AuditLog[]               @relation("AuditLogActor")
+  createdCompensationChanges   CompensationChange[]     @relation("CompChangeCreatedBy")
+  createdDailyWorkers          DailyWorker[]            @relation("DailyWorkerCreatedBy")
+  createdNewHires              NewHire[]                @relation("NewHireCreatedBy")
+  passwordSetupTokens          PasswordSetupToken[]
+  reviewedRegistrationRequests RegistrationRequest[]    @relation("RegistrationRequestReviewedBy")
+  tenantChanges                TenantChange[]           @relation("TenantChangeActor")
+  tenantChangeReadCursors      TenantChangeReadCursor[]
+  createdTerminations          Termination[]            @relation("TerminationCreatedBy")
+  company                      Company?                 @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+}
+
+model RegistrationRequest {
+  id           String                    @id @default(uuid()) @db.Uuid
+  name         String
+  email        String
+  companyName  String
+  phone        String?
+  note         String?
+  status       RegistrationRequestStatus @default(PENDING)
+  companyId    String?                   @db.Uuid
+  reviewedById String?                   @db.Uuid
+  reviewedAt   DateTime?
+  createdAt    DateTime                  @default(now())
+  company      Company?                  @relation(fields: [companyId], references: [id])
+  reviewedBy   User?                     @relation("RegistrationRequestReviewedBy", fields: [reviewedById], references: [id])
+
+  @@index([email, status])
+}
+
+model PasswordSetupToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model NewHire {
+  id                   String      @id @default(uuid()) @db.Uuid
+  companyId            String      @db.Uuid
+  name                 String
+  rrnEncrypted         String
+  rrnIv                String
+  hireDate             DateTime
+  department           String?
+  salaryType           SalaryType
+  salaryBasis          SalaryBasis
+  salaryAmount         Int
+  isContract           Boolean     @default(false)
+  contractStart        DateTime?
+  contractEnd          DateTime?
+  deletedAt            DateTime?
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  createdById          String      @db.Uuid
+  email                String?
+  accountNumber        String?
+  bankName             String?
+  nonTaxableAllowances Json?
+  notes                String?
+  phone                String?
+  company              Company     @relation(fields: [companyId], references: [id])
+  createdBy            User        @relation("NewHireCreatedBy", fields: [createdById], references: [id])
+
+  @@index([companyId])
+  @@index([companyId, deletedAt])
+}
+
+model Termination {
+  id                String            @id @default(uuid()) @db.Uuid
+  companyId         String            @db.Uuid
+  name              String
+  rrnEncrypted      String
+  rrnIv             String
+  terminationDate   DateTime
+  reason            String
+  deletedAt         DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  createdById       String            @db.Uuid
+  hireDate          DateTime?
+  retirementPayType RetirementPayType
+  notes             String?
+  company           Company           @relation(fields: [companyId], references: [id])
+  createdBy         User              @relation("TerminationCreatedBy", fields: [createdById], references: [id])
+
+  @@index([companyId])
+  @@index([companyId, deletedAt])
+}
+
+model CompensationChange {
+  id                 String      @id @default(uuid()) @db.Uuid
+  companyId          String      @db.Uuid
+  name               String
+  rrnEncrypted       String
+  rrnIv              String
+  salaryTypeBefore   SalaryType
+  salaryBasisBefore  SalaryBasis
+  salaryAmountBefore Int
+  salaryTypeAfter    SalaryType
+  salaryBasisAfter   SalaryBasis
+  salaryAmountAfter  Int
+  changeDate         DateTime
+  deletedAt          DateTime?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  createdById        String      @db.Uuid
+  company            Company     @relation(fields: [companyId], references: [id])
+  createdBy          User        @relation("CompChangeCreatedBy", fields: [createdById], references: [id])
+
+  @@index([companyId])
+  @@index([companyId, deletedAt])
+}
+
+model DailyWorker {
+  id             String                @id @default(uuid()) @db.Uuid
+  companyId      String                @db.Uuid
+  year           Int
+  month          Int
+  name           String
+  rrnEncrypted   String
+  rrnIv          String
+  occupation     DailyWorkerOccupation
+  occupationCode String
+  hoursDay1      Decimal?              @db.Decimal(4, 1)
+  hoursDay2      Decimal?              @db.Decimal(4, 1)
+  hoursDay3      Decimal?              @db.Decimal(4, 1)
+  hoursDay4      Decimal?              @db.Decimal(4, 1)
+  hoursDay5      Decimal?              @db.Decimal(4, 1)
+  hoursDay6      Decimal?              @db.Decimal(4, 1)
+  hoursDay7      Decimal?              @db.Decimal(4, 1)
+  hoursDay8      Decimal?              @db.Decimal(4, 1)
+  hoursDay9      Decimal?              @db.Decimal(4, 1)
+  hoursDay10     Decimal?              @db.Decimal(4, 1)
+  hoursDay11     Decimal?              @db.Decimal(4, 1)
+  hoursDay12     Decimal?              @db.Decimal(4, 1)
+  hoursDay13     Decimal?              @db.Decimal(4, 1)
+  hoursDay14     Decimal?              @db.Decimal(4, 1)
+  hoursDay15     Decimal?              @db.Decimal(4, 1)
+  hoursDay16     Decimal?              @db.Decimal(4, 1)
+  hoursDay17     Decimal?              @db.Decimal(4, 1)
+  hoursDay18     Decimal?              @db.Decimal(4, 1)
+  hoursDay19     Decimal?              @db.Decimal(4, 1)
+  hoursDay20     Decimal?              @db.Decimal(4, 1)
+  hoursDay21     Decimal?              @db.Decimal(4, 1)
+  hoursDay22     Decimal?              @db.Decimal(4, 1)
+  hoursDay23     Decimal?              @db.Decimal(4, 1)
+  hoursDay24     Decimal?              @db.Decimal(4, 1)
+  hoursDay25     Decimal?              @db.Decimal(4, 1)
+  hoursDay26     Decimal?              @db.Decimal(4, 1)
+  hoursDay27     Decimal?              @db.Decimal(4, 1)
+  hoursDay28     Decimal?              @db.Decimal(4, 1)
+  hoursDay29     Decimal?              @db.Decimal(4, 1)
+  hoursDay30     Decimal?              @db.Decimal(4, 1)
+  hoursDay31     Decimal?              @db.Decimal(4, 1)
+  daysWorked     Int                   @default(0)
+  avgHoursPerDay Int                   @default(0)
+  salaryBasis    SalaryBasis
+  totalWage      Int
+  deletedAt      DateTime?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  createdById    String                @db.Uuid
+  notes          String?
+  company        Company               @relation(fields: [companyId], references: [id])
+  createdBy      User                  @relation("DailyWorkerCreatedBy", fields: [createdById], references: [id])
+
+  @@index([companyId, year, month, deletedAt])
+  @@index([companyId, deletedAt])
+}
+
+model PortalSyncCursor {
+  scope     String   @id
+  version   BigInt   @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+model TenantChange {
+  id         String                 @id @default(uuid()) @db.Uuid
+  companyId  String                 @db.Uuid
+  entityType TenantChangeEntityType
+  entityId   String?                @db.Uuid
+  action     AuditAction
+  audience   TenantChangeAudience
+  actorId    String                 @db.Uuid
+  createdAt  DateTime               @default(now())
+  actor      User                   @relation("TenantChangeActor", fields: [actorId], references: [id])
+  company    Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, audience, entityType, createdAt])
+  @@index([audience, createdAt])
+}
+
+model TenantChangeReadCursor {
+  id         String                 @id @default(uuid()) @db.Uuid
+  userId     String                 @db.Uuid
+  companyId  String                 @db.Uuid
+  entityType TenantChangeEntityType
+  lastReadAt DateTime               @default(now())
+  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId, entityType])
+  @@index([userId, companyId])
+}
+
+model AuditLog {
+  id        String      @id @default(uuid()) @db.Uuid
+  actorId   String      @db.Uuid
+  companyId String      @db.Uuid
+  action    AuditAction
+  tableName String
+  recordId  String?
+  payload   Json?
+  createdAt DateTime    @default(now())
+  actor     User        @relation("AuditLogActor", fields: [actorId], references: [id])
+
+  @@index([actorId])
+  @@index([companyId])
+}
+
 enum UserRole {
   CLIENT_ADMIN
   FIRM_STAFF
@@ -66,317 +362,4 @@ enum TenantChangeEntityType {
 enum TenantChangeAudience {
   FIRM
   CLIENT
-}
-
-model Company {
-  id             String    @id @default(uuid()) @db.Uuid
-  name           String
-  businessNumber String?
-  isActive       Boolean   @default(true)
-
-  // Profile / registration info
-  firmContactName            String?
-  managesPayroll             Boolean?
-  managesFourMajorInsurance  Boolean?
-  workplaceManagementNumber  String?
-  representativeName         String?
-  companyContactName         String?
-  companyContactTitle        String?
-  phone                      String?
-  mobile                     String?
-  fax                        String?
-  email                      String?
-  businessAddress            String?
-  taxOfficeName              String?
-  taxOfficeContact           String?
-  certificatePassword        String?
-  workersCompPhone           String?
-  workersCompFax             String?
-  nhisPhone                  String?
-  nhisFax                    String?
-  npsPhone                   String?
-  npsFax                     String?
-  employmentCenterPhone      String?
-  employmentCenterFax        String?
-  retirementPensionContact   String?
-  retirementPensionPhone     String?
-  notes                      String?
-
-  deletedAt      DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  users                User[]
-  registrationRequests RegistrationRequest[]
-  departments          Department[]
-
-  newHires            NewHire[]
-  terminations        Termination[]
-  compensationChanges CompensationChange[]
-  dailyWorkers        DailyWorker[]
-  tenantChanges       TenantChange[]
-
-  @@index([deletedAt])
-}
-
-model Department {
-  id        String    @id @default(uuid()) @db.Uuid
-  companyId String    @db.Uuid
-  name      String
-  deletedAt DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
-
-  @@index([companyId, deletedAt])
-}
-
-model User {
-  id                 String   @id @default(uuid()) @db.Uuid
-  name               String
-  email              String   @unique
-  passwordHash       String
-  role               UserRole
-  companyId          String?  @db.Uuid
-  isActive           Boolean  @default(true)
-  mustChangePassword Boolean  @default(false)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  company Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
-
-  createdNewHires            NewHire[]            @relation("NewHireCreatedBy")
-  createdTerminations        Termination[]        @relation("TerminationCreatedBy")
-  createdCompensationChanges CompensationChange[] @relation("CompChangeCreatedBy")
-  createdDailyWorkers        DailyWorker[]        @relation("DailyWorkerCreatedBy")
-  auditLogs                  AuditLog[]           @relation("AuditLogActor")
-  reviewedRegistrationRequests RegistrationRequest[] @relation("RegistrationRequestReviewedBy")
-  passwordSetupTokens        PasswordSetupToken[]
-  tenantChanges              TenantChange[]          @relation("TenantChangeActor")
-  tenantChangeReadCursors    TenantChangeReadCursor[]
-
-  @@index([companyId])
-}
-
-model RegistrationRequest {
-  id          String                      @id @default(uuid()) @db.Uuid
-  name        String
-  email       String
-  companyName String
-  phone       String?
-  note        String?
-  status      RegistrationRequestStatus   @default(PENDING)
-  companyId   String?                     @db.Uuid
-  reviewedById String?                    @db.Uuid
-  reviewedAt  DateTime?
-  createdAt   DateTime                    @default(now())
-
-  company    Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  reviewedBy User?    @relation("RegistrationRequestReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
-
-  @@index([email, status])
-}
-
-model PasswordSetupToken {
-  id        String    @id @default(uuid()) @db.Uuid
-  userId    String    @db.Uuid
-  token     String    @unique
-  expiresAt DateTime
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}
-
-model NewHire {
-  id            String      @id @default(uuid()) @db.Uuid
-  companyId     String      @db.Uuid
-  name          String
-  email         String?
-  rrnEncrypted  String
-  rrnIv         String
-  hireDate      DateTime
-  department    String?
-  salaryType    SalaryType
-  salaryBasis   SalaryBasis
-  salaryAmount  Int
-  isContract    Boolean     @default(false)
-  contractStart          DateTime?
-  contractEnd            DateTime?
-  nonTaxableAllowances   Json?
-  bankName               String?
-  accountNumber          String?
-  phone                  String?
-  notes                  String?
-  deletedAt              DateTime?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  createdById   String      @db.Uuid
-
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  createdBy User    @relation("NewHireCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-
-  @@index([companyId])
-  @@index([companyId, deletedAt])
-}
-
-model Termination {
-  id                String            @id @default(uuid()) @db.Uuid
-  companyId         String            @db.Uuid
-  name              String
-  rrnEncrypted      String
-  rrnIv             String
-  hireDate          DateTime?
-  terminationDate   DateTime
-  reason            String
-  retirementPayType RetirementPayType
-  notes             String?
-  deletedAt         DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  createdById     String    @db.Uuid
-
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  createdBy User    @relation("TerminationCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-
-  @@index([companyId])
-  @@index([companyId, deletedAt])
-}
-
-model CompensationChange {
-  id                 String      @id @default(uuid()) @db.Uuid
-  companyId          String      @db.Uuid
-  name               String
-  rrnEncrypted       String
-  rrnIv              String
-  salaryTypeBefore   SalaryType
-  salaryBasisBefore  SalaryBasis
-  salaryAmountBefore Int
-  salaryTypeAfter    SalaryType
-  salaryBasisAfter   SalaryBasis
-  salaryAmountAfter  Int
-  changeDate         DateTime
-  deletedAt          DateTime?
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
-  createdById        String      @db.Uuid
-
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  createdBy User    @relation("CompChangeCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-
-  @@index([companyId])
-  @@index([companyId, deletedAt])
-}
-
-model DailyWorker {
-  id              String                @id @default(uuid()) @db.Uuid
-  companyId       String                @db.Uuid
-  year            Int
-  month           Int
-  name            String
-  rrnEncrypted    String
-  rrnIv           String
-  occupation      DailyWorkerOccupation
-  occupationCode  String
-  hoursDay1       Decimal?              @db.Decimal(4, 1)
-  hoursDay2       Decimal?              @db.Decimal(4, 1)
-  hoursDay3       Decimal?              @db.Decimal(4, 1)
-  hoursDay4       Decimal?              @db.Decimal(4, 1)
-  hoursDay5       Decimal?              @db.Decimal(4, 1)
-  hoursDay6       Decimal?              @db.Decimal(4, 1)
-  hoursDay7       Decimal?              @db.Decimal(4, 1)
-  hoursDay8       Decimal?              @db.Decimal(4, 1)
-  hoursDay9       Decimal?              @db.Decimal(4, 1)
-  hoursDay10      Decimal?              @db.Decimal(4, 1)
-  hoursDay11      Decimal?              @db.Decimal(4, 1)
-  hoursDay12      Decimal?              @db.Decimal(4, 1)
-  hoursDay13      Decimal?              @db.Decimal(4, 1)
-  hoursDay14      Decimal?              @db.Decimal(4, 1)
-  hoursDay15      Decimal?              @db.Decimal(4, 1)
-  hoursDay16      Decimal?              @db.Decimal(4, 1)
-  hoursDay17      Decimal?              @db.Decimal(4, 1)
-  hoursDay18      Decimal?              @db.Decimal(4, 1)
-  hoursDay19      Decimal?              @db.Decimal(4, 1)
-  hoursDay20      Decimal?              @db.Decimal(4, 1)
-  hoursDay21      Decimal?              @db.Decimal(4, 1)
-  hoursDay22      Decimal?              @db.Decimal(4, 1)
-  hoursDay23      Decimal?              @db.Decimal(4, 1)
-  hoursDay24      Decimal?              @db.Decimal(4, 1)
-  hoursDay25      Decimal?              @db.Decimal(4, 1)
-  hoursDay26      Decimal?              @db.Decimal(4, 1)
-  hoursDay27      Decimal?              @db.Decimal(4, 1)
-  hoursDay28      Decimal?              @db.Decimal(4, 1)
-  hoursDay29      Decimal?              @db.Decimal(4, 1)
-  hoursDay30      Decimal?              @db.Decimal(4, 1)
-  hoursDay31      Decimal?              @db.Decimal(4, 1)
-  daysWorked      Int                   @default(0)
-  avgHoursPerDay  Int                   @default(0)
-  salaryBasis     SalaryBasis
-  totalWage       Int
-  notes           String?
-  deletedAt       DateTime?
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
-  createdById     String                @db.Uuid
-
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  createdBy User    @relation("DailyWorkerCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-
-  @@index([companyId, year, month, deletedAt])
-  @@index([companyId, deletedAt])
-}
-
-model PortalSyncCursor {
-  scope     String   @id
-  version   BigInt   @default(0)
-  updatedAt DateTime @updatedAt
-}
-
-model TenantChange {
-  id         String                 @id @default(uuid()) @db.Uuid
-  companyId  String                 @db.Uuid
-  entityType TenantChangeEntityType
-  entityId   String?                @db.Uuid
-  action     AuditAction
-  audience   TenantChangeAudience
-  actorId    String                 @db.Uuid
-  createdAt  DateTime               @default(now())
-
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  actor   User    @relation("TenantChangeActor", fields: [actorId], references: [id], onDelete: Restrict)
-
-  @@index([companyId, audience, entityType, createdAt])
-  @@index([audience, createdAt])
-}
-
-model TenantChangeReadCursor {
-  id         String                 @id @default(uuid()) @db.Uuid
-  userId     String                 @db.Uuid
-  companyId  String                 @db.Uuid
-  entityType TenantChangeEntityType
-  lastReadAt DateTime               @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, companyId, entityType])
-  @@index([userId, companyId])
-}
-
-model AuditLog {
-  id        String      @id @default(uuid()) @db.Uuid
-  actorId   String      @db.Uuid
-  companyId String      @db.Uuid
-  action    AuditAction
-  tableName String
-  recordId  String?
-  payload   Json?
-  createdAt DateTime    @default(now())
-
-  actor User @relation("AuditLogActor", fields: [actorId], references: [id], onDelete: Restrict)
-
-  @@index([actorId])
-  @@index([companyId])
 }
