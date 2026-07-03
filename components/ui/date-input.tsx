@@ -96,7 +96,6 @@ export function DateInput({
               onChange(format(date, "yyyy-MM-dd"))
               setOpen(false)
             }}
-            initialFocus
           />
         </PopoverContent>
       </Popover>
