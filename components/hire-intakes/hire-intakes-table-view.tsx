@@ -78,6 +78,7 @@ export function HireIntakesTableView({
           hireIntake={{
             id: hireIntake.id,
             name: hireIntake.name,
+            employeeNumber: hireIntake.employeeNumber,
             email: hireIntake.email,
             hireDate: toFormDateValue(hireIntake.hireDate) ?? "",
             department: hireIntake.department,

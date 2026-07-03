@@ -50,6 +50,7 @@ function toHireIntakeData(
 ) {
   return {
     name: input.name,
+    employeeNumber: input.employeeNumber ?? null,
     email: input.email ?? null,
     rrnEncrypted,
     rrnIv,
@@ -94,6 +95,7 @@ export async function listHireIntakes(companyId: string) {
     select: {
       id: true,
       name: true,
+      employeeNumber: true,
       email: true,
       rrnEncrypted: true,
       rrnIv: true,

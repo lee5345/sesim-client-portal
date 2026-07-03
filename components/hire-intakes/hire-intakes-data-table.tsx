@@ -35,6 +35,7 @@ const stickyActionCellClassName =
 export type HireIntakeTableRow = {
   id: string;
   name: string;
+  employeeNumber: string | null;
   email: string | null;
   maskedRrn: string;
   hireDate: Date;
@@ -101,6 +102,7 @@ export function HireIntakesDataTable({
           <thead>
             <tr className="border-b bg-muted/40 text-left">
               <th className={stickyNameHeaderClassName}>이름</th>
+              <th className={headerCellClassName}>사번</th>
               <th className={headerCellClassName}>
                 <MaskedRrnColumnHeader />
               </th>
@@ -130,6 +132,9 @@ export function HireIntakesDataTable({
               className="group border-b last:border-0 hover:bg-muted/20"
             >
               <td className={stickyNameCellClassName}>{hireIntake.name}</td>
+              <td className={`${bodyCellClassName} font-mono text-muted-foreground`}>
+                {displayText(hireIntake.employeeNumber)}
+              </td>
               <td className={bodyCellClassName}>
                 <MaskedRrnCell
                   id={hireIntake.id}

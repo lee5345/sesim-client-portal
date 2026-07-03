@@ -62,3 +62,31 @@ export class PasswordSetupTokenInvalidError extends PasswordSetupTokenError {
   }
 }
 
+export class PasswordResetTokenError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PasswordResetTokenError";
+  }
+}
+
+export class PasswordResetTokenExpiredError extends PasswordResetTokenError {
+  constructor() {
+    super("Password reset token expired");
+    this.name = "PasswordResetTokenExpiredError";
+  }
+}
+
+export class PasswordResetTokenUsedError extends PasswordResetTokenError {
+  constructor() {
+    super("Password reset token already used");
+    this.name = "PasswordResetTokenUsedError";
+  }
+}
+
+export class PasswordResetTokenInvalidError extends PasswordResetTokenError {
+  constructor() {
+    super("Password reset token invalid");
+    this.name = "PasswordResetTokenInvalidError";
+  }
+}
+

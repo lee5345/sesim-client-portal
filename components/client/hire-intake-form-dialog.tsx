@@ -66,6 +66,7 @@ type NonTaxableAllowanceFormRow = {
 
 type HireIntakeFormValues = {
   name: string;
+  employeeNumber: string;
   email: string;
   rrnSegments: string[];
   hireDate: string;
@@ -91,6 +92,7 @@ type HireIntakeFormDialogProps = {
   hireIntake?: {
     id: string;
     name: string;
+    employeeNumber: string | null;
     email: string | null;
     hireDate: string;
     department: string | null;
@@ -159,6 +161,7 @@ function getInitialFormValues(
   const bankPreset = getBankPreset(hireIntake?.bankName);
   return {
     name: hireIntake?.name ?? "",
+    employeeNumber: hireIntake?.employeeNumber ?? "",
     email: hireIntake?.email ?? "",
     rrnSegments: createEmptyRrnSegments(),
     hireDate: toDateInputValue(hireIntake?.hireDate),
@@ -215,6 +218,7 @@ function buildFormData(
   }
 
   formData.set("name", values.name);
+  formData.set("employeeNumber", values.employeeNumber.replace(/\D/g, "").slice(0, 6));
   formData.set("email", values.email);
   formData.set("hireDate", values.hireDate);
   formData.set("department", values.department);
@@ -361,7 +365,7 @@ export function HireIntakeFormDialog({
           ) : null}
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2 sm:col-span-2">
+            <div className="space-y-2">
               <FieldLabel htmlFor={`name-${formId}`} required>
                 이름
               </FieldLabel>
@@ -371,6 +375,25 @@ export function HireIntakeFormDialog({
                 onChange={(event) => updateFormValue("name", event.target.value)}
                 required
                 maxLength={100}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <FieldLabel htmlFor={`employeeNumber-${formId}`}>사번</FieldLabel>
+              <Input
+                id={`employeeNumber-${formId}`}
+                type="text"
+                inputMode="numeric"
+                value={formValues.employeeNumber}
+                onChange={(event) =>
+                  updateFormValue(
+                    "employeeNumber",
+                    event.target.value.replace(/\D/g, "").slice(0, 6),
+                  )
+                }
+                disabled={isPending}
+                maxLength={6}
+                placeholder="최대 6자리"
               />
             </div>
 
@@ -806,7 +829,7 @@ export function HireIntakeFormDialog({
           </div>
 
           <div className="grid gap-4 border-t pt-4 sm:grid-cols-2">
-            <div className="space-y-2 sm:col-span-2">
+            <div className="space-y-2">
               <FieldLabel htmlFor={`email-${formId}`}>이메일</FieldLabel>
               <Input
                 id={`email-${formId}`}
@@ -819,7 +842,7 @@ export function HireIntakeFormDialog({
               />
             </div>
 
-            <div className="space-y-2 sm:col-span-2">
+            <div className="space-y-2">
               <FieldLabel htmlFor={`phone-${formId}`}>연락처</FieldLabel>
               <Input
                 id={`phone-${formId}`}

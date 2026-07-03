@@ -8,6 +8,23 @@ import { translateZodErrorMessage } from "@/lib/validation/zod-korean";
 const RRN_REGEX = /^\d{6}-?\d{7}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const employeeNumberSchema = z.preprocess(
+  (value) => {
+    if (value === "" || value === null || value === undefined) {
+      return undefined;
+    }
+    return String(value).trim();
+  },
+  z
+    .string()
+    .optional()
+    .transform((value) => (value ? value : undefined))
+    .refine(
+      (value) => value === undefined || /^\d{1,6}$/.test(value),
+      "사번은 최대 6자리 숫자만 입력해 주세요.",
+    ),
+);
+
 export const salaryTypeSchema = z.enum(["ANNUAL", "MONTHLY", "DAILY", "HOURLY"], {
   error: "급여 유형을 선택해 주세요.",
 });
@@ -174,6 +191,7 @@ function optionalDateSchema() {
 
 const hireIntakeBaseSchema = z.object({
   name: z.string().trim().min(1, "이름을 입력해 주세요."),
+  employeeNumber: employeeNumberSchema,
   email: emailSchema,
   hireDate: requiredDateSchema("입사일"),
   department: departmentSchema,
@@ -282,6 +300,7 @@ export function parseCreateHireIntakeFormData(
 ): HireIntakeFormParseResult<CreateHireIntakeInput> {
   const result = createHireIntakeSchema.safeParse({
     name: formData.get("name"),
+    employeeNumber: emptyToUndefined(formData.get("employeeNumber")),
     email: emptyToUndefined(formData.get("email")),
     rrn: formData.get("rrn"),
     hireDate: formData.get("hireDate"),
@@ -311,6 +330,7 @@ export function parseUpdateHireIntakeFormData(
 ): HireIntakeFormParseResult<UpdateHireIntakeInput> {
   const result = updateHireIntakeSchema.safeParse({
     name: formData.get("name"),
+    employeeNumber: emptyToUndefined(formData.get("employeeNumber")),
     email: emptyToUndefined(formData.get("email")),
     rrn: emptyToUndefined(formData.get("rrn")),
     hireDate: formData.get("hireDate"),
@@ -343,6 +363,7 @@ export function toAuditPayload(
 ) {
   return {
     name: data.name,
+    employeeNumber: data.employeeNumber ?? null,
     email: data.email ?? null,
     hireDate: data.hireDate.toISOString(),
     department: data.department ?? null,

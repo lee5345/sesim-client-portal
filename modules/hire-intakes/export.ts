@@ -69,6 +69,7 @@ export async function exportHireIntakesExcel(input: {
       filterSummary: compactFilterSummary(filterItems),
       records: filtered.map((record) => ({
         name: record.name,
+        employeeNumber: record.employeeNumber,
         rrn: rrnsById[record.id]!,
         hireDate: record.hireDate,
         department: record.department,
