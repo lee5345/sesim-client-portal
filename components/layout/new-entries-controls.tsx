@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { Bell, BellOff } from "lucide-react";
 
@@ -7,23 +8,54 @@ import { Button } from "@/components/ui/button";
 import { useRealtimeSync } from "@/components/layout/realtime-sync-provider";
 import {
   acknowledgeTenantChangesAction,
+  getEarliestUnreadDailyWorkerPeriodAction,
   listUnreadTenantChangeEntityIdsAction,
 } from "@/lib/realtime/sync-actions";
 import type { TenantChangeEntityType } from "@/lib/generated/prisma/client";
+
+type PeriodScope = {
+  year: number;
+  month: number;
+  basePath: string;
+};
 
 type NewEntriesControlsProps = {
   companyId: string;
   entityTypes: TenantChangeEntityType[];
   onShowUnreadEntries: (ids: string[]) => void;
   onClearUnreadFilter: () => void;
+  periodScope?: PeriodScope;
+  reviewActive?: boolean;
+  onReviewActiveChange?: (active: boolean) => void;
 };
+
+function buildPeriodNavigationUrl(
+  basePath: string,
+  searchParams: URLSearchParams,
+  year: number,
+  month: number,
+): string {
+  const params = new URLSearchParams(searchParams.toString());
+  params.set("year", String(year));
+  params.set("month", String(month));
+  params.set("showUnread", "1");
+  if (basePath.includes("/firm/companies/")) {
+    params.set("tab", "daily-workers");
+  }
+  return `${basePath}?${params.toString()}`;
+}
 
 export function NewEntriesControls({
   companyId,
   entityTypes,
   onShowUnreadEntries,
   onClearUnreadFilter,
+  periodScope,
+  reviewActive = false,
+  onReviewActiveChange,
 }: NewEntriesControlsProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { notifications, refreshNow } = useRealtimeSync();
   const [mode, setMode] = useState<"show" | "confirm">("show");
   const [isPending, startTransition] = useTransition();
@@ -33,17 +65,26 @@ export function NewEntriesControls({
     return entityTypes.reduce((sum, entityType) => sum + (companyCounts[entityType] ?? 0), 0);
   }, [companyId, entityTypes, notifications.companyModuleBadges]);
 
+  const showConfirm = reviewActive || mode === "confirm";
+
   useEffect(() => {
     if (count <= 0) {
       setMode("show");
+      onReviewActiveChange?.(false);
     }
-  }, [count]);
+  }, [count, onReviewActiveChange]);
+
+  useEffect(() => {
+    if (reviewActive) {
+      setMode("confirm");
+    }
+  }, [reviewActive]);
 
   if (count <= 0) {
     return null;
   }
 
-  if (mode === "confirm") {
+  if (showConfirm) {
     return (
       <Button
         type="button"
@@ -51,8 +92,15 @@ export function NewEntriesControls({
         disabled={isPending}
         onClick={() => {
           startTransition(async () => {
-            await acknowledgeTenantChangesAction({ companyId, entityTypes });
+            await acknowledgeTenantChangesAction({
+              companyId,
+              entityTypes,
+              periodYear: periodScope?.year,
+              periodMonth: periodScope?.month,
+            });
             await refreshNow();
+            setMode("show");
+            onReviewActiveChange?.(false);
             onClearUnreadFilter();
           });
         }}
@@ -71,12 +119,40 @@ export function NewEntriesControls({
       disabled={isPending}
       onClick={() => {
         startTransition(async () => {
+          if (periodScope && entityTypes.includes("DAILY_WORKER")) {
+            const earliest = await getEarliestUnreadDailyWorkerPeriodAction({
+              companyId,
+            });
+
+            if (!earliest) {
+              return;
+            }
+
+            if (
+              earliest.year !== periodScope.year ||
+              earliest.month !== periodScope.month
+            ) {
+              router.push(
+                buildPeriodNavigationUrl(
+                  periodScope.basePath,
+                  new URLSearchParams(searchParams.toString()),
+                  earliest.year,
+                  earliest.month,
+                ),
+              );
+              return;
+            }
+          }
+
           const ids = await listUnreadTenantChangeEntityIdsAction({
             companyId,
             entityTypes,
+            periodYear: periodScope?.year,
+            periodMonth: periodScope?.month,
           });
           onShowUnreadEntries(ids);
           setMode("confirm");
+          onReviewActiveChange?.(true);
         });
       }}
     >
@@ -85,4 +161,3 @@ export function NewEntriesControls({
     </Button>
   );
 }
-

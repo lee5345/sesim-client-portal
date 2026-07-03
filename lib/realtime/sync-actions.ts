@@ -4,9 +4,11 @@ import { requireAuth } from "@/lib/auth/guards";
 import { isFirmRole } from "@/lib/permissions/crud";
 import {
   acknowledgeTenantChanges,
+  getEarliestUnreadDailyWorkerPeriod,
   getNotificationCounts,
   listUnreadTenantChangeEntityIds,
   type NotificationCounts,
+  type YearMonthPeriod,
 } from "@/modules/notifications/tenant-changes";
 import type { TenantChangeEntityType } from "@/lib/generated/prisma/client";
 import {
@@ -54,6 +56,8 @@ export async function getRealtimeSyncStateAction(): Promise<RealtimeSyncState> {
 export async function acknowledgeTenantChangesAction(input: {
   companyId: string;
   entityTypes: TenantChangeEntityType[];
+  periodYear?: number;
+  periodMonth?: number;
 }): Promise<void> {
   const session = await requireAuth([
     "CLIENT_ADMIN",
@@ -65,12 +69,16 @@ export async function acknowledgeTenantChangesAction(input: {
     userId: session.user.userId,
     companyId: input.companyId,
     entityTypes: input.entityTypes,
+    periodYear: input.periodYear,
+    periodMonth: input.periodMonth,
   });
 }
 
 export async function listUnreadTenantChangeEntityIdsAction(input: {
   companyId: string;
   entityTypes: TenantChangeEntityType[];
+  periodYear?: number;
+  periodMonth?: number;
 }): Promise<string[]> {
   const session = await requireAuth([
     "CLIENT_ADMIN",
@@ -83,5 +91,23 @@ export async function listUnreadTenantChangeEntityIdsAction(input: {
     role: session.user.role,
     companyId: input.companyId,
     entityTypes: input.entityTypes,
+    periodYear: input.periodYear,
+    periodMonth: input.periodMonth,
+  });
+}
+
+export async function getEarliestUnreadDailyWorkerPeriodAction(input: {
+  companyId: string;
+}): Promise<YearMonthPeriod | null> {
+  const session = await requireAuth([
+    "CLIENT_ADMIN",
+    "FIRM_STAFF",
+    "FIRM_ADMIN",
+  ]);
+
+  return getEarliestUnreadDailyWorkerPeriod({
+    userId: session.user.userId,
+    role: session.user.role,
+    companyId: input.companyId,
   });
 }

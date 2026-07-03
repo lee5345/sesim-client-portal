@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { CalendarDays } from "lucide-react";
 
 import { DailyWorkerFormDialog } from "@/components/client/daily-worker-form-dialog";
@@ -17,6 +18,7 @@ import { summarizeDailyWorkerFilters } from "@/lib/export/filter-summaries";
 import { filterDailyWorkers } from "@/lib/filters/daily-workers";
 import { exportDailyWorkersExcel } from "@/modules/daily-workers/export";
 import { NewEntriesControls } from "@/components/layout/new-entries-controls";
+import { listUnreadTenantChangeEntityIdsAction } from "@/lib/realtime/sync-actions";
 import {
   Card,
   CardContent,
@@ -34,6 +36,15 @@ type DailyWorkersTableProps = {
   basePath?: string;
 };
 
+function clearShowUnreadParam(
+  basePath: string,
+  searchParams: URLSearchParams,
+): string {
+  const params = new URLSearchParams(searchParams.toString());
+  params.delete("showUnread");
+  return `${basePath}?${params.toString()}`;
+}
+
 export function DailyWorkersTable({
   dailyWorkers,
   year,
@@ -42,7 +53,11 @@ export function DailyWorkersTable({
   companyName,
   basePath = "/client/daily-workers",
 }: DailyWorkersTableProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const showUnread = searchParams.get("showUnread") === "1";
   const [unreadIds, setUnreadIds] = useState<Set<string> | null>(null);
+  const [reviewActive, setReviewActive] = useState(false);
   const [draftFilters, setDraftFilters] = useState<DailyWorkersFilterValues>(
     EMPTY_DAILY_WORKER_FILTERS,
   );
@@ -68,6 +83,34 @@ export function DailyWorkersTable({
     () => summarizeDailyWorkerFilters(year, month, appliedFilters),
     [year, month, appliedFilters],
   );
+
+  function showUnreadEntriesForPeriod(ids: string[]) {
+    setDraftFilters(EMPTY_DAILY_WORKER_FILTERS);
+    setAppliedFilters(EMPTY_DAILY_WORKER_FILTERS);
+    setUnreadIds(new Set(ids));
+  }
+
+  useEffect(() => {
+    if (!companyId || !showUnread) {
+      return;
+    }
+
+    router.replace(
+      clearShowUnreadParam(basePath, new URLSearchParams(searchParams.toString())),
+      { scroll: false },
+    );
+
+    void (async () => {
+      const ids = await listUnreadTenantChangeEntityIdsAction({
+        companyId,
+        entityTypes: ["DAILY_WORKER"],
+        periodYear: year,
+        periodMonth: month,
+      });
+      showUnreadEntriesForPeriod(ids);
+      setReviewActive(true);
+    })();
+  }, [basePath, companyId, month, router, searchParams, showUnread, year]);
 
   function handleDraftChange(next: DailyWorkersFilterValues) {
     setDraftFilters(next);
@@ -100,11 +143,10 @@ export function DailyWorkersTable({
             <NewEntriesControls
               companyId={companyId}
               entityTypes={["DAILY_WORKER"]}
-              onShowUnreadEntries={(ids) => {
-                setDraftFilters(EMPTY_DAILY_WORKER_FILTERS);
-                setAppliedFilters(EMPTY_DAILY_WORKER_FILTERS);
-                setUnreadIds(new Set(ids));
-              }}
+              periodScope={{ year, month, basePath }}
+              reviewActive={reviewActive}
+              onReviewActiveChange={setReviewActive}
+              onShowUnreadEntries={showUnreadEntriesForPeriod}
               onClearUnreadFilter={() => setUnreadIds(null)}
             />
           ) : null}

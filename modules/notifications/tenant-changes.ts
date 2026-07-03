@@ -14,6 +14,11 @@ export type NotificationCounts = {
   companyModuleBadges: Record<string, Partial<Record<TenantChangeEntityType, number>>>;
 };
 
+export type YearMonthPeriod = {
+  year: number;
+  month: number;
+};
+
 const CLIENT_NAV_ENTITY_MAP: Record<string, TenantChangeEntityType[]> = {
   "/client/new-hires": ["NEW_HIRE"],
   "/client/terminations": ["TERMINATION"],
@@ -31,8 +36,107 @@ type NotificationEntityType = (typeof NOTIFICATION_ENTITY_TYPES)[number];
 
 const NOTIFICATION_ACTIONS = ["CREATE", "UPDATE"] as const;
 
+type PeriodKey = `${number}-${number}`;
+
+function periodKey(year: number, month: number): PeriodKey {
+  return `${year}-${month}`;
+}
+
+function comparePeriods(a: YearMonthPeriod, b: YearMonthPeriod): number {
+  if (a.year !== b.year) {
+    return a.year - b.year;
+  }
+  return a.month - b.month;
+}
+
 function audienceForRole(role: UserRole): TenantChangeAudience {
   return isFirmRole(role) ? "FIRM" : "CLIENT";
+}
+
+async function getDailyWorkerPeriodsByEntityId(
+  companyId: string,
+  entityIds: string[],
+): Promise<Map<string, YearMonthPeriod>> {
+  if (entityIds.length === 0) {
+    return new Map();
+  }
+
+  const workers = await prisma.dailyWorker.findMany({
+    where: {
+      companyId,
+      id: { in: entityIds },
+    },
+    select: {
+      id: true,
+      year: true,
+      month: true,
+    },
+  });
+
+  return new Map(
+    workers.map((worker) => [
+      worker.id,
+      { year: worker.year, month: worker.month },
+    ]),
+  );
+}
+
+async function getPeriodReadCursors(
+  userId: string,
+  companyIds: string[],
+  entityType: TenantChangeEntityType,
+): Promise<Map<string, Map<PeriodKey, Date>>> {
+  if (companyIds.length === 0) {
+    return new Map();
+  }
+
+  const cursors = await prisma.tenantChangePeriodReadCursor.findMany({
+    where: {
+      userId,
+      companyId: { in: companyIds },
+      entityType,
+    },
+    select: {
+      companyId: true,
+      periodYear: true,
+      periodMonth: true,
+      lastReadAt: true,
+    },
+  });
+
+  const result = new Map<string, Map<PeriodKey, Date>>();
+
+  for (const cursor of cursors) {
+    const byPeriod =
+      result.get(cursor.companyId) ?? new Map<PeriodKey, Date>();
+    byPeriod.set(
+      periodKey(cursor.periodYear, cursor.periodMonth),
+      cursor.lastReadAt,
+    );
+    result.set(cursor.companyId, byPeriod);
+  }
+
+  return result;
+}
+
+function getEffectiveLastReadAt(input: {
+  globalLastReadAt?: Date;
+  periodLastReadAt?: Date;
+}): Date | undefined {
+  if (input.periodLastReadAt && input.globalLastReadAt) {
+    return input.periodLastReadAt > input.globalLastReadAt
+      ? input.periodLastReadAt
+      : input.globalLastReadAt;
+  }
+
+  return input.periodLastReadAt ?? input.globalLastReadAt;
+}
+
+function isUnreadChange(
+  createdAt: Date,
+  lastReadAt: Date | undefined,
+): boolean {
+  return !lastReadAt || createdAt > lastReadAt;
 }
 
 export async function recordCrossTenantChange(input: {
@@ -63,29 +167,69 @@ export async function acknowledgeTenantChanges(input: {
   userId: string;
   companyId: string;
   entityTypes: TenantChangeEntityType[];
+  periodYear?: number;
+  periodMonth?: number;
 }): Promise<void> {
   const now = new Date();
+  const hasPeriod =
+    input.periodYear !== undefined && input.periodMonth !== undefined;
 
-  await prisma.$transaction(
-    input.entityTypes.map((entityType) =>
-      prisma.tenantChangeReadCursor.upsert({
+  const globalEntityTypes = hasPeriod
+    ? input.entityTypes.filter((entityType) => entityType !== "DAILY_WORKER")
+    : input.entityTypes;
+
+  const operations = globalEntityTypes.map((entityType) =>
+    prisma.tenantChangeReadCursor.upsert({
+      where: {
+        userId_companyId_entityType: {
+          userId: input.userId,
+          companyId: input.companyId,
+          entityType,
+        },
+      },
+      create: {
+        userId: input.userId,
+        companyId: input.companyId,
+        entityType,
+        lastReadAt: now,
+      },
+      update: { lastReadAt: now },
+    }),
+  );
+
+  if (
+    hasPeriod &&
+    input.entityTypes.includes("DAILY_WORKER") &&
+    input.periodYear !== undefined &&
+    input.periodMonth !== undefined
+  ) {
+    operations.push(
+      prisma.tenantChangePeriodReadCursor.upsert({
         where: {
-          userId_companyId_entityType: {
+          userId_companyId_entityType_periodYear_periodMonth: {
             userId: input.userId,
             companyId: input.companyId,
-            entityType,
+            entityType: "DAILY_WORKER",
+            periodYear: input.periodYear,
+            periodMonth: input.periodMonth,
           },
         },
         create: {
           userId: input.userId,
           companyId: input.companyId,
-          entityType,
+          entityType: "DAILY_WORKER",
+          periodYear: input.periodYear,
+          periodMonth: input.periodMonth,
           lastReadAt: now,
         },
         update: { lastReadAt: now },
       }),
-    ),
-  );
+    );
+  }
+
+  if (operations.length > 0) {
+    await prisma.$transaction(operations);
+  }
 }
 
 async function getUnreadByCompany(
@@ -135,19 +279,61 @@ async function getUnreadByCompany(
     ]),
   );
 
+  const dailyWorkerPeriodsByCompany = new Map<string, Map<string, YearMonthPeriod>>();
+  const periodCursorsByCompany = entityTypes.includes("DAILY_WORKER")
+    ? await getPeriodReadCursors(userId, scopedCompanyIds, "DAILY_WORKER")
+    : new Map<string, Map<PeriodKey, Date>>();
+
+  for (const companyId of scopedCompanyIds) {
+    const companyEntityIds = changes
+      .filter(
+        (change) =>
+          change.companyId === companyId &&
+          change.entityType === "DAILY_WORKER" &&
+          change.entityId,
+      )
+      .map((change) => change.entityId as string);
+
+    if (companyEntityIds.length > 0) {
+      dailyWorkerPeriodsByCompany.set(
+        companyId,
+        await getDailyWorkerPeriodsByEntityId(companyId, companyEntityIds),
+      );
+    }
+  }
+
   const unreadEntityIdsByCompanyType = new Map<
     string,
     Map<TenantChangeEntityType, Set<string>>
   >();
 
   for (const change of changes) {
-    const cursorKey = `${change.companyId}:${change.entityType}`;
-    const lastReadAt = cursorMap.get(cursorKey);
-    if (lastReadAt && change.createdAt <= lastReadAt) {
+    if (!change.entityId) {
       continue;
     }
 
-    if (!change.entityId) {
+    let lastReadAt = cursorMap.get(`${change.companyId}:${change.entityType}`);
+
+    if (change.entityType === "DAILY_WORKER") {
+      const period = dailyWorkerPeriodsByCompany
+        .get(change.companyId)
+        ?.get(change.entityId);
+
+      if (!period) {
+        continue;
+      }
+
+      const periodLastReadAt = periodCursorsByCompany
+        .get(change.companyId)
+        ?.get(periodKey(period.year, period.month));
+
+      lastReadAt = getEffectiveLastReadAt({
+        globalLastReadAt: lastReadAt,
+        periodLastReadAt,
+      });
+    }
+
+    if (!isUnreadChange(change.createdAt, lastReadAt)) {
       continue;
     }
 
@@ -193,6 +379,8 @@ export async function listUnreadTenantChangeEntityIds(input: {
   role: UserRole;
   companyId: string;
   entityTypes: TenantChangeEntityType[];
+  periodYear?: number;
+  periodMonth?: number;
 }): Promise<string[]> {
   const audience = audienceForRole(input.role);
 
@@ -220,20 +408,95 @@ export async function listUnreadTenantChangeEntityIds(input: {
     orderBy: { createdAt: "asc" },
   });
 
+  const dailyWorkerEntityIds = [
+    ...new Set(
+      changes
+        .filter((change) => change.entityType === "DAILY_WORKER" && change.entityId)
+        .map((change) => change.entityId as string),
+    ),
+  ];
+
+  const dailyWorkerPeriods = input.entityTypes.includes("DAILY_WORKER")
+    ? await getDailyWorkerPeriodsByEntityId(input.companyId, dailyWorkerEntityIds)
+    : new Map<string, YearMonthPeriod>();
+
+  const periodCursors = input.entityTypes.includes("DAILY_WORKER")
+    ? (await getPeriodReadCursors(input.userId, [input.companyId], "DAILY_WORKER")).get(
+        input.companyId,
+      ) ?? new Map<PeriodKey, Date>()
+    : new Map<PeriodKey, Date>();
+
   const ids = new Set<string>();
 
   for (const change of changes) {
     if (!change.entityId) {
       continue;
     }
-    const lastReadAt = cursorMap.get(change.entityType);
-    if (lastReadAt && change.createdAt <= lastReadAt) {
+
+    let lastReadAt = cursorMap.get(change.entityType);
+
+    if (change.entityType === "DAILY_WORKER") {
+      const period = dailyWorkerPeriods.get(change.entityId);
+      if (!period) {
+        continue;
+      }
+
+      if (
+        input.periodYear !== undefined &&
+        input.periodMonth !== undefined &&
+        (period.year !== input.periodYear || period.month !== input.periodMonth)
+      ) {
+        continue;
+      }
+
+      const periodLastReadAt = periodCursors.get(
+        periodKey(period.year, period.month),
+      );
+
+      lastReadAt = getEffectiveLastReadAt({
+        globalLastReadAt: lastReadAt,
+        periodLastReadAt,
+      });
+    }
+
+    if (!isUnreadChange(change.createdAt, lastReadAt)) {
       continue;
     }
+
     ids.add(change.entityId);
   }
 
   return [...ids];
+}
+
+export async function getEarliestUnreadDailyWorkerPeriod(input: {
+  userId: string;
+  role: UserRole;
+  companyId: string;
+}): Promise<YearMonthPeriod | null> {
+  const unreadIds = await listUnreadTenantChangeEntityIds({
+    userId: input.userId,
+    role: input.role,
+    companyId: input.companyId,
+    entityTypes: ["DAILY_WORKER"],
+  });
+
+  if (unreadIds.length === 0) {
+    return null;
+  }
+
+  const periods = await getDailyWorkerPeriodsByEntityId(input.companyId, unreadIds);
+  const uniquePeriods = [
+    ...new Map(
+      [...periods.values()].map((period) => [
+        periodKey(period.year, period.month),
+        period,
+      ]),
+    ).values(),
+  ];
+
+  uniquePeriods.sort(comparePeriods);
+  return uniquePeriods[0] ?? null;
 }
 
 export async function getNotificationCounts(input: {

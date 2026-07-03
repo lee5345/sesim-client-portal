@@ -84,6 +84,7 @@ model User {
   reviewedRegistrationRequests RegistrationRequest[]    @relation("RegistrationRequestReviewedBy")
   tenantChanges                TenantChange[]           @relation("TenantChangeActor")
   tenantChangeReadCursors      TenantChangeReadCursor[]
+  tenantChangePeriodReadCursors TenantChangePeriodReadCursor[]
   createdTerminations          Termination[]            @relation("TerminationCreatedBy")
   company                      Company?                 @relation(fields: [companyId], references: [id])
 
@@ -285,6 +286,20 @@ model TenantChangeReadCursor {
   user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, companyId, entityType])
+  @@index([userId, companyId])
+}
+
+model TenantChangePeriodReadCursor {
+  id          String                 @id @default(uuid()) @db.Uuid
+  userId      String                 @db.Uuid
+  companyId   String                 @db.Uuid
+  entityType  TenantChangeEntityType
+  periodYear  Int
+  periodMonth Int
+  lastReadAt  DateTime               @default(now())
+  user        User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId, entityType, periodYear, periodMonth])
   @@index([userId, companyId])
 }
 
