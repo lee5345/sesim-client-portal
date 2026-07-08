@@ -34,6 +34,7 @@ type DailyWorkersTableProps = {
   companyId?: string;
   companyName?: string;
   basePath?: string;
+  embedded?: boolean;
 };
 
 function clearShowUnreadParam(
@@ -52,6 +53,7 @@ export function DailyWorkersTable({
   companyId,
   companyName,
   basePath = "/client/daily-workers",
+  embedded = false,
 }: DailyWorkersTableProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -128,16 +130,20 @@ export function DailyWorkersTable({
 
   return (
     <Card className="min-w-0">
-      <CardHeader className="flex shrink-0 flex-row items-start justify-between gap-4">
-        <div>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <CalendarDays className="size-4 text-primary" />
-            일용직 목록
-          </CardTitle>
-          <CardDescription>
-            {year}년 {month}월 일용직 근로시간과 임금 정보를 관리합니다.
-          </CardDescription>
-        </div>
+      <CardHeader
+        className={`flex shrink-0 flex-row items-start gap-4 ${embedded ? "justify-end" : "justify-between"}`}
+      >
+        {embedded ? null : (
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <CalendarDays className="size-4 text-primary" />
+              일용직 목록
+            </CardTitle>
+            <CardDescription>
+              {year}년 {month}월 일용직 근로시간과 임금 정보를 관리합니다.
+            </CardDescription>
+          </div>
+        )}
         <div className="flex shrink-0 items-center gap-2">
           {companyId ? (
             <NewEntriesControls

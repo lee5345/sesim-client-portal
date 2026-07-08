@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useRealtimeSync } from "@/components/layout/realtime-sync-provider";
 import {
   acknowledgeTenantChangesAction,
-  getEarliestUnreadDailyWorkerPeriodAction,
+  getEarliestUnreadPeriodScopedPeriodAction,
   listUnreadTenantChangeEntityIdsAction,
 } from "@/lib/realtime/sync-actions";
 import type { TenantChangeEntityType } from "@/lib/generated/prisma/client";
@@ -34,15 +34,34 @@ function buildPeriodNavigationUrl(
   searchParams: URLSearchParams,
   year: number,
   month: number,
+  options?: {
+    firmTab?: string;
+    compensationTab?: string;
+  },
 ): string {
   const params = new URLSearchParams(searchParams.toString());
   params.set("year", String(year));
   params.set("month", String(month));
   params.set("showUnread", "1");
   if (basePath.includes("/firm/companies/")) {
-    params.set("tab", "daily-workers");
+    params.set("tab", options?.firmTab ?? "daily-workers");
+  }
+  if (options?.compensationTab) {
+    params.set("compensationTab", options.compensationTab);
   }
   return `${basePath}?${params.toString()}`;
+}
+
+function getPeriodScopedEntityType(
+  entityTypes: TenantChangeEntityType[],
+): "DAILY_WORKER" | "COMPENSATION_INFO" | undefined {
+  if (entityTypes.includes("DAILY_WORKER")) {
+    return "DAILY_WORKER";
+  }
+  if (entityTypes.includes("COMPENSATION_INFO")) {
+    return "COMPENSATION_INFO";
+  }
+  return undefined;
 }
 
 export function NewEntriesControls({
@@ -119,9 +138,14 @@ export function NewEntriesControls({
       disabled={isPending}
       onClick={() => {
         startTransition(async () => {
-          if (periodScope && entityTypes.includes("DAILY_WORKER")) {
-            const earliest = await getEarliestUnreadDailyWorkerPeriodAction({
+          const periodScopedType = periodScope
+            ? getPeriodScopedEntityType(entityTypes)
+            : undefined;
+
+          if (periodScope && periodScopedType) {
+            const earliest = await getEarliestUnreadPeriodScopedPeriodAction({
               companyId,
+              entityType: periodScopedType,
             });
 
             if (!earliest) {
@@ -138,6 +162,12 @@ export function NewEntriesControls({
                   new URLSearchParams(searchParams.toString()),
                   earliest.year,
                   earliest.month,
+                  {
+                    firmTab:
+                      periodScopedType === "COMPENSATION_INFO"
+                        ? "compensation-info"
+                        : "daily-workers",
+                  },
                 ),
               );
               return;

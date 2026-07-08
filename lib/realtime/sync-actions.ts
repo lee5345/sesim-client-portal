@@ -5,6 +5,7 @@ import { isFirmRole } from "@/lib/permissions/crud";
 import {
   acknowledgeTenantChanges,
   getEarliestUnreadDailyWorkerPeriod,
+  getEarliestUnreadPeriodScopedPeriod,
   getNotificationCounts,
   listUnreadTenantChangeEntityIds,
   type NotificationCounts,
@@ -93,6 +94,24 @@ export async function listUnreadTenantChangeEntityIdsAction(input: {
     entityTypes: input.entityTypes,
     periodYear: input.periodYear,
     periodMonth: input.periodMonth,
+  });
+}
+
+export async function getEarliestUnreadPeriodScopedPeriodAction(input: {
+  companyId: string;
+  entityType: "DAILY_WORKER" | "COMPENSATION_INFO";
+}): Promise<YearMonthPeriod | null> {
+  const session = await requireAuth([
+    "CLIENT_ADMIN",
+    "FIRM_STAFF",
+    "FIRM_ADMIN",
+  ]);
+
+  return getEarliestUnreadPeriodScopedPeriod({
+    userId: session.user.userId,
+    role: session.user.role,
+    companyId: input.companyId,
+    entityType: input.entityType,
   });
 }
 

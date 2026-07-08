@@ -42,6 +42,7 @@ model Company {
   managesFourMajorInsurance Boolean?
   managesPayroll            Boolean?
   compensationChanges       CompensationChange[]
+  compensationInfos         CompensationInfo[]
   dailyWorkers              DailyWorker[]
   departments               Department[]
   newHires                  NewHire[]
@@ -78,6 +79,7 @@ model User {
   name                         String
   auditLogs                    AuditLog[]               @relation("AuditLogActor")
   createdCompensationChanges   CompensationChange[]     @relation("CompChangeCreatedBy")
+  createdCompensationInfos     CompensationInfo[]       @relation("CompInfoCreatedBy")
   createdDailyWorkers          DailyWorker[]            @relation("DailyWorkerCreatedBy")
   createdNewHires              NewHire[]                @relation("NewHireCreatedBy")
   passwordSetupTokens          PasswordSetupToken[]
@@ -192,8 +194,6 @@ model CompensationChange {
   id                 String      @id @default(uuid()) @db.Uuid
   companyId          String      @db.Uuid
   name               String
-  rrnEncrypted       String
-  rrnIv              String
   salaryTypeBefore   SalaryType
   salaryBasisBefore  SalaryBasis
   salaryAmountBefore Int
@@ -201,6 +201,7 @@ model CompensationChange {
   salaryBasisAfter   SalaryBasis
   salaryAmountAfter  Int
   changeDate         DateTime
+  notes              String?
   deletedAt          DateTime?
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
@@ -209,6 +210,32 @@ model CompensationChange {
   createdBy          User        @relation("CompChangeCreatedBy", fields: [createdById], references: [id])
 
   @@index([companyId])
+  @@index([companyId, deletedAt])
+}
+
+model CompensationInfo {
+  id                 String           @id @default(uuid()) @db.Uuid
+  companyId          String           @db.Uuid
+  year               Int
+  month              Int
+  name               String
+  overtimeHours      Decimal?         @db.Decimal(6, 2)
+  holidayHours       Decimal?         @db.Decimal(6, 2)
+  nightHours         Decimal?         @db.Decimal(6, 2)
+  absenceDays        Int?
+  lateEarlyLeaveHours Decimal?        @db.Decimal(6, 2)
+  incentiveAmount    Int?
+  unusedLeaveUnit    UnusedLeaveUnit?
+  unusedLeaveAmount  Decimal?         @db.Decimal(6, 1)
+  notes              String?
+  deletedAt          DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  createdById        String           @db.Uuid
+  company            Company           @relation(fields: [companyId], references: [id])
+  createdBy          User              @relation("CompInfoCreatedBy", fields: [createdById], references: [id])
+
+  @@index([companyId, year, month, deletedAt])
   @@index([companyId, deletedAt])
 }
 
@@ -356,6 +383,11 @@ enum RetirementPayType {
   SEVERANCE_PENSION
 }
 
+enum UnusedLeaveUnit {
+  DAYS
+  HOURS
+}
+
 enum DailyWorkerOccupation {
   MEDICAL_DOCTOR
   VETERINARIAN
@@ -384,6 +416,8 @@ enum TenantChangeEntityType {
   NEW_HIRE
   TERMINATION
   DAILY_WORKER
+  COMPENSATION_CHANGE
+  COMPENSATION_INFO
   COMPANY_PROFILE
   DEPARTMENT
 }

@@ -34,6 +34,7 @@ type HireIntakesTableProps = {
   departments: DepartmentOption[];
   companyId?: string;
   companyName?: string;
+  embedded?: boolean;
 };
 
 export function HireIntakesTable({
@@ -41,6 +42,7 @@ export function HireIntakesTable({
   departments,
   companyId,
   companyName,
+  embedded = false,
 }: HireIntakesTableProps) {
   const [unreadIds, setUnreadIds] = useState<Set<string> | null>(null);
   const [draftFilters, setDraftFilters] = useState<HireIntakeFilterValues>(
@@ -83,14 +85,18 @@ export function HireIntakesTable({
 
   return (
     <Card className="min-w-0">
-      <CardHeader className="flex shrink-0 flex-row items-start justify-between gap-4">
-        <div>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <UserPlus className="size-4 text-primary" />
-            입사자 목록
-          </CardTitle>
-          <CardDescription>등록된 입사자 정보를 확인하고 관리합니다.</CardDescription>
-        </div>
+      <CardHeader
+        className={`flex shrink-0 flex-row items-start gap-4 ${embedded ? "justify-end" : "justify-between"}`}
+      >
+        {embedded ? null : (
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <UserPlus className="size-4 text-primary" />
+              입사자 목록
+            </CardTitle>
+            <CardDescription>등록된 입사자 정보를 확인하고 관리합니다.</CardDescription>
+          </div>
+        )}
         <div className="flex shrink-0 items-center gap-2">
           {companyId ? (
             <NewEntriesControls

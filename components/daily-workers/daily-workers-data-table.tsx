@@ -30,7 +30,7 @@ const autoCellClassName = `${bodyCellClassName} bg-muted/60 text-muted-foregroun
 const dayHeaderClassName =
   "border-r border-border/30 px-4 py-3 text-center font-medium whitespace-nowrap last:border-r-0";
 const dayCellClassName =
-  "border-r border-border/30 px-4 py-3 text-center font-mono whitespace-nowrap last:border-r-0";
+  "border-r border-border/30 px-4 py-3 text-center font-mono text-muted-foreground whitespace-nowrap last:border-r-0";
 const stickyNameHeaderClassName =
   "sticky left-0 z-40 border-r border-border bg-muted px-4 py-3 font-medium whitespace-nowrap shadow-[10px_0_20px_-10px_rgba(0,0,0,0.15)]";
 const stickyNameCellClassName =
@@ -108,7 +108,7 @@ export function DailyWorkersDataTable({
                   maskedRrn={dailyWorker.maskedRrn}
                 />
               </td>
-              <td className={`${bodyCellClassName} max-w-40 truncate`}>
+              <td className={`${bodyCellClassName} max-w-40 truncate text-muted-foreground`}>
                 {DAILY_WORKER_OCCUPATION_LABELS[dailyWorker.occupation]}
               </td>
               <td className={autoCellClassName}>
@@ -128,7 +128,7 @@ export function DailyWorkersDataTable({
               <td className={bodyCellClassName}>
                 {SALARY_BASIS_LABELS[dailyWorker.salaryBasis]}
               </td>
-              <td className={bodyCellClassName}>
+              <td className={`${bodyCellClassName} text-muted-foreground`}>
                 {formatSalaryAmount(dailyWorker.totalWage)}
               </td>
               <td className={`${bodyCellClassName} text-muted-foreground`}>

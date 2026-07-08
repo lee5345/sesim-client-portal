@@ -13,6 +13,8 @@ import { formatWorkplaceManagementNumber } from "@/lib/format/workplace-manageme
 import { getCompanyById } from "@/modules/companies/companies";
 import { listFirmStaffUsers } from "@/modules/auth/staff-users";
 import {
+  listCompanyCompensationChanges,
+  listCompanyCompensationInfos,
   listCompanyDailyWorkers,
   listCompanyNewHires,
   listCompanyTerminations,
@@ -21,22 +23,16 @@ import { listDepartments } from "@/modules/companies/departments";
 import { CompanyEditForm } from "@/components/companies/company-edit-form";
 import { CompanyInfoLink } from "@/components/companies/company-info-link";
 import { DepartmentManager } from "@/components/companies/department-manager";
-import { EmptyState } from "@/components/dashboard/empty-state";
 import { CompanyDetailTabs } from "@/components/firm/company-detail-tabs";
 import { CompanyTabIndicator } from "@/components/firm/company-tab-indicator";
+import { CompensationChangesTable } from "@/components/client/compensation-changes-table";
+import { CompensationInfoTable } from "@/components/compensation-info/compensation-info-table";
 import { DailyWorkersTable } from "@/components/client/daily-workers-table";
 import { HireIntakesTable } from "@/components/client/hire-intakes-table";
 import { TerminationsTable } from "@/components/client/terminations-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 export async function generateMetadata({
   params,
@@ -65,11 +61,22 @@ export default async function FirmCompanyDetailPage({
   const firmDailyWorkersBasePath = `/firm/companies/${companyId}`;
   const isFirmAdmin = session.user.role === "FIRM_ADMIN";
 
-  const [company, newHires, terminations, dailyWorkers, departments, staffUsers] = await Promise.all([
+  const [
+    company,
+    newHires,
+    terminations,
+    dailyWorkers,
+    compensationChanges,
+    compensationInfos,
+    departments,
+    staffUsers,
+  ] = await Promise.all([
     getCompanyById(companyId),
     listCompanyNewHires(companyId),
     listCompanyTerminations(companyId),
     listCompanyDailyWorkers(companyId, year, month),
+    listCompanyCompensationChanges(companyId),
+    listCompanyCompensationInfos(companyId, year, month),
     listDepartments(companyId),
     isFirmAdmin ? listFirmStaffUsers() : Promise.resolve([]),
   ]);
@@ -80,7 +87,19 @@ export default async function FirmCompanyDetailPage({
   const newHireCount = company._count.newHires;
   const terminationCount = company._count.terminations;
   const dailyWorkerCount = company._count.dailyWorkers;
-  const compensationCount = company._count.compensationChanges;
+  const compensationChangeCount = company._count.compensationChanges;
+  const compensationInfoCount = company._count.compensationInfos;
+
+  const changeRows = compensationChanges.map((row) => ({
+    ...row,
+    changeDate: row.changeDate.toISOString().slice(0, 10),
+    createdAt: row.createdAt.toISOString(),
+  }));
+
+  const infoRows = compensationInfos.map((row) => ({
+    ...row,
+    createdAt: row.createdAt.toISOString(),
+  }));
 
   return (
     <div className="min-w-0 space-y-6">
@@ -160,11 +179,21 @@ export default async function FirmCompanyDetailPage({
               totalCount={dailyWorkerCount}
             />
           </TabsTrigger>
-          <TabsTrigger value="compensation">
-            급여 정보
-            <Badge variant="secondary" className="ml-2">
-              {compensationCount}
-            </Badge>
+          <TabsTrigger value="compensation-changes">
+            급여변경 정보
+            <CompanyTabIndicator
+              companyId={companyId}
+              entityType="COMPENSATION_CHANGE"
+              totalCount={compensationChangeCount}
+            />
+          </TabsTrigger>
+          <TabsTrigger value="compensation-info">
+            상세급여 정보
+            <CompanyTabIndicator
+              companyId={companyId}
+              entityType="COMPENSATION_INFO"
+              totalCount={compensationInfoCount}
+            />
           </TabsTrigger>
         </TabsList>
 
@@ -197,16 +226,21 @@ export default async function FirmCompanyDetailPage({
           />
         </TabsContent>
 
-        <TabsContent value="compensation">
-          <Card>
-            <CardHeader>
-              <CardTitle>급여 정보</CardTitle>
-              <CardDescription>급여변경 내역 관리</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <EmptyState message="준비 중입니다." />
-            </CardContent>
-          </Card>
+        <TabsContent value="compensation-changes" className="space-y-4">
+          <CompensationChangesTable
+            compensationChanges={changeRows}
+            companyId={companyId}
+          />
+        </TabsContent>
+
+        <TabsContent value="compensation-info" className="space-y-4">
+          <CompensationInfoTable
+            compensationInfos={infoRows}
+            year={year}
+            month={month}
+            companyId={companyId}
+            basePath={firmDailyWorkersBasePath}
+          />
         </TabsContent>
       </CompanyDetailTabs>
     </div>

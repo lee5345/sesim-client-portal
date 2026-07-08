@@ -52,6 +52,7 @@ const activeCompanySelect = {
       newHires: { where: { deletedAt: null } },
       terminations: { where: { deletedAt: null } },
       compensationChanges: { where: { deletedAt: null } },
+      compensationInfos: { where: { deletedAt: null } },
       dailyWorkers: { where: { deletedAt: null } },
     },
   },
@@ -256,6 +257,7 @@ export async function permanentlyDeleteCompanyAction(formData: FormData) {
     await tx.newHire.deleteMany({ where: { companyId } });
     await tx.termination.deleteMany({ where: { companyId } });
     await tx.compensationChange.deleteMany({ where: { companyId } });
+    await tx.compensationInfo.deleteMany({ where: { companyId } });
     await tx.department.deleteMany({ where: { companyId } });
     await tx.auditLog.deleteMany({ where: { companyId } });
 

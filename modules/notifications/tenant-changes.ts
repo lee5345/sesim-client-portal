@@ -23,15 +23,28 @@ const CLIENT_NAV_ENTITY_MAP: Record<string, TenantChangeEntityType[]> = {
   "/client/new-hires": ["NEW_HIRE"],
   "/client/terminations": ["TERMINATION"],
   "/client/daily-workers": ["DAILY_WORKER"],
+  "/client/compensation-changes": ["COMPENSATION_CHANGE"],
+  "/client/compensation-info": ["COMPENSATION_INFO"],
 };
 
 const FIRM_TAB_ENTITY_MAP: Record<string, TenantChangeEntityType> = {
   "new-hires": "NEW_HIRE",
   terminations: "TERMINATION",
   "daily-workers": "DAILY_WORKER",
+  "compensation-changes": "COMPENSATION_CHANGE",
+  "compensation-info": "COMPENSATION_INFO",
 };
 
-const NOTIFICATION_ENTITY_TYPES = ["NEW_HIRE", "TERMINATION", "DAILY_WORKER"] as const;
+const PERIOD_SCOPED_ENTITY_TYPES = ["DAILY_WORKER", "COMPENSATION_INFO"] as const;
+type PeriodScopedEntityType = (typeof PERIOD_SCOPED_ENTITY_TYPES)[number];
+
+const NOTIFICATION_ENTITY_TYPES = [
+  "NEW_HIRE",
+  "TERMINATION",
+  "DAILY_WORKER",
+  "COMPENSATION_CHANGE",
+  "COMPENSATION_INFO",
+] as const;
 type NotificationEntityType = (typeof NOTIFICATION_ENTITY_TYPES)[number];
 
 const NOTIFICATION_ACTIONS = ["CREATE", "UPDATE"] as const;
@@ -51,6 +64,12 @@ function comparePeriods(a: YearMonthPeriod, b: YearMonthPeriod): number {
 
 function audienceForRole(role: UserRole): TenantChangeAudience {
   return isFirmRole(role) ? "FIRM" : "CLIENT";
+}
+
+function isPeriodScopedEntityType(
+  entityType: TenantChangeEntityType,
+): entityType is PeriodScopedEntityType {
+  return (PERIOD_SCOPED_ENTITY_TYPES as readonly string[]).includes(entityType);
 }
 
 async function getDailyWorkerPeriodsByEntityId(
@@ -79,6 +98,46 @@ async function getDailyWorkerPeriodsByEntityId(
       { year: worker.year, month: worker.month },
     ]),
   );
+}
+
+async function getCompensationInfoPeriodsByEntityId(
+  companyId: string,
+  entityIds: string[],
+): Promise<Map<string, YearMonthPeriod>> {
+  if (entityIds.length === 0) {
+    return new Map();
+  }
+
+  const records = await prisma.compensationInfo.findMany({
+    where: {
+      companyId,
+      id: { in: entityIds },
+    },
+    select: {
+      id: true,
+      year: true,
+      month: true,
+    },
+  });
+
+  return new Map(
+    records.map((record) => [
+      record.id,
+      { year: record.year, month: record.month },
+    ]),
+  );
+}
+
+async function getEntityPeriodsByEntityId(
+  entityType: PeriodScopedEntityType,
+  companyId: string,
+  entityIds: string[],
+): Promise<Map<string, YearMonthPeriod>> {
+  if (entityType === "DAILY_WORKER") {
+    return getDailyWorkerPeriodsByEntityId(companyId, entityIds);
+  }
+
+  return getCompensationInfoPeriodsByEntityId(companyId, entityIds);
 }
 
 async function getPeriodReadCursors(
@@ -175,7 +234,7 @@ export async function acknowledgeTenantChanges(input: {
     input.periodYear !== undefined && input.periodMonth !== undefined;
 
   const globalEntityTypes = hasPeriod
-    ? input.entityTypes.filter((entityType) => entityType !== "DAILY_WORKER")
+    ? input.entityTypes.filter((entityType) => !isPeriodScopedEntityType(entityType))
     : input.entityTypes;
 
   const operations = globalEntityTypes.map((entityType) =>
@@ -199,32 +258,33 @@ export async function acknowledgeTenantChanges(input: {
 
   if (
     hasPeriod &&
-    input.entityTypes.includes("DAILY_WORKER") &&
     input.periodYear !== undefined &&
     input.periodMonth !== undefined
   ) {
-    operations.push(
-      prisma.tenantChangePeriodReadCursor.upsert({
-        where: {
-          userId_companyId_entityType_periodYear_periodMonth: {
+    for (const entityType of input.entityTypes.filter(isPeriodScopedEntityType)) {
+      operations.push(
+        prisma.tenantChangePeriodReadCursor.upsert({
+          where: {
+            userId_companyId_entityType_periodYear_periodMonth: {
+              userId: input.userId,
+              companyId: input.companyId,
+              entityType,
+              periodYear: input.periodYear,
+              periodMonth: input.periodMonth,
+            },
+          },
+          create: {
             userId: input.userId,
             companyId: input.companyId,
-            entityType: "DAILY_WORKER",
+            entityType,
             periodYear: input.periodYear,
             periodMonth: input.periodMonth,
+            lastReadAt: now,
           },
-        },
-        create: {
-          userId: input.userId,
-          companyId: input.companyId,
-          entityType: "DAILY_WORKER",
-          periodYear: input.periodYear,
-          periodMonth: input.periodMonth,
-          lastReadAt: now,
-        },
-        update: { lastReadAt: now },
-      }),
-    );
+          update: { lastReadAt: now },
+        }),
+      );
+    }
   }
 
   if (operations.length > 0) {
@@ -279,26 +339,43 @@ async function getUnreadByCompany(
     ]),
   );
 
-  const dailyWorkerPeriodsByCompany = new Map<string, Map<string, YearMonthPeriod>>();
-  const periodCursorsByCompany = entityTypes.includes("DAILY_WORKER")
-    ? await getPeriodReadCursors(userId, scopedCompanyIds, "DAILY_WORKER")
-    : new Map<string, Map<PeriodKey, Date>>();
+  const periodScopedEntityTypes = entityTypes.filter(isPeriodScopedEntityType);
+  const periodsByCompanyAndType = new Map<
+    PeriodScopedEntityType,
+    Map<string, Map<string, YearMonthPeriod>>
+  >();
+  const periodCursorsByCompanyAndType = new Map<
+    PeriodScopedEntityType,
+    Map<string, Map<PeriodKey, Date>>
+  >();
+
+  for (const entityType of periodScopedEntityTypes) {
+    periodCursorsByCompanyAndType.set(
+      entityType,
+      await getPeriodReadCursors(userId, scopedCompanyIds, entityType),
+    );
+    periodsByCompanyAndType.set(entityType, new Map());
+  }
 
   for (const companyId of scopedCompanyIds) {
-    const companyEntityIds = changes
-      .filter(
-        (change) =>
-          change.companyId === companyId &&
-          change.entityType === "DAILY_WORKER" &&
-          change.entityId,
-      )
-      .map((change) => change.entityId as string);
+    for (const entityType of periodScopedEntityTypes) {
+      const companyEntityIds = changes
+        .filter(
+          (change) =>
+            change.companyId === companyId &&
+            change.entityType === entityType &&
+            change.entityId,
+        )
+        .map((change) => change.entityId as string);
 
-    if (companyEntityIds.length > 0) {
-      dailyWorkerPeriodsByCompany.set(
-        companyId,
-        await getDailyWorkerPeriodsByEntityId(companyId, companyEntityIds),
-      );
+      if (companyEntityIds.length > 0) {
+        periodsByCompanyAndType
+          .get(entityType)
+          ?.set(
+            companyId,
+            await getEntityPeriodsByEntityId(entityType, companyId, companyEntityIds),
+          );
+      }
     }
   }
 
@@ -314,17 +391,19 @@ async function getUnreadByCompany(
 
     let lastReadAt = cursorMap.get(`${change.companyId}:${change.entityType}`);
 
-    if (change.entityType === "DAILY_WORKER") {
-      const period = dailyWorkerPeriodsByCompany
-        .get(change.companyId)
+    if (isPeriodScopedEntityType(change.entityType)) {
+      const period = periodsByCompanyAndType
+        .get(change.entityType)
+        ?.get(change.companyId)
         ?.get(change.entityId);
 
       if (!period) {
         continue;
       }
 
-      const periodLastReadAt = periodCursorsByCompany
-        .get(change.companyId)
+      const periodLastReadAt = periodCursorsByCompanyAndType
+        .get(change.entityType)
+        ?.get(change.companyId)
         ?.get(periodKey(period.year, period.month));
 
       lastReadAt = getEffectiveLastReadAt({
@@ -408,23 +487,36 @@ export async function listUnreadTenantChangeEntityIds(input: {
     orderBy: { createdAt: "asc" },
   });
 
-  const dailyWorkerEntityIds = [
-    ...new Set(
-      changes
-        .filter((change) => change.entityType === "DAILY_WORKER" && change.entityId)
-        .map((change) => change.entityId as string),
-    ),
-  ];
+  const periodScopedEntityTypes = input.entityTypes.filter(isPeriodScopedEntityType);
+  const periodsByEntityType = new Map<
+    PeriodScopedEntityType,
+    Map<string, YearMonthPeriod>
+  >();
+  const periodCursorsByEntityType = new Map<
+    PeriodScopedEntityType,
+    Map<PeriodKey, Date>
+  >();
 
-  const dailyWorkerPeriods = input.entityTypes.includes("DAILY_WORKER")
-    ? await getDailyWorkerPeriodsByEntityId(input.companyId, dailyWorkerEntityIds)
-    : new Map<string, YearMonthPeriod>();
+  for (const entityType of periodScopedEntityTypes) {
+    const entityIds = [
+      ...new Set(
+        changes
+          .filter((change) => change.entityType === entityType && change.entityId)
+          .map((change) => change.entityId as string),
+      ),
+    ];
 
-  const periodCursors = input.entityTypes.includes("DAILY_WORKER")
-    ? (await getPeriodReadCursors(input.userId, [input.companyId], "DAILY_WORKER")).get(
+    periodsByEntityType.set(
+      entityType,
+      await getEntityPeriodsByEntityId(entityType, input.companyId, entityIds),
+    );
+    periodCursorsByEntityType.set(
+      entityType,
+      (await getPeriodReadCursors(input.userId, [input.companyId], entityType)).get(
         input.companyId,
-      ) ?? new Map<PeriodKey, Date>()
-    : new Map<PeriodKey, Date>();
+      ) ?? new Map<PeriodKey, Date>(),
+    );
+  }
 
   const ids = new Set<string>();
 
@@ -435,8 +527,8 @@ export async function listUnreadTenantChangeEntityIds(input: {
 
     let lastReadAt = cursorMap.get(change.entityType);
 
-    if (change.entityType === "DAILY_WORKER") {
-      const period = dailyWorkerPeriods.get(change.entityId);
+    if (isPeriodScopedEntityType(change.entityType)) {
+      const period = periodsByEntityType.get(change.entityType)?.get(change.entityId);
       if (!period) {
         continue;
       }
@@ -449,9 +541,9 @@ export async function listUnreadTenantChangeEntityIds(input: {
         continue;
       }
 
-      const periodLastReadAt = periodCursors.get(
-        periodKey(period.year, period.month),
-      );
+      const periodLastReadAt = periodCursorsByEntityType
+        .get(change.entityType)
+        ?.get(periodKey(period.year, period.month));
 
       lastReadAt = getEffectiveLastReadAt({
         globalLastReadAt: lastReadAt,
@@ -469,23 +561,28 @@ export async function listUnreadTenantChangeEntityIds(input: {
   return [...ids];
 }
 
-export async function getEarliestUnreadDailyWorkerPeriod(input: {
+export async function getEarliestUnreadPeriodScopedPeriod(input: {
   userId: string;
   role: UserRole;
   companyId: string;
+  entityType: PeriodScopedEntityType;
 }): Promise<YearMonthPeriod | null> {
   const unreadIds = await listUnreadTenantChangeEntityIds({
     userId: input.userId,
     role: input.role,
     companyId: input.companyId,
-    entityTypes: ["DAILY_WORKER"],
+    entityTypes: [input.entityType],
   });
 
   if (unreadIds.length === 0) {
     return null;
   }
 
-  const periods = await getDailyWorkerPeriodsByEntityId(input.companyId, unreadIds);
+  const periods = await getEntityPeriodsByEntityId(
+    input.entityType,
+    input.companyId,
+    unreadIds,
+  );
   const uniquePeriods = [
     ...new Map(
       [...periods.values()].map((period) => [
@@ -497,6 +594,17 @@ export async function getEarliestUnreadDailyWorkerPeriod(input: {
 
   uniquePeriods.sort(comparePeriods);
   return uniquePeriods[0] ?? null;
+}
+
+export async function getEarliestUnreadDailyWorkerPeriod(input: {
+  userId: string;
+  role: UserRole;
+  companyId: string;
+}): Promise<YearMonthPeriod | null> {
+  return getEarliestUnreadPeriodScopedPeriod({
+    ...input,
+    entityType: "DAILY_WORKER",
+  });
 }
 
 export async function getNotificationCounts(input: {

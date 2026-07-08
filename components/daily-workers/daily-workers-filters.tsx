@@ -118,21 +118,28 @@ export function DailyWorkersFilters({
 
         <div className="space-y-1.5">
           <Label htmlFor="daily-worker-salary-basis-filter">기준</Label>
-          <select
-            id="daily-worker-salary-basis-filter"
-            className={cn(selectClassName, draft.salaryBasis && "border-primary/30")}
-            value={draft.salaryBasis}
-            onChange={(event) =>
-              onDraftChange({
-                ...draft,
-                salaryBasis: event.target.value as SalaryBasis | "",
-              })
-            }
-          >
-            <option value="">전체</option>
-            <option value="GROSS">{SALARY_BASIS_LABELS.GROSS}</option>
-            <option value="NET">{SALARY_BASIS_LABELS.NET}</option>
-          </select>
+          <div className="relative">
+            <select
+              id="daily-worker-salary-basis-filter"
+              className={cn(
+                selectClassName,
+                "appearance-none pl-2.5 pr-10",
+                draft.salaryBasis && "border-primary/30",
+              )}
+              value={draft.salaryBasis}
+              onChange={(event) =>
+                onDraftChange({
+                  ...draft,
+                  salaryBasis: event.target.value as SalaryBasis | "",
+                })
+              }
+            >
+              <option value="">전체</option>
+              <option value="GROSS">{SALARY_BASIS_LABELS.GROSS}</option>
+              <option value="NET">{SALARY_BASIS_LABELS.NET}</option>
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
