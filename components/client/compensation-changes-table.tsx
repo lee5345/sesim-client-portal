@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Search, Wallet, X } from "lucide-react";
 
 import { CompensationChangeFormDialog } from "@/components/client/compensation-change-form-dialog";
+import { ExcelExportDialog } from "@/components/export/excel-export-dialog";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { NewEntriesControls } from "@/components/layout/new-entries-controls";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
@@ -25,10 +26,12 @@ import {
   filterCompensationChanges,
   type CompensationChangeFilterValues,
 } from "@/lib/filters/compensation-changes";
+import { summarizeCompensationChangeFilters } from "@/lib/export/filter-summaries";
 import type { SalaryBasis, SalaryType } from "@/lib/generated/prisma/client";
 import { paginate } from "@/lib/pagination";
 import { SALARY_BASIS_LABELS, SALARY_TYPE_LABELS } from "@/modules/hire-intakes/labels";
 import { deleteCompensationChangeAction } from "@/modules/compensation-changes/actions";
+import { exportCompensationChangesExcel } from "@/modules/compensation-changes/export";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
 
 type CompensationChangeRow = {
@@ -49,6 +52,7 @@ type CompensationChangeRow = {
 type CompensationChangesTableProps = {
   compensationChanges: CompensationChangeRow[];
   companyId?: string;
+  companyName?: string;
   embedded?: boolean;
 };
 
@@ -74,6 +78,7 @@ function displayText(value: string | null | undefined) {
 export function CompensationChangesTable({
   compensationChanges,
   companyId,
+  companyName,
   embedded = false,
 }: CompensationChangesTableProps) {
   const [unreadIds, setUnreadIds] = useState<Set<string> | null>(null);
@@ -97,6 +102,11 @@ export function CompensationChangesTable({
     [appliedFilters, visibleChanges],
   );
 
+  const filterSummary = useMemo(
+    () => summarizeCompensationChangeFilters(appliedFilters),
+    [appliedFilters],
+  );
+
   const pagination = useMemo(
     () => paginate(filteredChanges, page),
     [filteredChanges, page],
@@ -107,6 +117,17 @@ export function CompensationChangesTable({
       setPage(pagination.totalPages);
     }
   }, [page, pagination.totalPages]);
+
+  function handleFilterChange(
+    updater: (current: CompensationChangeFilterValues) => CompensationChangeFilterValues,
+  ) {
+    setPage(1);
+    setDraftFilters((current) => {
+      const next = updater(current);
+      setAppliedFilters(next);
+      return next;
+    });
+  }
 
   function onSearch() {
     setPage(1);
@@ -147,6 +168,21 @@ export function CompensationChangesTable({
               onClearUnreadFilter={() => setUnreadIds(null)}
             />
           ) : null}
+          <ExcelExportDialog
+            moduleLabel="급여변경 정보"
+            defaultTitle="급여변경 정보"
+            companyName={companyName}
+            filterSummary={filterSummary}
+            entryCount={filteredChanges.length}
+            companyId={companyId}
+            onExport={({ title }) =>
+              exportCompensationChangesExcel({
+                title,
+                filters: appliedFilters,
+                companyId,
+              })
+            }
+          />
           <CompensationChangeFormDialog mode="create" companyId={companyId} />
         </div>
       </CardHeader>
@@ -164,9 +200,7 @@ export function CompensationChangesTable({
                   className="pl-8"
                   onChange={(event) => {
                     const name = event.target.value;
-                    setPage(1);
-                    setDraftFilters((current) => ({ ...current, name }));
-                    setAppliedFilters((current) => ({ ...current, name }));
+                    handleFilterChange((current) => ({ ...current, name }));
                   }}
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
@@ -185,7 +219,7 @@ export function CompensationChangesTable({
                   id="compensation-change-date-from"
                   value={draftFilters.changeDateFrom}
                   onChange={(changeDateFrom) =>
-                    setDraftFilters((current) => ({ ...current, changeDateFrom }))
+                    handleFilterChange((current) => ({ ...current, changeDateFrom }))
                   }
                   className="w-[10.5rem]"
                 />
@@ -194,7 +228,7 @@ export function CompensationChangesTable({
                   id="compensation-change-date-to"
                   value={draftFilters.changeDateTo}
                   onChange={(changeDateTo) =>
-                    setDraftFilters((current) => ({ ...current, changeDateTo }))
+                    handleFilterChange((current) => ({ ...current, changeDateTo }))
                   }
                   className="w-[10.5rem]"
                 />

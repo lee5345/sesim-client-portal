@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "대시보드",
 };
-import { Plus } from "lucide-react";
 
 import { requireAuth } from "@/lib/auth/guards";
 import { CompactDateTime } from "@/components/ui/compact-datetime";
@@ -12,7 +10,6 @@ import { getClientDashboardData } from "@/modules/dashboard/client";
 import { ActivityTypeBadge } from "@/components/dashboard/activity-type-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { EmptyState } from "@/components/dashboard/empty-state";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -46,21 +43,6 @@ export default async function ClientDashboardPage() {
         <StatCard title="총 입사자" value={`${data.newHireCount}건`} />
         <StatCard title="총 퇴사자" value={`${data.terminationCount}건`} />
         <StatCard title="총 일용직" value={`${data.dailyWorkerCount}건`} />
-      </div>
-
-      <div className="flex flex-wrap gap-3">
-        <Button nativeButton={false} render={<Link href="/client/new-hires" />}>
-          <Plus className="size-4" />
-          입사자 등록
-        </Button>
-        <Button
-          nativeButton={false}
-          variant="outline"
-          render={<Link href="/client/terminations" />}
-        >
-          <Plus className="size-4" />
-          퇴사자 등록
-        </Button>
       </div>
 
       <Card>

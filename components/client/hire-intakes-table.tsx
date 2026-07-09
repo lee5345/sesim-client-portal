@@ -140,6 +140,7 @@ export function HireIntakesTable({
             hireIntakes={visibleHireIntakes}
             departments={departments}
             companyId={companyId}
+            hasBaseRows={hireIntakes.length > 0}
             draftFilters={draftFilters}
             appliedFilters={appliedFilters}
             onDraftChange={handleDraftChange}

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { requireAuth } from "@/lib/auth/guards";
 import { parseYearMonthSearchParams } from "@/lib/daily-workers/period";
 import { CompensationInfoTable } from "@/components/compensation-info/compensation-info-table";
+import { getCompanyById } from "@/modules/companies/companies";
 import { listCompensationInfos } from "@/modules/compensation-info/actions";
 
 export const metadata: Metadata = {
@@ -24,7 +25,10 @@ export default async function ClientCompensationInfoPage({
   const query = await searchParams;
   const { year, month } = parseYearMonthSearchParams(query);
 
-  const compensationInfos = await listCompensationInfos(companyId, year, month);
+  const [compensationInfos, company] = await Promise.all([
+    listCompensationInfos(companyId, year, month),
+    getCompanyById(companyId),
+  ]);
   const infoRows = compensationInfos.map((row) => ({
     ...row,
     createdAt: row.createdAt.toISOString(),
@@ -44,6 +48,7 @@ export default async function ClientCompensationInfoPage({
         year={year}
         month={month}
         companyId={companyId}
+        companyName={company?.name}
       />
     </div>
   );

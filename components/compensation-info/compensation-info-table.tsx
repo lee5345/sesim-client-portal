@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { Calculator, Copy, Pencil, Plus, Search, X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { CompensationInfoMonthSelector } from "@/components/compensation-info/compensation-info-month-selector";
+import { ExcelExportDialog } from "@/components/export/excel-export-dialog";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { NewEntriesControls } from "@/components/layout/new-entries-controls";
 import { Button } from "@/components/ui/button";
@@ -33,7 +34,10 @@ import {
   formatUnusedLeaveAmount,
   splitDecimalHours,
 } from "@/lib/compensation-info/format";
+import { summarizeCompensationInfoFilters } from "@/lib/export/filter-summaries";
+import { filterCompensationInfos } from "@/lib/filters/compensation-info";
 import { formatSalaryAmount, formatSalaryInput, parseSalaryInput } from "@/lib/format/currency";
+import type { SalaryBasis } from "@/lib/generated/prisma/client";
 import type { UnusedLeaveUnit } from "@/lib/generated/prisma/client";
 import {
   copyCompensationInfoNamesFromMostRecentMonth,
@@ -41,7 +45,18 @@ import {
   deleteCompensationInfoAction,
   updateCompensationInfo,
 } from "@/modules/compensation-info/actions";
+import { exportCompensationInfosExcel } from "@/modules/compensation-info/export";
 import { paginate } from "@/lib/pagination";
+import { listUnreadTenantChangeEntityIdsAction } from "@/lib/realtime/sync-actions";
+
+function clearShowUnreadParam(
+  basePath: string,
+  searchParams: URLSearchParams,
+): string {
+  const params = new URLSearchParams(searchParams.toString());
+  params.delete("showUnread");
+  return `${basePath}?${params.toString()}`;
+}
 
 const selectClassName =
   "h-8 w-24 min-w-0 rounded-lg border border-input bg-transparent px-2 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
@@ -71,6 +86,7 @@ export type CompensationInfoTableRow = {
   absenceDays: number | null;
   lateEarlyLeaveHours: number | null;
   incentiveAmount: number | null;
+  incentiveBasis: SalaryBasis | null;
   unusedLeaveUnit: UnusedLeaveUnit | null;
   unusedLeaveAmount: number | null;
   notes: string | null;
@@ -90,6 +106,7 @@ type RowFormValues = {
   lateEarlyLeaveHoursHours: string;
   lateEarlyLeaveHoursMinutes: string;
   incentiveAmount: string;
+  incentiveBasis: SalaryBasis | "";
   unusedLeaveUnit: UnusedLeaveUnit | "";
   unusedLeaveAmount: string;
   notes: string;
@@ -100,6 +117,7 @@ type CompensationInfoTableProps = {
   year: number;
   month: number;
   companyId?: string;
+  companyName?: string;
   basePath?: string;
   embedded?: boolean;
 };
@@ -117,6 +135,7 @@ function createEmptyFormValues(): RowFormValues {
     lateEarlyLeaveHoursHours: "",
     lateEarlyLeaveHoursMinutes: "",
     incentiveAmount: "",
+    incentiveBasis: "",
     unusedLeaveUnit: "",
     unusedLeaveAmount: "",
     notes: "",
@@ -142,6 +161,7 @@ function rowToFormValues(row: CompensationInfoTableRow): RowFormValues {
     lateEarlyLeaveHoursMinutes: late.minutes,
     incentiveAmount:
       row.incentiveAmount !== null ? String(row.incentiveAmount) : "",
+    incentiveBasis: row.incentiveBasis ?? "",
     unusedLeaveUnit: row.unusedLeaveUnit ?? "",
     unusedLeaveAmount:
       row.unusedLeaveAmount !== null ? String(row.unusedLeaveAmount) : "",
@@ -170,6 +190,7 @@ function buildFormData(
   formData.set("lateEarlyLeaveHoursHours", values.lateEarlyLeaveHoursHours);
   formData.set("lateEarlyLeaveHoursMinutes", values.lateEarlyLeaveHoursMinutes);
   formData.set("incentiveAmount", values.incentiveAmount);
+  formData.set("incentiveBasis", values.incentiveBasis);
   formData.set("unusedLeaveUnit", values.unusedLeaveUnit);
   formData.set("unusedLeaveAmount", values.unusedLeaveAmount);
   formData.set("notes", values.notes);
@@ -206,16 +227,26 @@ function HourPartsInput({
         disabled={disabled}
         placeholder="0"
       />
-      <span className="text-xs text-muted-foreground">시</span>
+      <span className="text-xs text-muted-foreground">시간</span>
       <Input
         id={`${idPrefix}-minutes`}
         type="text"
         inputMode="numeric"
         className="h-8 w-10 px-1 text-center"
         value={minutes}
-        onChange={(event) =>
-          onMinutesChange(event.target.value.replace(/\D/g, "").slice(0, 2))
-        }
+        onChange={(event) => {
+          const raw = event.target.value.replace(/\D/g, "").slice(0, 2);
+          if (!raw) {
+            onMinutesChange("");
+            return;
+          }
+          const parsed = Number(raw);
+          if (!Number.isFinite(parsed)) {
+            onMinutesChange("");
+            return;
+          }
+          onMinutesChange(String(Math.min(59, Math.max(0, parsed))));
+        }}
         disabled={disabled}
         placeholder="0"
       />
@@ -224,15 +255,38 @@ function HourPartsInput({
   );
 }
 
+function validateMinuteParts(values: RowFormValues): string | null {
+  const minuteKeys: (keyof RowFormValues)[] = [
+    "overtimeHoursMinutes",
+    "holidayHoursMinutes",
+    "nightHoursMinutes",
+    "lateEarlyLeaveHoursMinutes",
+  ];
+
+  for (const key of minuteKeys) {
+    const raw = values[key].trim();
+    if (!raw) continue;
+    const parsed = Number(raw);
+    if (!Number.isInteger(parsed) || parsed < 0 || parsed > 59) {
+      return "분 입력은 0~59 사이여야 합니다.";
+    }
+  }
+
+  return null;
+}
+
 export function CompensationInfoTable({
   compensationInfos,
   year,
   month,
   companyId,
-  basePath = "/client/compensation-changes",
+  companyName,
+  basePath = "/client/compensation-info",
   embedded = false,
 }: CompensationInfoTableProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const showUnread = searchParams.get("showUnread") === "1";
   const [isPending, startTransition] = useTransition();
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const [formValues, setFormValues] = useState<RowFormValues>(createEmptyFormValues);
@@ -240,9 +294,36 @@ export function CompensationInfoTable({
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
   const [copyModeDialogOpen, setCopyModeDialogOpen] = useState(false);
   const [unreadIds, setUnreadIds] = useState<Set<string> | null>(null);
+  const [reviewActive, setReviewActive] = useState(false);
   const [draftNameFilter, setDraftNameFilter] = useState("");
   const [nameFilter, setNameFilter] = useState("");
   const [page, setPage] = useState(1);
+
+  function showUnreadEntriesForPeriod(ids: string[]) {
+    setUnreadIds(new Set(ids));
+  }
+
+  useEffect(() => {
+    if (!companyId || !showUnread) {
+      return;
+    }
+
+    router.replace(
+      clearShowUnreadParam(basePath, new URLSearchParams(searchParams.toString())),
+      { scroll: false },
+    );
+
+    void (async () => {
+      const ids = await listUnreadTenantChangeEntityIdsAction({
+        companyId,
+        entityTypes: ["COMPENSATION_INFO"],
+        periodYear: year,
+        periodMonth: month,
+      });
+      showUnreadEntriesForPeriod(ids);
+      setReviewActive(true);
+    })();
+  }, [basePath, companyId, month, router, searchParams, showUnread, year]);
 
   const visibleRows = useMemo(() => {
     if (!unreadIds) {
@@ -251,18 +332,33 @@ export function CompensationInfoTable({
     return compensationInfos.filter((row) => unreadIds.has(row.id));
   }, [compensationInfos, unreadIds]);
 
-  const filteredRows = useMemo(() => {
-    const needle = nameFilter.trim().toLowerCase();
-    if (!needle) {
-      return visibleRows;
-    }
-    return visibleRows.filter((row) => row.name.toLowerCase().includes(needle));
-  }, [nameFilter, visibleRows]);
+  const filteredRows = useMemo(
+    () => filterCompensationInfos(visibleRows, { name: nameFilter }),
+    [nameFilter, visibleRows],
+  );
+
+  const filterSummary = useMemo(
+    () => summarizeCompensationInfoFilters(year, month, { name: nameFilter }),
+    [year, month, nameFilter],
+  );
+
+  const defaultTitle = `${year}년 ${month}월 상세급여 정보`;
 
   const hasAnyNotes = useMemo(
     () => compensationInfos.some((row) => Boolean(row.notes?.trim())),
     [compensationInfos],
   );
+
+  function applyFilters() {
+    setPage(1);
+    setNameFilter(draftNameFilter);
+  }
+
+  function clearFilters() {
+    setPage(1);
+    setDraftNameFilter("");
+    setNameFilter("");
+  }
 
   const pagination = useMemo(() => paginate(filteredRows, page), [filteredRows, page]);
 
@@ -316,6 +412,13 @@ type TableRow =
     }
 
     setFormError(null);
+
+    const minuteError = validateMinuteParts(formValues);
+    if (minuteError) {
+      setFormError(minuteError);
+      return;
+    }
+
     startTransition(async () => {
       const formData = buildFormData(formValues, { companyId });
       const isDraft = editingRowId.startsWith("draft-");
@@ -412,19 +515,30 @@ type TableRow =
               companyId={companyId}
               entityTypes={["COMPENSATION_INFO"]}
               periodScope={{ year, month, basePath }}
-              onShowUnreadEntries={(ids) => setUnreadIds(new Set(ids))}
+              reviewActive={reviewActive}
+              onReviewActiveChange={setReviewActive}
+              onShowUnreadEntries={showUnreadEntriesForPeriod}
               onClearUnreadFilter={() => setUnreadIds(null)}
             />
           ) : null}
-          <Button
-            type="button"
-            variant="outline"
+          <ExcelExportDialog
+            moduleLabel="상세급여 정보"
+            defaultTitle={defaultTitle}
+            companyName={companyName}
+            filterSummary={filterSummary}
+            entryCount={filteredRows.length}
             disabled={isPending || editingRowId !== null}
-            onClick={handleCopyClick}
-          >
-            <Copy className="size-4" />
-            최근 인원 복사
-          </Button>
+            companyId={companyId}
+            onExport={({ title }) =>
+              exportCompensationInfosExcel({
+                title,
+                year,
+                month,
+                filters: { name: nameFilter },
+                companyId,
+              })
+            }
+          />
           <Button
             type="button"
             disabled={isPending || editingRowId !== null}
@@ -436,7 +550,19 @@ type TableRow =
         </div>
       </CardHeader>
       <CardContent className="min-w-0 space-y-4">
-        <CompensationInfoMonthSelector year={year} month={month} basePath={basePath} />
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <CompensationInfoMonthSelector year={year} month={month} basePath={basePath} />
+          <Button
+            type="button"
+            variant="outline"
+            className="h-8 shrink-0 self-end"
+            disabled={isPending || editingRowId !== null}
+            onClick={handleCopyClick}
+          >
+            <Copy className="size-4" />
+            최근 인원 복사
+          </Button>
+        </div>
 
         <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
@@ -449,12 +575,16 @@ type TableRow =
                   value={draftNameFilter}
                   placeholder="이름으로 검색"
                   className="pl-8"
-                  onChange={(event) => setDraftNameFilter(event.target.value)}
+                  onChange={(event) => {
+                    const name = event.target.value;
+                    setPage(1);
+                    setDraftNameFilter(name);
+                    setNameFilter(name);
+                  }}
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
                       event.preventDefault();
-                      setPage(1);
-                      setNameFilter(draftNameFilter);
+                      applyFilters();
                     }
                   }}
                 />
@@ -462,25 +592,11 @@ type TableRow =
             </div>
 
             <div className="flex shrink-0 items-center gap-2 lg:ml-auto">
-              <Button
-                type="button"
-                onClick={() => {
-                  setPage(1);
-                  setNameFilter(draftNameFilter);
-                }}
-              >
+              <Button type="button" onClick={applyFilters}>
                 <Search className="size-4" />
                 검색
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setPage(1);
-                  setDraftNameFilter("");
-                  setNameFilter("");
-                }}
-              >
+              <Button type="button" variant="outline" onClick={clearFilters}>
                 <X className="size-4" />
                 필터 초기화
               </Button>
@@ -495,7 +611,13 @@ type TableRow =
         ) : null}
 
         {filteredRows.length === 0 && !editingRowId ? (
-          <EmptyState message="등록된 상세급여 정보가 없습니다. 재직자 추가 버튼으로 첫 항목을 추가하거나 최근 월 인원을 복사해 주세요." />
+          compensationInfos.length === 0 ? (
+            <EmptyState message="등록된 상세급여 정보가 없습니다. 재직자 추가 버튼으로 첫 항목을 추가하거나 최근 월 인원을 복사해 주세요." />
+          ) : (
+            <div className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
+              검색 조건에 맞는 상세급여 정보가 없습니다.
+            </div>
+          )
         ) : (
           <div className="overflow-hidden rounded-lg border">
             <div className="max-h-[60vh] max-w-full min-w-0 overflow-auto">
@@ -631,25 +753,51 @@ type TableRow =
                       </td>
                       <td className={bodyCellClassName}>
                         {isEditing ? (
-                          <Input
-                            type="text"
-                            inputMode="numeric"
-                            className="h-8 w-24 px-2 text-right"
-                            value={formatSalaryInput(formValues.incentiveAmount)}
-                            onChange={(event) =>
-                              updateFormValue(
-                                "incentiveAmount",
-                                parseSalaryInput(event.target.value),
-                              )
-                            }
-                            disabled={isPending}
-                          />
+                          <div className="flex items-center justify-end gap-2">
+                            <select
+                              className={selectClassName}
+                              value={formValues.incentiveBasis}
+                              onChange={(event) =>
+                                updateFormValue(
+                                  "incentiveBasis",
+                                  event.target.value as SalaryBasis | "",
+                                )
+                              }
+                              disabled={isPending}
+                            >
+                              <option value="">선택</option>
+                              <option value="GROSS">세전</option>
+                              <option value="NET">세후</option>
+                            </select>
+                            <Input
+                              type="text"
+                              inputMode="numeric"
+                              className="h-8 w-24 px-2 text-right"
+                              value={formatSalaryInput(formValues.incentiveAmount)}
+                              onChange={(event) =>
+                                updateFormValue(
+                                  "incentiveAmount",
+                                  parseSalaryInput(event.target.value),
+                                )
+                              }
+                              disabled={isPending}
+                            />
+                          </div>
                         ) : isDraft ? (
                           "—"
                         ) : row.incentiveAmount !== null ? (
-                          <span className="text-muted-foreground">
-                            {formatSalaryAmount(row.incentiveAmount)}
-                          </span>
+                          <div className="flex items-center justify-end gap-2">
+                            <span className="text-xs text-muted-foreground">
+                              {row.incentiveBasis === "NET"
+                                ? "세후"
+                                : row.incentiveBasis === "GROSS"
+                                  ? "세전"
+                                  : "—"}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {formatSalaryAmount(row.incentiveAmount)}
+                            </span>
+                          </div>
                         ) : (
                           "—"
                         )}

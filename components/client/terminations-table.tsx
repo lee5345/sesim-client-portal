@@ -130,6 +130,7 @@ export function TerminationsTable({
           <TerminationsTableView
             terminations={visibleTerminations}
             companyId={companyId}
+            hasBaseRows={terminations.length > 0}
             draftFilters={draftFilters}
             appliedFilters={appliedFilters}
             onDraftChange={handleDraftChange}

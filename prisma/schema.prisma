@@ -225,6 +225,7 @@ model CompensationInfo {
   absenceDays        Int?
   lateEarlyLeaveHours Decimal?        @db.Decimal(6, 2)
   incentiveAmount    Int?
+  incentiveBasis     SalaryBasis?
   unusedLeaveUnit    UnusedLeaveUnit?
   unusedLeaveAmount  Decimal?         @db.Decimal(6, 1)
   notes              String?

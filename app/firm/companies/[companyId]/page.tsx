@@ -9,6 +9,7 @@ import {
   NO_WORKPLACE_MANAGEMENT_NUMBER_LABEL,
 } from "@/lib/companies/labels";
 import { parseYearMonthSearchParams } from "@/lib/daily-workers/period";
+import { formatDate } from "@/lib/format/date";
 import { formatWorkplaceManagementNumber } from "@/lib/format/workplace-management-number";
 import { getCompanyById } from "@/modules/companies/companies";
 import { listFirmStaffUsers } from "@/modules/auth/staff-users";
@@ -92,7 +93,7 @@ export default async function FirmCompanyDetailPage({
 
   const changeRows = compensationChanges.map((row) => ({
     ...row,
-    changeDate: row.changeDate.toISOString().slice(0, 10),
+    changeDate: formatDate(row.changeDate),
     createdAt: row.createdAt.toISOString(),
   }));
 
@@ -230,6 +231,7 @@ export default async function FirmCompanyDetailPage({
           <CompensationChangesTable
             compensationChanges={changeRows}
             companyId={companyId}
+            companyName={company.name}
           />
         </TabsContent>
 
@@ -239,6 +241,7 @@ export default async function FirmCompanyDetailPage({
             year={year}
             month={month}
             companyId={companyId}
+            companyName={company.name}
             basePath={firmDailyWorkersBasePath}
           />
         </TabsContent>

@@ -194,6 +194,7 @@ export function DailyWorkersTable({
             month={month}
             companyId={companyId}
             basePath={basePath}
+            hasBaseRows={dailyWorkers.length > 0}
             draftFilters={draftFilters}
             appliedFilters={appliedFilters}
             onDraftChange={handleDraftChange}

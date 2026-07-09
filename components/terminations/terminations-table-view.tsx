@@ -9,6 +9,7 @@ import {
   filterTerminations,
   type TerminationFilterValues,
 } from "@/lib/filters/terminations";
+import { formatDate } from "@/lib/format/date";
 import type { TerminationTableRow } from "@/lib/terminations/types";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
@@ -18,6 +19,7 @@ import { deleteTerminationAction } from "@/modules/terminations/actions";
 type TerminationsTableViewProps = {
   terminations: TerminationTableRow[];
   companyId?: string;
+  hasBaseRows: boolean;
   draftFilters: TerminationFilterValues;
   appliedFilters: TerminationFilterValues;
   onDraftChange: (next: TerminationFilterValues) => void;
@@ -29,12 +31,13 @@ function toFormDateValue(date: Date | null) {
   if (!date) {
     return null;
   }
-  return date.toISOString().slice(0, 10);
+  return formatDate(date);
 }
 
 export function TerminationsTableView({
   terminations,
   companyId,
+  hasBaseRows,
   draftFilters,
   appliedFilters,
   onDraftChange,
@@ -52,6 +55,10 @@ export function TerminationsTableView({
     () => paginate(filteredTerminations, page),
     [filteredTerminations, page],
   );
+
+  useEffect(() => {
+    setPage(1);
+  }, [appliedFilters]);
 
   useEffect(() => {
     if (page > pagination.totalPages) {
@@ -100,9 +107,7 @@ export function TerminationsTableView({
 
       {filteredTerminations.length === 0 ? (
         <div className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
-          {terminations.length === 0
-            ? "등록된 퇴사자가 없습니다."
-            : "검색 조건에 맞는 퇴사자가 없습니다."}
+          {hasBaseRows ? "검색 조건에 맞는 퇴사자가 없습니다." : "등록된 퇴사자가 없습니다."}
         </div>
       ) : (
         <div className="overflow-hidden rounded-lg border">

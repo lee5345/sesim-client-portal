@@ -22,6 +22,7 @@ type DailyWorkersTableViewProps = {
   month: number;
   companyId?: string;
   basePath: string;
+  hasBaseRows: boolean;
   draftFilters: DailyWorkersFilterValues;
   appliedFilters: DailyWorkersFilterValues;
   onDraftChange: (next: DailyWorkersFilterValues) => void;
@@ -35,6 +36,7 @@ export function DailyWorkersTableView({
   month,
   companyId,
   basePath,
+  hasBaseRows,
   draftFilters,
   appliedFilters,
   onDraftChange,
@@ -52,6 +54,10 @@ export function DailyWorkersTableView({
     () => paginate(filteredDailyWorkers, page),
     [filteredDailyWorkers, page],
   );
+
+  useEffect(() => {
+    setPage(1);
+  }, [appliedFilters]);
 
   useEffect(() => {
     if (page > pagination.totalPages) {
@@ -104,9 +110,7 @@ export function DailyWorkersTableView({
 
       {filteredDailyWorkers.length === 0 ? (
         <div className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
-          {dailyWorkers.length === 0
-            ? `${year}년 ${month}월에 등록된 일용직이 없습니다.`
-            : "검색 조건에 맞는 일용직이 없습니다."}
+          {hasBaseRows ? "검색 조건에 맞는 일용직이 없습니다." : "등록된 일용직이 없습니다."}
         </div>
       ) : (
         <div className="overflow-hidden rounded-lg border">

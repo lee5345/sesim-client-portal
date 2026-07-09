@@ -15,6 +15,7 @@ import {
 } from "@/components/hire-intakes/hire-intakes-filters";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
 import { filterHireIntakes } from "@/lib/filters/hire-intakes";
+import { formatDate } from "@/lib/format/date";
 import { paginate } from "@/lib/pagination";
 
 type DepartmentOption = {
@@ -26,6 +27,7 @@ type HireIntakesTableViewProps = {
   hireIntakes: HireIntakeTableRow[];
   departments: DepartmentOption[];
   companyId?: string;
+  hasBaseRows: boolean;
   draftFilters: HireIntakeFilterValues;
   appliedFilters: HireIntakeFilterValues;
   onDraftChange: (next: HireIntakeFilterValues) => void;
@@ -37,13 +39,14 @@ function toFormDateValue(date: Date | null) {
   if (!date) {
     return null;
   }
-  return date.toISOString().slice(0, 10);
+  return formatDate(date);
 }
 
 export function HireIntakesTableView({
   hireIntakes,
   departments,
   companyId,
+  hasBaseRows,
   draftFilters,
   appliedFilters,
   onDraftChange,
@@ -61,6 +64,10 @@ export function HireIntakesTableView({
     () => paginate(filteredHireIntakes, page),
     [filteredHireIntakes, page],
   );
+
+  useEffect(() => {
+    setPage(1);
+  }, [appliedFilters]);
 
   useEffect(() => {
     if (page > pagination.totalPages) {
@@ -121,9 +128,7 @@ export function HireIntakesTableView({
 
       {filteredHireIntakes.length === 0 ? (
         <div className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
-          {hireIntakes.length === 0
-            ? "등록된 입사자가 없습니다."
-            : "검색 조건에 맞는 입사자가 없습니다."}
+          {hasBaseRows ? "검색 조건에 맞는 입사자가 없습니다." : "등록된 입사자가 없습니다."}
         </div>
       ) : (
         <div className="overflow-hidden rounded-lg border">

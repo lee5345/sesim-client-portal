@@ -42,6 +42,8 @@ const notesSchema = z
 
 const unusedLeaveUnitSchema = z.enum(["DAYS", "HOURS"]).optional();
 
+const incentiveBasisSchema = z.enum(["GROSS", "NET"]).optional();
+
 const unusedLeaveAmountSchema = z.preprocess(
   (value) => {
     if (value === "" || value === null || value === undefined) {
@@ -77,6 +79,7 @@ export const compensationInfoCoreSchema = z
       .int("인센티브 금액은 정수로 입력해 주세요.")
       .min(0, "인센티브 금액은 0 이상이어야 합니다.")
       .optional(),
+    incentiveBasis: incentiveBasisSchema,
     unusedLeaveUnit: unusedLeaveUnitSchema,
     unusedLeaveAmount: unusedLeaveAmountSchema.optional(),
     notes: notesSchema,
@@ -94,6 +97,20 @@ export const compensationInfoCoreSchema = z
         code: "custom",
         message: "미사용연차 값을 입력해 주세요.",
         path: ["unusedLeaveAmount"],
+      });
+    }
+    if (data.incentiveAmount !== undefined && data.incentiveBasis === undefined) {
+      ctx.addIssue({
+        code: "custom",
+        message: "인센티브 기준(세전/세후)을 선택해 주세요.",
+        path: ["incentiveBasis"],
+      });
+    }
+    if (data.incentiveBasis !== undefined && data.incentiveAmount === undefined) {
+      ctx.addIssue({
+        code: "custom",
+        message: "인센티브 금액을 입력해 주세요.",
+        path: ["incentiveAmount"],
       });
     }
   });
@@ -154,6 +171,7 @@ export function parseCompensationInfoFormData(input: {
       const n = Number(normalized);
       return Number.isFinite(n) ? n : (text as unknown);
     })(),
+    incentiveBasis: emptyToUndefined(formData.get("incentiveBasis")),
     unusedLeaveUnit: emptyToUndefined(formData.get("unusedLeaveUnit")),
     unusedLeaveAmount: emptyToUndefined(formData.get("unusedLeaveAmount")),
     notes: emptyToUndefined(formData.get("notes")),
@@ -177,6 +195,7 @@ export function toCompensationInfoAuditPayload(data: CompensationInfoCoreInput) 
     absenceDays: data.absenceDays ?? null,
     lateEarlyLeaveHours: data.lateEarlyLeaveHours ?? null,
     incentiveAmount: data.incentiveAmount ?? null,
+    incentiveBasis: data.incentiveBasis ?? null,
     unusedLeaveUnit: data.unusedLeaveUnit ?? null,
     unusedLeaveAmount: data.unusedLeaveAmount ?? null,
     notes: data.notes ?? null,
