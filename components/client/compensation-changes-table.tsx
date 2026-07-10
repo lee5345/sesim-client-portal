@@ -187,76 +187,76 @@ export function CompensationChangesTable({
         </div>
       </CardHeader>
       <CardContent className="min-w-0 space-y-3">
-        <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-            <div className="min-w-0 flex-1 space-y-1.5">
-              <Label htmlFor="compensation-change-name-filter">이름</Label>
-              <div className="relative">
-                <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="compensation-change-name-filter"
-                  value={draftFilters.name}
-                  placeholder="이름으로 검색"
-                  className="pl-8"
-                  onChange={(event) => {
-                    const name = event.target.value;
-                    handleFilterChange((current) => ({ ...current, name }));
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      onSearch();
-                    }
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>급여변경일</Label>
-              <div className="flex items-center gap-2">
-                <DateInput
-                  id="compensation-change-date-from"
-                  value={draftFilters.changeDateFrom}
-                  onChange={(changeDateFrom) =>
-                    handleFilterChange((current) => ({ ...current, changeDateFrom }))
-                  }
-                  className="w-[10.5rem]"
-                />
-                <span className="text-muted-foreground">~</span>
-                <DateInput
-                  id="compensation-change-date-to"
-                  value={draftFilters.changeDateTo}
-                  onChange={(changeDateTo) =>
-                    handleFilterChange((current) => ({ ...current, changeDateTo }))
-                  }
-                  className="w-[10.5rem]"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button type="button" onClick={onSearch}>
-                <Search />
-                검색
-              </Button>
-              <Button type="button" variant="outline" onClick={onClear}>
-                <X />
-                필터 초기화
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {filteredChanges.length === 0 ? (
-          compensationChanges.length === 0 ? (
-            <EmptyState message="등록된 급여변경 내역이 없습니다. 급여변경 등록 버튼으로 첫 항목을 추가해 주세요." />
-          ) : (
-            <div className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
-              검색 조건에 맞는 급여변경 내역이 없습니다.
-            </div>
-          )
+        {compensationChanges.length === 0 ? (
+          <EmptyState message="등록된 급여변경 내역이 없습니다. 급여변경 등록 버튼으로 첫 항목을 추가해 주세요." />
         ) : (
+          <>
+            <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <Label htmlFor="compensation-change-name-filter">이름</Label>
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="compensation-change-name-filter"
+                      value={draftFilters.name}
+                      placeholder="이름으로 검색"
+                      className="pl-8"
+                      onChange={(event) => {
+                        const name = event.target.value;
+                        handleFilterChange((current) => ({ ...current, name }));
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          onSearch();
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label>급여변경일</Label>
+                  <div className="flex items-center gap-2">
+                    <DateInput
+                      id="compensation-change-date-from"
+                      value={draftFilters.changeDateFrom}
+                      onChange={(changeDateFrom) =>
+                        handleFilterChange((current) => ({ ...current, changeDateFrom }))
+                      }
+                      className="w-[10.5rem]"
+                    />
+                    <span className="text-muted-foreground">~</span>
+                    <DateInput
+                      id="compensation-change-date-to"
+                      value={draftFilters.changeDateTo}
+                      onChange={(changeDateTo) =>
+                        handleFilterChange((current) => ({ ...current, changeDateTo }))
+                      }
+                      className="w-[10.5rem]"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button type="button" onClick={onSearch}>
+                    <Search />
+                    검색
+                  </Button>
+                  <Button type="button" variant="outline" onClick={onClear}>
+                    <X />
+                    필터 초기화
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {filteredChanges.length === 0 ? (
+              <div className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
+                검색 조건에 맞는 급여변경 내역이 없습니다.
+              </div>
+            ) : (
           <div className="overflow-hidden rounded-lg border">
             <div className="max-w-full min-w-0 overflow-x-auto">
               <table className="w-max min-w-full text-sm">
@@ -355,6 +355,8 @@ export function CompensationChangesTable({
               onPageChange={setPage}
             />
           </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>

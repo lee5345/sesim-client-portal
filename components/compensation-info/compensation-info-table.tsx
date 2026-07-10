@@ -569,55 +569,57 @@ type TableRow =
           </Button>
         </div>
 
-        <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-            <div className="min-w-0 flex-1 space-y-1.5">
-              <Label htmlFor="compensation-info-name-filter">이름</Label>
-              <div className="relative">
-                <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="compensation-info-name-filter"
-                  value={draftNameFilter}
-                  placeholder="이름으로 검색"
-                  className="pl-8"
+        {compensationInfos.length > 0 ? (
+          <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <Label htmlFor="compensation-info-name-filter">이름</Label>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="compensation-info-name-filter"
+                    value={draftNameFilter}
+                    placeholder="이름으로 검색"
+                    className="pl-8"
+                    disabled={isPending || editingRowId !== null}
+                    onChange={(event) => {
+                      const name = event.target.value;
+                      setPage(1);
+                      setDraftNameFilter(name);
+                      setNameFilter(name);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        applyFilters();
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex shrink-0 items-center gap-2 lg:ml-auto">
+                <Button
+                  type="button"
                   disabled={isPending || editingRowId !== null}
-                  onChange={(event) => {
-                    const name = event.target.value;
-                    setPage(1);
-                    setDraftNameFilter(name);
-                    setNameFilter(name);
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      applyFilters();
-                    }
-                  }}
-                />
+                  onClick={applyFilters}
+                >
+                  <Search className="size-4" />
+                  검색
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isPending || editingRowId !== null}
+                  onClick={clearFilters}
+                >
+                  <X className="size-4" />
+                  필터 초기화
+                </Button>
               </div>
             </div>
-
-            <div className="flex shrink-0 items-center gap-2 lg:ml-auto">
-              <Button
-                type="button"
-                disabled={isPending || editingRowId !== null}
-                onClick={applyFilters}
-              >
-                <Search className="size-4" />
-                검색
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isPending || editingRowId !== null}
-                onClick={clearFilters}
-              >
-                <X className="size-4" />
-                필터 초기화
-              </Button>
-            </div>
           </div>
-        </div>
+        ) : null}
 
         {formError ? (
           <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
