@@ -5,7 +5,7 @@ import { Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import {
-  softDeleteCompanyAction,
+  deleteCompanyAction,
   updateCompanyAction,
 } from "@/modules/companies/companies";
 import { WorkplaceManagementNumberInput } from "@/components/companies/workplace-management-number-input";
@@ -177,16 +177,17 @@ export function CompanyEditForm({
         {canDelete ? (
           <div className="border-t pt-4">
             <p className="mb-3 text-sm text-muted-foreground">
-              고객사를 삭제하면 최근 삭제 목록으로 이동하며, 연결된 클라이언트
-              계정은 비활성화됩니다.
+              고객사를 삭제하면 연결된 입사·퇴사·급여 데이터와 클라이언트 계정이
+              모두 영구 삭제되며 복구할 수 없습니다.
             </p>
             <ConfirmDeleteDialog
               title="고객사 삭제"
-              description={`"${company.name}" 고객사를 삭제하시겠습니까? 삭제된 고객사는 최근 삭제 목록에서 확인할 수 있습니다.`}
-              action={softDeleteCompanyAction}
+              description={`"${company.name}" 고객사를 삭제하시겠습니까? 연결된 모든 데이터가 영구 삭제되며 복구할 수 없습니다.`}
+              action={deleteCompanyAction}
               hiddenFields={{ companyId: company.id }}
               triggerLabel="고객사 삭제"
               confirmLabel="삭제 확인"
+              requireTypedConfirmation
             />
           </div>
         ) : null}

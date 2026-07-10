@@ -46,7 +46,7 @@ type CompanyListItem = {
   firmContactName: string | null;
   workplaceManagementNumber: string | null;
   isActive: boolean;
-  updatedAt: Date | string;
+  lastModifiedAt: Date | string;
 };
 
 type CompaniesListProps = {
@@ -245,7 +245,7 @@ function CompanyCard({
         <CardContent className="space-y-2 text-sm text-muted-foreground">
           <p>담당 직원: {company.firmContactName ?? "없음"}</p>
           <p className="text-xs">
-            최종 수정: {formatDateTime(new Date(company.updatedAt))}
+            최종 수정: {formatDateTime(new Date(company.lastModifiedAt))}
           </p>
         </CardContent>
 

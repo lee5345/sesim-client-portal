@@ -7,6 +7,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db/db";
 import { requireAuth } from "@/lib/auth/guards";
 import { sortFirmStaffUsers } from "@/lib/sort/korean";
+import { hasValidDeleteConfirmation } from "@/lib/validation/delete-confirmation";
 
 function redirectIfSelfTarget(actorId: string, targetUserId: string): void {
   if (actorId === targetUserId) {
@@ -91,6 +92,10 @@ const deleteSchema = z.object({
 
 export async function deleteUserAction(formData: FormData) {
   const session = await requireAuth("FIRM_ADMIN");
+
+  if (!hasValidDeleteConfirmation(formData)) {
+    throw new Error("삭제 확인 문구가 일치하지 않습니다.");
+  }
 
   const input = deleteSchema.parse({
     userId: formData.get("userId"),

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db/db";
 import { requireAuth } from "@/lib/auth/guards";
 import { sortByActivityThenKoreanName } from "@/lib/sort/korean";
+import { hasValidDeleteConfirmation } from "@/lib/validation/delete-confirmation";
 
 const CLIENT_ACCOUNTS_PATH = "/firm/client-accounts";
 
@@ -49,6 +50,10 @@ export async function toggleClientUserActiveAction(formData: FormData) {
 
 export async function deleteClientUserAction(formData: FormData) {
   await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
+
+  if (!hasValidDeleteConfirmation(formData)) {
+    throw new Error("삭제 확인 문구가 일치하지 않습니다.");
+  }
 
   const input = deleteSchema.parse({
     userId: formData.get("userId"),

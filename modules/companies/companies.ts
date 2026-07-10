@@ -7,8 +7,13 @@ import { z } from "zod";
 import { prisma } from "@/lib/db/db";
 import { requireAuth } from "@/lib/auth/guards";
 import { sortCompaniesByActivity } from "@/lib/sort/korean";
+import { hasValidDeleteConfirmation } from "@/lib/validation/delete-confirmation";
 import { optionalWorkplaceManagementNumberSchema } from "@/lib/validation/workplace-management-number";
 import { getFirstZodErrorMessage } from "@/lib/validation/zod-korean";
+import {
+  getCompanyLastModifiedAtById,
+  resolveCompanyLastModifiedAt,
+} from "@/modules/companies/last-modified";
 import { afterFirmScopeMutation } from "@/modules/realtime/post-mutation";
 import { bumpSyncCursors } from "@/modules/realtime/sync";
 
@@ -65,32 +70,30 @@ export async function getPendingRegistrationRequestCount() {
 }
 
 export async function listCompanies() {
-  const companies = await prisma.company.findMany({
-    where: { deletedAt: null },
-    select: {
-      id: true,
-      name: true,
-      firmContactName: true,
-      workplaceManagementNumber: true,
-      isActive: true,
-      updatedAt: true,
-    },
-  });
+  const [companies, lastModifiedByCompanyId] = await Promise.all([
+    prisma.company.findMany({
+      where: { deletedAt: null },
+      select: {
+        id: true,
+        name: true,
+        firmContactName: true,
+        workplaceManagementNumber: true,
+        isActive: true,
+        updatedAt: true,
+      },
+    }),
+    getCompanyLastModifiedAtById(),
+  ]);
 
-  return sortCompaniesByActivity(companies);
-}
-
-export async function listDeletedCompanies() {
-  return prisma.company.findMany({
-    where: { deletedAt: { not: null } },
-    orderBy: { deletedAt: "desc" },
-    select: {
-      id: true,
-      name: true,
-      businessNumber: true,
-      deletedAt: true,
-    },
-  });
+  return sortCompaniesByActivity(
+    companies.map((company) => ({
+      ...company,
+      lastModifiedAt: resolveCompanyLastModifiedAt(
+        company.updatedAt,
+        lastModifiedByCompanyId.get(company.id),
+      ),
+    })),
+  );
 }
 
 export async function getCompanyById(companyId: string) {
@@ -179,8 +182,12 @@ export async function updateCompanyAction(
   return { success: true };
 }
 
-export async function softDeleteCompanyAction(formData: FormData) {
+export async function deleteCompanyAction(formData: FormData) {
   await requireAuth("FIRM_ADMIN");
+
+  if (!hasValidDeleteConfirmation(formData)) {
+    throw new Error("삭제 확인 문구가 일치하지 않습니다.");
+  }
 
   const input = companyIdSchema.parse({
     companyId: formData.get("companyId"),
@@ -194,63 +201,6 @@ export async function softDeleteCompanyAction(formData: FormData) {
     redirect("/firm/companies");
   }
 
-  await prisma.$transaction([
-    prisma.company.update({
-      where: { id: input.companyId },
-      data: { deletedAt: new Date(), isActive: false },
-    }),
-    prisma.user.updateMany({
-      where: { companyId: input.companyId },
-      data: { isActive: false },
-    }),
-  ]);
-
-  revalidatePath("/firm/companies");
-  revalidatePath("/firm/companies/deleted");
-  revalidatePath("/firm/dashboard");
-  redirect("/firm/companies");
-}
-
-export async function restoreCompanyAction(formData: FormData) {
-  await requireAuth("FIRM_ADMIN");
-
-  const input = companyIdSchema.parse({
-    companyId: formData.get("companyId"),
-  });
-
-  const existing = await prisma.company.findFirst({
-    where: { id: input.companyId, deletedAt: { not: null } },
-    select: { id: true },
-  });
-  if (!existing) {
-    redirect("/firm/companies/deleted");
-  }
-
-  await prisma.company.update({
-    where: { id: input.companyId },
-    data: { deletedAt: null, isActive: true },
-  });
-
-  revalidatePath("/firm/companies");
-  revalidatePath("/firm/companies/deleted");
-  revalidatePath("/firm/dashboard");
-}
-
-export async function permanentlyDeleteCompanyAction(formData: FormData) {
-  await requireAuth("FIRM_ADMIN");
-
-  const input = companyIdSchema.parse({
-    companyId: formData.get("companyId"),
-  });
-
-  const existing = await prisma.company.findFirst({
-    where: { id: input.companyId, deletedAt: { not: null } },
-    select: { id: true },
-  });
-  if (!existing) {
-    redirect("/firm/companies/deleted");
-  }
-
   const companyId = input.companyId;
 
   await prisma.$transaction(async (tx) => {
@@ -258,8 +208,11 @@ export async function permanentlyDeleteCompanyAction(formData: FormData) {
     await tx.termination.deleteMany({ where: { companyId } });
     await tx.compensationChange.deleteMany({ where: { companyId } });
     await tx.compensationInfo.deleteMany({ where: { companyId } });
+    await tx.dailyWorker.deleteMany({ where: { companyId } });
     await tx.department.deleteMany({ where: { companyId } });
     await tx.auditLog.deleteMany({ where: { companyId } });
+    await tx.tenantChangeReadCursor.deleteMany({ where: { companyId } });
+    await tx.tenantChangePeriodReadCursor.deleteMany({ where: { companyId } });
 
     const userIds = (
       await tx.user.findMany({
@@ -273,6 +226,15 @@ export async function permanentlyDeleteCompanyAction(formData: FormData) {
       await tx.passwordSetupToken.deleteMany({
         where: { userId: { in: userIds } },
       });
+      await tx.passwordResetToken.deleteMany({
+        where: { userId: { in: userIds } },
+      });
+      await tx.tenantChangeReadCursor.deleteMany({
+        where: { userId: { in: userIds } },
+      });
+      await tx.tenantChangePeriodReadCursor.deleteMany({
+        where: { userId: { in: userIds } },
+      });
       await tx.user.deleteMany({ where: { companyId } });
     }
 
@@ -284,9 +246,10 @@ export async function permanentlyDeleteCompanyAction(formData: FormData) {
     await tx.company.delete({ where: { id: companyId } });
   });
 
+  await afterFirmScopeMutation();
+
   revalidatePath("/firm/companies");
-  revalidatePath("/firm/companies/deleted");
   revalidatePath("/firm/dashboard");
   revalidatePath("/firm/client-accounts");
-  redirect("/firm/companies/deleted");
+  redirect("/firm/companies");
 }

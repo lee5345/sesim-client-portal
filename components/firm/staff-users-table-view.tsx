@@ -155,6 +155,7 @@ export function StaffUsersTableView({
                             action={deleteAction}
                             hiddenFields={{ userId: user.id }}
                             triggerLabel="삭제"
+                            requireTypedConfirmation
                           />
                         </div>
                       )}

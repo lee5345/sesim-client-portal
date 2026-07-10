@@ -133,6 +133,7 @@ function AccountRow({
             action={deleteAction}
             hiddenFields={{ userId: account.id }}
             triggerLabel="삭제"
+            requireTypedConfirmation
           />
         </div>
       </td>
