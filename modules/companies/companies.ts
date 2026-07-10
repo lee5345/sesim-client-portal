@@ -10,10 +10,6 @@ import { sortCompaniesByActivity } from "@/lib/sort/korean";
 import { hasValidDeleteConfirmation } from "@/lib/validation/delete-confirmation";
 import { optionalWorkplaceManagementNumberSchema } from "@/lib/validation/workplace-management-number";
 import { getFirstZodErrorMessage } from "@/lib/validation/zod-korean";
-import {
-  getCompanyLastModifiedAtById,
-  resolveCompanyLastModifiedAt,
-} from "@/modules/companies/last-modified";
 import { afterFirmScopeMutation } from "@/modules/realtime/post-mutation";
 import { bumpSyncCursors } from "@/modules/realtime/sync";
 
@@ -70,30 +66,19 @@ export async function getPendingRegistrationRequestCount() {
 }
 
 export async function listCompanies() {
-  const [companies, lastModifiedByCompanyId] = await Promise.all([
-    prisma.company.findMany({
-      where: { deletedAt: null },
-      select: {
-        id: true,
-        name: true,
-        firmContactName: true,
-        workplaceManagementNumber: true,
-        isActive: true,
-        updatedAt: true,
-      },
-    }),
-    getCompanyLastModifiedAtById(),
-  ]);
+  const companies = await prisma.company.findMany({
+    where: { deletedAt: null },
+    select: {
+      id: true,
+      name: true,
+      firmContactName: true,
+      workplaceManagementNumber: true,
+      isActive: true,
+      lastModifiedAt: true,
+    },
+  });
 
-  return sortCompaniesByActivity(
-    companies.map((company) => ({
-      ...company,
-      lastModifiedAt: resolveCompanyLastModifiedAt(
-        company.updatedAt,
-        lastModifiedByCompanyId.get(company.id),
-      ),
-    })),
-  );
+  return sortCompaniesByActivity(companies);
 }
 
 export async function getCompanyById(companyId: string) {

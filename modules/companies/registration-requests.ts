@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/db/db";
 import { afterFirmScopeMutation } from "@/modules/realtime/post-mutation";
+import { bumpSyncCursors } from "@/modules/realtime/sync";
 import { requireAuth } from "@/lib/auth/guards";
 import { createPasswordSetupTokenTx } from "@/lib/auth/password-setup";
 import { sendPasswordSetupEmail } from "@/lib/auth/email";
@@ -88,7 +89,7 @@ export async function approveRegistrationRequestAction(formData: FormData) {
       },
     });
 
-    return { email: request.email, setupUrl };
+    return { email: request.email, setupUrl, companyId };
   });
 
   if (!result) {
@@ -106,6 +107,7 @@ export async function approveRegistrationRequestAction(formData: FormData) {
     redirect("/firm/client-accounts?approved=1&emailError=1");
   }
 
+  await bumpSyncCursors(result.companyId);
   await afterFirmScopeMutation();
   redirect("/firm/client-accounts?approved=1");
 }

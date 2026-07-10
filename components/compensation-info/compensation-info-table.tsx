@@ -753,7 +753,7 @@ type TableRow =
                       </td>
                       <td className={bodyCellClassName}>
                         {isEditing ? (
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex w-full min-w-[9rem] items-center justify-between gap-2">
                             <select
                               className={selectClassName}
                               value={formValues.incentiveBasis}
@@ -786,7 +786,7 @@ type TableRow =
                         ) : isDraft ? (
                           "—"
                         ) : row.incentiveAmount !== null ? (
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex w-full min-w-[9rem] items-center justify-between gap-2">
                             <span className="text-xs text-muted-foreground">
                               {row.incentiveBasis === "NET"
                                 ? "세후"
@@ -794,7 +794,7 @@ type TableRow =
                                   ? "세전"
                                   : "—"}
                             </span>
-                            <span className="text-muted-foreground">
+                            <span className="tabular-nums text-muted-foreground">
                               {formatSalaryAmount(row.incentiveAmount)}
                             </span>
                           </div>

@@ -8,6 +8,7 @@ import { prisma } from "@/lib/db/db";
 import { requireAuth } from "@/lib/auth/guards";
 import { sortByActivityThenKoreanName } from "@/lib/sort/korean";
 import { hasValidDeleteConfirmation } from "@/lib/validation/delete-confirmation";
+import { bumpSyncCursors } from "@/modules/realtime/sync";
 
 const CLIENT_ACCOUNTS_PATH = "/firm/client-accounts";
 
@@ -23,11 +24,13 @@ const deleteSchema = z.object({
 async function requireClientAdminUser(userId: string) {
   const user = await prisma.user.findFirst({
     where: { id: userId, role: "CLIENT_ADMIN" },
-    select: { id: true },
+    select: { id: true, companyId: true },
   });
   if (!user) {
     redirect(CLIENT_ACCOUNTS_PATH);
   }
+
+  return user;
 }
 
 export async function toggleClientUserActiveAction(formData: FormData) {
@@ -38,12 +41,16 @@ export async function toggleClientUserActiveAction(formData: FormData) {
     isActive: formData.get("isActive"),
   });
 
-  await requireClientAdminUser(input.userId);
+  const user = await requireClientAdminUser(input.userId);
 
   await prisma.user.update({
     where: { id: input.userId },
     data: { isActive: input.isActive === "true" },
   });
+
+  if (user.companyId) {
+    await bumpSyncCursors(user.companyId);
+  }
 
   revalidatePath(CLIENT_ACCOUNTS_PATH);
 }
@@ -59,7 +66,7 @@ export async function deleteClientUserAction(formData: FormData) {
     userId: formData.get("userId"),
   });
 
-  await requireClientAdminUser(input.userId);
+  const user = await requireClientAdminUser(input.userId);
 
   await prisma.$transaction(async (tx) => {
     const count = await tx.auditLog.count({ where: { actorId: input.userId } });
@@ -74,6 +81,10 @@ export async function deleteClientUserAction(formData: FormData) {
     await tx.passwordSetupToken.deleteMany({ where: { userId: input.userId } });
     await tx.user.delete({ where: { id: input.userId } });
   });
+
+  if (user.companyId) {
+    await bumpSyncCursors(user.companyId);
+  }
 
   revalidatePath(CLIENT_ACCOUNTS_PATH);
 }

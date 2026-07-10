@@ -13,6 +13,7 @@ model Company {
   businessNumber            String?
   createdAt                 DateTime              @default(now())
   updatedAt                 DateTime              @updatedAt
+  lastModifiedAt            DateTime              @default(now())
   isActive                  Boolean               @default(true)
   deletedAt                 DateTime?
   businessAddress           String?

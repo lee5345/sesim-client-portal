@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db/db";
+import { bumpCompanyLastModifiedAt } from "@/modules/companies/last-modified";
 
 export const FIRM_SYNC_SCOPE = "firm";
 
@@ -10,18 +11,19 @@ export async function bumpSyncCursors(companyId: string): Promise<void> {
   const companyScope = companySyncScope(companyId);
   const now = new Date();
 
-  await prisma.$transaction([
-    prisma.portalSyncCursor.upsert({
+  await prisma.$transaction(async (tx) => {
+    await bumpCompanyLastModifiedAt(companyId, now, tx);
+    await tx.portalSyncCursor.upsert({
       where: { scope: FIRM_SYNC_SCOPE },
       create: { scope: FIRM_SYNC_SCOPE, version: 1n, updatedAt: now },
       update: { version: { increment: 1 }, updatedAt: now },
-    }),
-    prisma.portalSyncCursor.upsert({
+    });
+    await tx.portalSyncCursor.upsert({
       where: { scope: companyScope },
       create: { scope: companyScope, version: 1n, updatedAt: now },
       update: { version: { increment: 1 }, updatedAt: now },
-    }),
-  ]);
+    });
+  });
 }
 
 export async function getSyncRevision(scopes: string[]): Promise<string> {
