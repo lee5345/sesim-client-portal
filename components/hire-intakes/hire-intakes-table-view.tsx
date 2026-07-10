@@ -117,7 +117,7 @@ export function HireIntakesTableView({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <HireIntakesFilters
         departments={departments}
         draft={draftFilters}

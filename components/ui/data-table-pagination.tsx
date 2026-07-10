@@ -11,6 +11,7 @@ type DataTablePaginationProps = {
   rangeEnd: number;
   total: number;
   onPageChange: (page: number) => void;
+  disabled?: boolean;
 };
 
 export function DataTablePagination({
@@ -20,6 +21,7 @@ export function DataTablePagination({
   rangeEnd,
   total,
   onPageChange,
+  disabled = false,
 }: DataTablePaginationProps) {
   if (total === 0) {
     return null;
@@ -35,7 +37,7 @@ export function DataTablePagination({
           type="button"
           variant="outline"
           size="icon-sm"
-          disabled={page <= 1}
+          disabled={disabled || page <= 1}
           aria-label="이전 페이지"
           onClick={() => onPageChange(page - 1)}
         >
@@ -45,7 +47,7 @@ export function DataTablePagination({
           type="button"
           variant="outline"
           size="icon-sm"
-          disabled={page >= totalPages}
+          disabled={disabled || page >= totalPages}
           aria-label="다음 페이지"
           onClick={() => onPageChange(page + 1)}
         >

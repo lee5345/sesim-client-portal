@@ -551,7 +551,12 @@ type TableRow =
       </CardHeader>
       <CardContent className="min-w-0 space-y-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <CompensationInfoMonthSelector year={year} month={month} basePath={basePath} />
+          <CompensationInfoMonthSelector
+            year={year}
+            month={month}
+            basePath={basePath}
+            disabled={isPending || editingRowId !== null}
+          />
           <Button
             type="button"
             variant="outline"
@@ -575,6 +580,7 @@ type TableRow =
                   value={draftNameFilter}
                   placeholder="이름으로 검색"
                   className="pl-8"
+                  disabled={isPending || editingRowId !== null}
                   onChange={(event) => {
                     const name = event.target.value;
                     setPage(1);
@@ -592,11 +598,20 @@ type TableRow =
             </div>
 
             <div className="flex shrink-0 items-center gap-2 lg:ml-auto">
-              <Button type="button" onClick={applyFilters}>
+              <Button
+                type="button"
+                disabled={isPending || editingRowId !== null}
+                onClick={applyFilters}
+              >
                 <Search className="size-4" />
                 검색
               </Button>
-              <Button type="button" variant="outline" onClick={clearFilters}>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isPending || editingRowId !== null}
+                onClick={clearFilters}
+              >
                 <X className="size-4" />
                 필터 초기화
               </Button>
@@ -639,7 +654,7 @@ type TableRow =
                   <th className={`${headerCellClassName} text-center`} colSpan={2}>
                     근태공제
                   </th>
-                  <th rowSpan={2} className={`${headerCellClassName} align-middle`}>
+                  <th rowSpan={2} className={`${headerCellClassName} w-px align-middle`}>
                     인센티브
                   </th>
                   <th className={`${headerCellClassName} text-center`} colSpan={2}>
@@ -751,9 +766,9 @@ type TableRow =
                           isEditing,
                         )}
                       </td>
-                      <td className={bodyCellClassName}>
+                      <td className={`${bodyCellClassName} w-px`}>
                         {isEditing ? (
-                          <div className="flex w-full min-w-[9rem] items-center justify-between gap-2">
+                          <div className="flex w-full items-center justify-between gap-2">
                             <select
                               className={selectClassName}
                               value={formValues.incentiveBasis}
@@ -786,7 +801,7 @@ type TableRow =
                         ) : isDraft ? (
                           "—"
                         ) : row.incentiveAmount !== null ? (
-                          <div className="flex w-full min-w-[9rem] items-center justify-between gap-2">
+                          <div className="flex w-full items-center justify-between gap-2">
                             <span className="text-xs text-muted-foreground">
                               {row.incentiveBasis === "NET"
                                 ? "세후"
@@ -952,6 +967,7 @@ type TableRow =
               rangeStart={pagination.rangeStart}
               rangeEnd={pagination.rangeEnd}
               total={pagination.total}
+              disabled={isPending || editingRowId !== null}
               onPageChange={setPage}
             />
           </div>

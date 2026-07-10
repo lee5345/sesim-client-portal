@@ -26,12 +26,14 @@ type CompensationInfoMonthSelectorProps = {
   year: number;
   month: number;
   basePath: string;
+  disabled?: boolean;
 };
 
 export function CompensationInfoMonthSelector({
   year,
   month,
   basePath,
+  disabled = false,
 }: CompensationInfoMonthSelectorProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -88,6 +90,7 @@ export function CompensationInfoMonthSelector({
           value={yearDraft}
           maxLength={4}
           placeholder="YYYY"
+          disabled={disabled}
           onChange={(event) => {
             const next = event.target.value.replace(/\D/g, "").slice(0, 4);
             setYearDraft(next);
@@ -103,8 +106,9 @@ export function CompensationInfoMonthSelector({
 
         <select
           id="compensation-info-month"
-          className={`col-start-2 row-start-2 ${selectClassName} min-w-20`}
+          className={`col-start-2 row-start-2 ${selectClassName} min-w-20 disabled:cursor-not-allowed disabled:opacity-50`}
           value={monthDraft}
+          disabled={disabled}
           onChange={(event) => setMonthDraft(Number(event.target.value))}
         >
           {MONTH_OPTIONS.map((option) => (
@@ -115,13 +119,14 @@ export function CompensationInfoMonthSelector({
         </select>
 
         <div className="col-start-3 row-start-2 flex items-center gap-2">
-          <Button type="button" className="h-8" onClick={applyDraft}>
+          <Button type="button" className="h-8" disabled={disabled} onClick={applyDraft}>
             적용
           </Button>
           <Button
             type="button"
             variant="outline"
             className="h-8"
+            disabled={disabled}
             onClick={() => navigate(currentYear, currentMonth)}
           >
             이번 달

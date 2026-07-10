@@ -98,7 +98,7 @@ export function DailyWorkersTableView({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <DailyWorkersMonthSelector year={year} month={month} basePath={basePath} />
 
       <DailyWorkersFilters

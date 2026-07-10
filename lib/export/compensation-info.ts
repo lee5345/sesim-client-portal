@@ -6,7 +6,8 @@ import {
   buildStyledWorkbookBuffer,
   type StyledCell,
 } from "@/lib/export/excel/workbook";
-import type { UnusedLeaveUnit } from "@/lib/generated/prisma/client";
+import type { SalaryBasis, UnusedLeaveUnit } from "@/lib/generated/prisma/client";
+import { SALARY_BASIS_LABELS } from "@/modules/hire-intakes/labels";
 
 export type CompensationInfoExportRow = {
   name: string;
@@ -15,6 +16,7 @@ export type CompensationInfoExportRow = {
   nightHours: number | null;
   absenceDays: number | null;
   lateEarlyLeaveHours: number | null;
+  incentiveBasis: SalaryBasis | null;
   incentiveAmount: number | null;
   unusedLeaveUnit: UnusedLeaveUnit | null;
   unusedLeaveAmount: number | null;
@@ -28,7 +30,8 @@ const HEADERS = [
   "야간근로",
   "결근",
   "지각 및 조퇴",
-  "인센티브",
+  "인센티브 기준",
+  "인센티브 금액",
   "미사용연차 단위",
   "미사용연차 값",
   "비고",
@@ -39,6 +42,13 @@ function formatHourValue(value: number | null): string | null {
     return null;
   }
   return formatDecimalHours(value);
+}
+
+function formatIncentiveBasis(basis: SalaryBasis | null): string | null {
+  if (!basis) {
+    return null;
+  }
+  return SALARY_BASIS_LABELS[basis];
 }
 
 function formatUnusedLeaveUnit(unit: UnusedLeaveUnit | null): string | null {
@@ -72,6 +82,7 @@ function toRow(record: CompensationInfoExportRow): StyledCell[] {
     { value: formatHourValue(record.nightHours) },
     { value: record.absenceDays },
     { value: formatHourValue(record.lateEarlyLeaveHours) },
+    { value: formatIncentiveBasis(record.incentiveBasis) },
     { value: record.incentiveAmount },
     { value: formatUnusedLeaveUnit(record.unusedLeaveUnit) },
     {
@@ -102,8 +113,8 @@ export function buildCompensationInfoExportBuffer(input: {
     ],
     headers: [...HEADERS],
     rows: input.records.map(toRow),
-    columnWidths: [12, 10, 10, 10, 8, 12, 14, 12, 12, 24],
-    centerHeaderIndexes: [1, 2, 3, 4, 5, 7, 8],
-    numberColumnIndexes: [4, 6, 8],
+    columnWidths: [12, 10, 10, 10, 8, 12, 10, 14, 12, 12, 24],
+    centerHeaderIndexes: [1, 2, 3, 4, 5, 6, 8, 9],
+    numberColumnIndexes: [4, 7, 9],
   });
 }

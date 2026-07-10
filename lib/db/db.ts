@@ -10,15 +10,18 @@ if (!connectionString) {
 
 const adapter = new PrismaNeon({ connectionString });
 
+// Bump after schema changes that require `prisma generate`.
+const PRISMA_CLIENT_SCHEMA_REVISION = 2;
+
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
+  prismaSchemaRevision?: number;
 };
 
 const cachedPrisma = globalForPrisma.prisma;
 const staleGlobal =
   cachedPrisma !== undefined &&
-  typeof (cachedPrisma as { portalSyncCursor?: unknown }).portalSyncCursor ===
-    "undefined";
+  globalForPrisma.prismaSchemaRevision !== PRISMA_CLIENT_SCHEMA_REVISION;
 
 const prismaInstance =
   cachedPrisma && !staleGlobal ? cachedPrisma : new PrismaClient({ adapter });
@@ -26,5 +29,6 @@ const prismaInstance =
 export const prisma = prismaInstance;
 
 if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+  globalForPrisma.prisma = prismaInstance;
+  globalForPrisma.prismaSchemaRevision = PRISMA_CLIENT_SCHEMA_REVISION;
 }

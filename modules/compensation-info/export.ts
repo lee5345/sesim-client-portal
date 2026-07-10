@@ -80,6 +80,7 @@ export async function exportCompensationInfosExcel(input: {
         nightHours: record.nightHours,
         absenceDays: record.absenceDays,
         lateEarlyLeaveHours: record.lateEarlyLeaveHours,
+        incentiveBasis: record.incentiveBasis,
         incentiveAmount: record.incentiveAmount,
         unusedLeaveUnit: record.unusedLeaveUnit,
         unusedLeaveAmount: record.unusedLeaveAmount,

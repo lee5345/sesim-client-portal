@@ -97,7 +97,7 @@ export function TerminationsTableView({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <TerminationsFilters
         draft={draftFilters}
         onDraftChange={onDraftChange}
