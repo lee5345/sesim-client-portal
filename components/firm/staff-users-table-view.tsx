@@ -53,7 +53,7 @@ export function StaffUsersTableView({
         <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="이름, 이메일"
+          placeholder="이름, 이메일 검색"
         />
         <Button type="button" variant="secondary" onClick={() => router.refresh()}>
           검색

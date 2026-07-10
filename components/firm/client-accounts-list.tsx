@@ -267,7 +267,7 @@ export function ClientAccountsList({
           <Input
             className="min-w-0 flex-1"
             value={draftQuery}
-            placeholder="이름, 이메일, 고객사명"
+            placeholder="이름, 이메일, 고객사명 검색"
             onChange={(event) => handleDraftChange(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
