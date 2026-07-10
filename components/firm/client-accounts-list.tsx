@@ -18,7 +18,6 @@ import {
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 type ClientAccount = {
   id: string;
@@ -207,10 +206,11 @@ export function ClientAccountsList({
   toggleAction,
   deleteAction,
 }: ClientAccountsListProps) {
-  const [query, setQuery] = useState("");
+  const [draftQuery, setDraftQuery] = useState("");
+  const [appliedQuery, setAppliedQuery] = useState("");
 
   const filtered = useMemo(() => {
-    const trimmed = query.trim().toLowerCase();
+    const trimmed = appliedQuery.trim().toLowerCase();
     if (!trimmed) {
       return { companies, unassigned };
     }
@@ -233,7 +233,16 @@ export function ClientAccountsList({
     );
 
     return { companies: filteredCompanies, unassigned: filteredUnassigned };
-  }, [companies, unassigned, query]);
+  }, [companies, unassigned, appliedQuery]);
+
+  function handleDraftChange(value: string) {
+    setDraftQuery(value);
+    setAppliedQuery(value);
+  }
+
+  function handleSearch() {
+    setAppliedQuery(draftQuery);
+  }
 
   const totalAccounts =
     companies.reduce((sum, company) => sum + company.users.length, 0) +
@@ -246,32 +255,38 @@ export function ClientAccountsList({
   const hasResults =
     filtered.companies.some((company) => company.users.length > 0) ||
     filtered.unassigned.length > 0 ||
-    (query.trim() &&
+    (appliedQuery.trim() &&
       filtered.companies.some((company) =>
-        company.name.toLowerCase().includes(query.trim().toLowerCase()),
+        company.name.toLowerCase().includes(appliedQuery.trim().toLowerCase()),
       ));
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="max-w-sm flex-1">
-          <Label htmlFor="account-search" className="mb-2 block">
-            계정 검색
-          </Label>
+        <div className="flex w-full max-w-md gap-2">
           <Input
-            id="account-search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            className="min-w-0 flex-1"
+            value={draftQuery}
             placeholder="이름, 이메일, 고객사명"
+            onChange={(event) => handleDraftChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                handleSearch();
+              }
+            }}
           />
+          <Button type="button" variant="secondary" onClick={handleSearch}>
+            검색
+          </Button>
         </div>
         <p className="text-sm text-muted-foreground">
           전체 {totalAccounts}개 계정
-          {query.trim() ? ` · 검색 결과 ${visibleAccounts}개` : null}
+          {appliedQuery.trim() ? ` · 검색 결과 ${visibleAccounts}개` : null}
         </p>
       </div>
 
-      {totalAccounts === 0 && !query.trim() ? (
+      {totalAccounts === 0 && !appliedQuery.trim() ? (
         <Card className="shadow-sm">
           <CardContent className="py-12">
             <EmptyState message="등록된 고객 계정이 없습니다." />
@@ -288,7 +303,7 @@ export function ClientAccountsList({
           {filtered.companies.map((company) => {
             const showCompany =
               company.users.length > 0 ||
-              (!query.trim() && company.users.length === 0);
+              (!appliedQuery.trim() && company.users.length === 0);
 
             if (!showCompany) return null;
 
