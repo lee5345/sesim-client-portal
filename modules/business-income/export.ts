@@ -26,7 +26,6 @@ import {
 
 const businessIncomeFiltersSchema = z.object({
   name: z.string(),
-  incomeBasis: z.union([z.literal(""), z.enum(["GROSS", "NET"])]),
 });
 
 const exportInputSchema = z.object({

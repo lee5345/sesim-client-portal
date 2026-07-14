@@ -145,11 +145,5 @@ export function summarizeBusinessIncomeFilters(
       label: "이름",
       value: filters.name.trim() ? filters.name.trim() : "전체",
     },
-    {
-      label: "소득액 기준",
-      value: filters.incomeBasis
-        ? SALARY_BASIS_LABELS[filters.incomeBasis]
-        : "전체",
-    },
   ];
 }

@@ -61,7 +61,7 @@ export function BusinessIncomeMonthSelector({
     setYearInvalid(false);
   }, [year, month]);
 
-  function applyDraft() {
+  function applyPeriod(nextMonth: number = monthDraft) {
     const parsed = parseFourDigitYear(yearDraft);
     if (parsed === null) {
       setYearInvalid(true);
@@ -69,7 +69,7 @@ export function BusinessIncomeMonthSelector({
       return;
     }
     setYearInvalid(false);
-    navigate(parsed, monthDraft);
+    navigate(parsed, nextMonth);
   }
 
   return (
@@ -109,7 +109,7 @@ export function BusinessIncomeMonthSelector({
           className={`col-start-2 row-start-2 ${selectClassName} min-w-20 disabled:cursor-not-allowed disabled:opacity-50`}
           value={monthDraft}
           disabled={disabled}
-          onChange={(event) => setMonthDraft(Number(event.target.value))}
+          onChange={(event) => applyPeriod(Number(event.target.value))}
         >
           {MONTH_OPTIONS.map((option) => (
             <option key={option} value={option}>
@@ -119,7 +119,7 @@ export function BusinessIncomeMonthSelector({
         </select>
 
         <div className="col-start-3 row-start-2 flex items-center gap-2">
-          <Button type="button" className="h-8" disabled={disabled} onClick={applyDraft}>
+          <Button type="button" className="h-8" disabled={disabled} onClick={() => applyPeriod()}>
             적용
           </Button>
           <Button

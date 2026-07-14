@@ -59,7 +59,7 @@ export function DailyWorkersMonthSelector({
     setYearInvalid(false);
   }, [year, month]);
 
-  function applyDraft() {
+  function applyPeriod(nextMonth: number = monthDraft) {
     const parsed = parseFourDigitYear(yearDraft);
     if (parsed === null) {
       setYearInvalid(true);
@@ -67,7 +67,7 @@ export function DailyWorkersMonthSelector({
       return;
     }
     setYearInvalid(false);
-    navigate(parsed, monthDraft);
+    navigate(parsed, nextMonth);
   }
 
   return (
@@ -105,7 +105,7 @@ export function DailyWorkersMonthSelector({
           id="daily-workers-month"
           className={`col-start-2 row-start-2 ${selectClassName} min-w-20`}
           value={monthDraft}
-          onChange={(event) => setMonthDraft(Number(event.target.value))}
+          onChange={(event) => applyPeriod(Number(event.target.value))}
         >
           {MONTH_OPTIONS.map((option) => (
             <option key={option} value={option}>
@@ -115,7 +115,7 @@ export function DailyWorkersMonthSelector({
         </select>
 
         <div className="col-start-3 row-start-2 flex items-center gap-2">
-          <Button type="button" className="h-8" onClick={applyDraft}>
+          <Button type="button" className="h-8" onClick={() => applyPeriod()}>
             적용
           </Button>
           <Button
