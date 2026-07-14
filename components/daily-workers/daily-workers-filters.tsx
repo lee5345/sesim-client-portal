@@ -117,7 +117,7 @@ export function DailyWorkersFilters({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="daily-worker-salary-basis-filter">기준</Label>
+          <Label htmlFor="daily-worker-salary-basis-filter">임금총액 기준</Label>
           <div className="relative">
             <select
               id="daily-worker-salary-basis-filter"
