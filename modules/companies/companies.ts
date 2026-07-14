@@ -54,6 +54,7 @@ const activeCompanySelect = {
       terminations: { where: { deletedAt: null } },
       compensationChanges: { where: { deletedAt: null } },
       compensationInfos: { where: { deletedAt: null } },
+      businessIncomes: { where: { deletedAt: null } },
       dailyWorkers: { where: { deletedAt: null } },
     },
   },

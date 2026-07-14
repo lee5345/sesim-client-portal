@@ -25,6 +25,7 @@ const CLIENT_NAV_ENTITY_MAP: Record<string, TenantChangeEntityType[]> = {
   "/client/daily-workers": ["DAILY_WORKER"],
   "/client/compensation-changes": ["COMPENSATION_CHANGE"],
   "/client/compensation-info": ["COMPENSATION_INFO"],
+  "/client/business-income": ["BUSINESS_INCOME"],
 };
 
 const FIRM_TAB_ENTITY_MAP: Record<string, TenantChangeEntityType> = {
@@ -33,9 +34,14 @@ const FIRM_TAB_ENTITY_MAP: Record<string, TenantChangeEntityType> = {
   "daily-workers": "DAILY_WORKER",
   "compensation-changes": "COMPENSATION_CHANGE",
   "compensation-info": "COMPENSATION_INFO",
+  "business-income": "BUSINESS_INCOME",
 };
 
-const PERIOD_SCOPED_ENTITY_TYPES = ["DAILY_WORKER", "COMPENSATION_INFO"] as const;
+const PERIOD_SCOPED_ENTITY_TYPES = [
+  "DAILY_WORKER",
+  "COMPENSATION_INFO",
+  "BUSINESS_INCOME",
+] as const;
 type PeriodScopedEntityType = (typeof PERIOD_SCOPED_ENTITY_TYPES)[number];
 
 const NOTIFICATION_ENTITY_TYPES = [
@@ -44,6 +50,7 @@ const NOTIFICATION_ENTITY_TYPES = [
   "DAILY_WORKER",
   "COMPENSATION_CHANGE",
   "COMPENSATION_INFO",
+  "BUSINESS_INCOME",
 ] as const;
 type NotificationEntityType = (typeof NOTIFICATION_ENTITY_TYPES)[number];
 
@@ -128,6 +135,34 @@ async function getCompensationInfoPeriodsByEntityId(
   );
 }
 
+async function getBusinessIncomePeriodsByEntityId(
+  companyId: string,
+  entityIds: string[],
+): Promise<Map<string, YearMonthPeriod>> {
+  if (entityIds.length === 0) {
+    return new Map();
+  }
+
+  const records = await prisma.businessIncome.findMany({
+    where: {
+      companyId,
+      id: { in: entityIds },
+    },
+    select: {
+      id: true,
+      year: true,
+      month: true,
+    },
+  });
+
+  return new Map(
+    records.map((record) => [
+      record.id,
+      { year: record.year, month: record.month },
+    ]),
+  );
+}
+
 async function getEntityPeriodsByEntityId(
   entityType: PeriodScopedEntityType,
   companyId: string,
@@ -137,7 +172,11 @@ async function getEntityPeriodsByEntityId(
     return getDailyWorkerPeriodsByEntityId(companyId, entityIds);
   }
 
-  return getCompensationInfoPeriodsByEntityId(companyId, entityIds);
+  if (entityType === "COMPENSATION_INFO") {
+    return getCompensationInfoPeriodsByEntityId(companyId, entityIds);
+  }
+
+  return getBusinessIncomePeriodsByEntityId(companyId, entityIds);
 }
 
 async function getPeriodReadCursors(

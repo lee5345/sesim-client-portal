@@ -12,6 +12,7 @@ const COMPANY_TABS = [
   "daily-workers",
   "compensation-changes",
   "compensation-info",
+  "business-income",
 ] as const;
 
 type CompanyTabValue = (typeof COMPANY_TABS)[number];
@@ -24,6 +25,7 @@ export const FIRM_TAB_ENTITY_TYPES: Partial<
   "daily-workers": "DAILY_WORKER",
   "compensation-changes": "COMPENSATION_CHANGE",
   "compensation-info": "COMPENSATION_INFO",
+  "business-income": "BUSINESS_INCOME",
 };
 
 type CompanyDetailTabsProps = {

@@ -36,6 +36,7 @@ export default async function ClientLayout({
     { href: "/client/daily-workers", label: "일용직 정보", icon: "calendar-days" as const },
     { href: "/client/compensation-changes", label: "급여변경 정보", icon: "wallet" as const },
     { href: "/client/compensation-info", label: "상세급여 정보", icon: "calculator" as const },
+    { href: "/client/business-income", label: "사업소득 정보", icon: "clipboard-list" as const },
   ];
 
   return (

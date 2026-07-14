@@ -85,7 +85,6 @@ export function DailyWorkersDataTable({
             ))}
             <th className={`${headerCellClassName} bg-muted/60`}>근로일수</th>
             <th className={`${headerCellClassName} bg-muted/60`}>일평균 근로시간</th>
-            <th className={headerCellClassName}>기준</th>
             <th className={headerCellClassName}>임금총액</th>
             <th className={headerCellClassName}>비고</th>
             <th className={headerCellClassName}>등록자</th>
@@ -126,10 +125,14 @@ export function DailyWorkersDataTable({
               <td className={autoCellClassName}>{dailyWorker.daysWorked}</td>
               <td className={autoCellClassName}>{dailyWorker.avgHoursPerDay}</td>
               <td className={bodyCellClassName}>
-                {SALARY_BASIS_LABELS[dailyWorker.salaryBasis]}
-              </td>
-              <td className={`${bodyCellClassName} text-muted-foreground`}>
-                {formatSalaryAmount(dailyWorker.totalWage)}
+                <div className="flex w-full items-center justify-between gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    {SALARY_BASIS_LABELS[dailyWorker.salaryBasis]}
+                  </span>
+                  <span className="tabular-nums text-muted-foreground">
+                    {formatSalaryAmount(dailyWorker.totalWage)}
+                  </span>
+                </div>
               </td>
               <td className={`${bodyCellClassName} text-muted-foreground`}>
                 {displayText(dailyWorker.notes)}

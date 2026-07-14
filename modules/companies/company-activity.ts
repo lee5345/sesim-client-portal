@@ -3,6 +3,7 @@
 import { listHireIntakes } from "@/modules/hire-intakes/actions";
 import { listTerminations } from "@/modules/terminations/actions";
 import { listDailyWorkers } from "@/modules/daily-workers/actions";
+import { listBusinessIncomes } from "@/modules/business-income/actions";
 import { listCompensationChanges } from "@/modules/compensation-changes/actions";
 import { listCompensationInfos } from "@/modules/compensation-info/actions";
 
@@ -32,4 +33,12 @@ export async function listCompanyCompensationInfos(
   month: number,
 ) {
   return listCompensationInfos(companyId, year, month);
+}
+
+export async function listCompanyBusinessIncomes(
+  companyId: string,
+  year: number,
+  month: number,
+) {
+  return listBusinessIncomes(companyId, year, month);
 }

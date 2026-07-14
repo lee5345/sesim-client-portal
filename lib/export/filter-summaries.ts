@@ -1,4 +1,5 @@
 import type { HireIntakeFilterValues } from "@/components/hire-intakes/hire-intakes-filters";
+import type { BusinessIncomeFilterValues } from "@/lib/filters/business-income";
 import type { CompensationChangeFilterValues } from "@/lib/filters/compensation-changes";
 import type { CompensationInfoFilterValues } from "@/lib/filters/compensation-info";
 import type { DailyWorkerFilterValues } from "@/lib/filters/daily-workers";
@@ -126,6 +127,29 @@ export function summarizeCompensationInfoFilters(
     {
       label: "이름",
       value: filters.name.trim() ? filters.name.trim() : "전체",
+    },
+  ];
+}
+
+export function summarizeBusinessIncomeFilters(
+  year: number,
+  month: number,
+  filters: BusinessIncomeFilterValues,
+): ExportFilterSummaryItem[] {
+  return [
+    {
+      label: "대상 기간",
+      value: `${year}년 ${month}월`,
+    },
+    {
+      label: "이름",
+      value: filters.name.trim() ? filters.name.trim() : "전체",
+    },
+    {
+      label: "소득액 기준",
+      value: filters.incomeBasis
+        ? SALARY_BASIS_LABELS[filters.incomeBasis]
+        : "전체",
     },
   ];
 }

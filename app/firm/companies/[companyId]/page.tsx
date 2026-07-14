@@ -14,6 +14,7 @@ import { formatWorkplaceManagementNumber } from "@/lib/format/workplace-manageme
 import { getCompanyById } from "@/modules/companies/companies";
 import { listFirmStaffUsers } from "@/modules/auth/staff-users";
 import {
+  listCompanyBusinessIncomes,
   listCompanyCompensationChanges,
   listCompanyCompensationInfos,
   listCompanyDailyWorkers,
@@ -26,6 +27,7 @@ import { CompanyInfoLink } from "@/components/companies/company-info-link";
 import { DepartmentManager } from "@/components/companies/department-manager";
 import { CompanyDetailTabs } from "@/components/firm/company-detail-tabs";
 import { CompanyTabIndicator } from "@/components/firm/company-tab-indicator";
+import { BusinessIncomeTable } from "@/components/client/business-income-table";
 import { CompensationChangesTable } from "@/components/client/compensation-changes-table";
 import { CompensationInfoTable } from "@/components/compensation-info/compensation-info-table";
 import { DailyWorkersTable } from "@/components/client/daily-workers-table";
@@ -69,6 +71,7 @@ export default async function FirmCompanyDetailPage({
     dailyWorkers,
     compensationChanges,
     compensationInfos,
+    businessIncomes,
     departments,
     staffUsers,
   ] = await Promise.all([
@@ -78,6 +81,7 @@ export default async function FirmCompanyDetailPage({
     listCompanyDailyWorkers(companyId, year, month),
     listCompanyCompensationChanges(companyId),
     listCompanyCompensationInfos(companyId, year, month),
+    listCompanyBusinessIncomes(companyId, year, month),
     listDepartments(companyId),
     isFirmAdmin ? listFirmStaffUsers() : Promise.resolve([]),
   ]);
@@ -90,6 +94,7 @@ export default async function FirmCompanyDetailPage({
   const dailyWorkerCount = company._count.dailyWorkers;
   const compensationChangeCount = company._count.compensationChanges;
   const compensationInfoCount = company._count.compensationInfos;
+  const businessIncomeCount = company._count.businessIncomes;
 
   const changeRows = compensationChanges.map((row) => ({
     ...row,
@@ -196,6 +201,14 @@ export default async function FirmCompanyDetailPage({
               totalCount={compensationInfoCount}
             />
           </TabsTrigger>
+          <TabsTrigger value="business-income">
+            사업소득 정보
+            <CompanyTabIndicator
+              companyId={companyId}
+              entityType="BUSINESS_INCOME"
+              totalCount={businessIncomeCount}
+            />
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="new-hires" className="space-y-4">
@@ -238,6 +251,16 @@ export default async function FirmCompanyDetailPage({
         <TabsContent value="compensation-info" className="space-y-4">
           <CompensationInfoTable
             compensationInfos={infoRows}
+            year={year}
+            month={month}
+            companyId={companyId}
+            companyName={company.name}
+            basePath={firmDailyWorkersBasePath}
+          />
+        </TabsContent>
+        <TabsContent value="business-income" className="space-y-4">
+          <BusinessIncomeTable
+            businessIncomes={businessIncomes}
             year={year}
             month={month}
             companyId={companyId}

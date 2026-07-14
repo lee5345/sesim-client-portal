@@ -42,6 +42,7 @@ model Company {
   workplaceManagementNumber String?
   managesFourMajorInsurance Boolean?
   managesPayroll            Boolean?
+  businessIncomes           BusinessIncome[]
   compensationChanges       CompensationChange[]
   compensationInfos         CompensationInfo[]
   dailyWorkers              DailyWorker[]
@@ -79,6 +80,7 @@ model User {
   mustChangePassword           Boolean                  @default(false)
   name                         String
   auditLogs                    AuditLog[]               @relation("AuditLogActor")
+  createdBusinessIncomes       BusinessIncome[]         @relation("BusinessIncomeCreatedBy")
   createdCompensationChanges   CompensationChange[]     @relation("CompChangeCreatedBy")
   createdCompensationInfos     CompensationInfo[]       @relation("CompInfoCreatedBy")
   createdDailyWorkers          DailyWorker[]            @relation("DailyWorkerCreatedBy")
@@ -236,6 +238,28 @@ model CompensationInfo {
   createdById        String           @db.Uuid
   company            Company           @relation(fields: [companyId], references: [id])
   createdBy          User              @relation("CompInfoCreatedBy", fields: [createdById], references: [id])
+
+  @@index([companyId, year, month, deletedAt])
+  @@index([companyId, deletedAt])
+}
+
+model BusinessIncome {
+  id            String      @id @default(uuid()) @db.Uuid
+  companyId     String      @db.Uuid
+  year          Int
+  month         Int
+  name          String
+  rrnEncrypted  String
+  rrnIv         String
+  incomeAmount  Int
+  incomeBasis   SalaryBasis
+  notes         String?
+  deletedAt     DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  createdById   String      @db.Uuid
+  company       Company     @relation(fields: [companyId], references: [id])
+  createdBy     User        @relation("BusinessIncomeCreatedBy", fields: [createdById], references: [id])
 
   @@index([companyId, year, month, deletedAt])
   @@index([companyId, deletedAt])
@@ -420,6 +444,7 @@ enum TenantChangeEntityType {
   DAILY_WORKER
   COMPENSATION_CHANGE
   COMPENSATION_INFO
+  BUSINESS_INCOME
   COMPANY_PROFILE
   DEPARTMENT
 }
