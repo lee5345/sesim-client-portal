@@ -1,6 +1,7 @@
 "use server";
 
 import crypto from "crypto";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -20,96 +21,102 @@ const approveSchema = z.object({
 export async function approveRegistrationRequestAction(formData: FormData) {
   const session = await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
 
-  const input = approveSchema.parse({
-    requestId: formData.get("requestId"),
-    companyId: formData.get("companyId") || undefined,
-    newCompanyName: formData.get("newCompanyName") || undefined,
-  });
-
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (!appUrl) {
-    throw new Error("NEXT_PUBLIC_APP_URL is not set");
-  }
-
-  const result = await prisma.$transaction(async (tx) => {
-    const request = await tx.registrationRequest.findUnique({
-      where: { id: input.requestId },
-      select: {
-        id: true,
-        status: true,
-        email: true,
-        name: true,
-        companyName: true,
-      },
+  try {
+    const parsed = approveSchema.safeParse({
+      requestId: formData.get("requestId"),
+      companyId: formData.get("companyId") || undefined,
+      newCompanyName: formData.get("newCompanyName") || undefined,
     });
-
-    if (!request || request.status !== "PENDING") {
-      return null;
+    if (!parsed.success) {
+      redirect("/firm/client-accounts?approveError=1");
     }
 
-    let companyId = input.companyId;
+    const input = parsed.data;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    if (!appUrl) {
+      redirect("/firm/client-accounts?approveError=1&emailError=1");
+    }
 
-    const newName = input.newCompanyName?.trim();
-    if (!companyId && newName) {
-      const company = await tx.company.create({
-        data: { name: newName },
+    const result = await prisma.$transaction(async (tx) => {
+      const request = await tx.registrationRequest.findUnique({
+        where: { id: input.requestId },
+        select: {
+          id: true,
+          status: true,
+          email: true,
+          name: true,
+          companyName: true,
+        },
+      });
+
+      if (!request || request.status !== "PENDING") {
+        return null;
+      }
+
+      let companyId = input.companyId;
+
+      const newName = input.newCompanyName?.trim();
+      if (!companyId && newName) {
+        const company = await tx.company.create({
+          data: { name: newName },
+          select: { id: true },
+        });
+        companyId = company.id;
+      }
+
+      if (!companyId) {
+        throw new Error("companyId or newCompanyName is required");
+      }
+
+      const unusable = crypto.randomBytes(32).toString("hex");
+      const user = await tx.user.create({
+        data: {
+          name: request.name,
+          email: request.email,
+          role: "CLIENT_ADMIN",
+          companyId,
+          isActive: true,
+          mustChangePassword: false,
+          passwordHash: unusable,
+        },
         select: { id: true },
       });
-      companyId = company.id;
-    }
 
-    if (!companyId) {
-      throw new Error("companyId or newCompanyName is required");
-    }
+      const token = await createPasswordSetupTokenTx(tx, user.id);
+      const setupUrl = `${appUrl}/setup-password?token=${token}`;
 
-    const unusable = crypto.randomBytes(32).toString("hex");
-    const user = await tx.user.create({
-      data: {
-        name: request.name,
-        email: request.email,
-        role: "CLIENT_ADMIN",
-        companyId,
-        isActive: true,
-        mustChangePassword: false,
-        passwordHash: unusable,
-      },
-      select: { id: true },
+      await tx.registrationRequest.update({
+        where: { id: request.id },
+        data: {
+          status: "APPROVED",
+          companyId,
+          reviewedById: session.user.userId,
+          reviewedAt: new Date(),
+        },
+      });
+
+      return { email: request.email, setupUrl, companyId };
     });
 
-    const token = await createPasswordSetupTokenTx(tx, user.id);
-    const setupUrl = `${appUrl}/setup-password?token=${token}`;
+    if (!result) {
+      redirect("/firm/client-accounts");
+    }
 
-    await tx.registrationRequest.update({
-      where: { id: request.id },
-      data: {
-        status: "APPROVED",
-        companyId,
-        reviewedById: session.user.userId,
-        reviewedAt: new Date(),
-      },
-    });
+    const sent = await sendPasswordSetupEmail(result.email, result.setupUrl);
 
-    return { email: request.email, setupUrl, companyId };
-  });
+    await bumpSyncCursors(result.companyId);
+    await afterFirmScopeMutation();
 
-  if (!result) {
-    redirect("/firm/client-accounts");
+    if (!sent.ok) {
+      redirect("/firm/client-accounts?approved=1&emailError=1");
+    }
+
+    redirect("/firm/client-accounts?approved=1");
+  } catch (error) {
+    if (isRedirectError(error)) throw error;
+    console.error("[approveRegistrationRequestAction] Unexpected error", error);
+    redirect("/firm/client-accounts?approveError=1");
   }
-
-  let emailFailed = false;
-  try {
-    await sendPasswordSetupEmail(result.email, result.setupUrl);
-  } catch {
-    emailFailed = true;
-  }
-
-  if (emailFailed) {
-    redirect("/firm/client-accounts?approved=1&emailError=1");
-  }
-
-  await bumpSyncCursors(result.companyId);
-  await afterFirmScopeMutation();
-  redirect("/firm/client-accounts?approved=1");
 }
 
 const rejectSchema = z.object({

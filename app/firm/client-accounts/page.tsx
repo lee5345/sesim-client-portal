@@ -25,11 +25,15 @@ import {
 export default async function ClientAccountsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ approved?: string; emailError?: string }>;
+  searchParams: Promise<{
+    approved?: string;
+    emailError?: string;
+    approveError?: string;
+  }>;
 }) {
   await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
 
-  const { approved, emailError } = await searchParams;
+  const { approved, emailError, approveError } = await searchParams;
 
   const [pendingRequests, allCompaniesRaw, accountData] = await Promise.all([
     prisma.registrationRequest.findMany({
@@ -84,9 +88,17 @@ export default async function ClientAccountsPage({
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
           <p>
             승인은 완료되었으나 비밀번호 설정 이메일 발송에 실패했습니다.
-            Gmail SMTP 설정(GMAIL_USER, GMAIL_APP_PASSWORD)을 확인하거나,
-            DB의 password_setup_tokens에서 링크를 직접 전달해 주세요.
-            확인이 어려운 경우 개발자에게 문의해주세요.
+            잠시 후 다시 시도하거나, 개발자에게 문의해 설정 링크를 직접 전달해
+            주세요.
+          </p>
+        </div>
+      ) : null}
+      {approveError && !approved ? (
+        <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <AlertCircle className="mt-0.5 size-4 shrink-0" />
+          <p>
+            가입 신청 승인 처리 중 오류가 발생했습니다. 입력 내용을 확인한 뒤
+            다시 시도해 주세요.
           </p>
         </div>
       ) : null}

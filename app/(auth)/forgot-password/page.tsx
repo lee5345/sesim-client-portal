@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -17,41 +18,48 @@ const resetRequestSchema = z.object({
 export default async function ForgotPasswordPage({
   searchParams,
 }: {
-  searchParams: Promise<{ success?: string }>;
+  searchParams: Promise<{ success?: string; error?: string }>;
 }) {
-  const { success } = await searchParams;
+  const { success, error } = await searchParams;
 
   async function action(formData: FormData) {
     "use server";
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-    if (!appUrl) {
-      throw new Error("NEXT_PUBLIC_APP_URL is not set");
-    }
-
-    const parsed = resetRequestSchema.safeParse({
-      email: formData.get("email"),
-    });
-    if (!parsed.success) {
-      redirect("/forgot-password?success=1");
-    }
-
-    const email = parsed.data.email;
 
     try {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+      if (!appUrl) {
+        redirect("/forgot-password?error=email");
+      }
+
+      const parsed = resetRequestSchema.safeParse({
+        email: formData.get("email"),
+      });
+      if (!parsed.success) {
+        redirect("/forgot-password?success=1");
+      }
+
+      const email = parsed.data.email;
+
       const user = await prisma.user.findUnique({
         where: { email },
         select: { id: true, isActive: true },
       });
+
       if (user && user.isActive) {
         const token = await createPasswordResetToken(user.id);
         const resetUrl = `${appUrl}/reset-password?token=${token}`;
-        await sendPasswordResetEmail(email, resetUrl);
+        const sent = await sendPasswordResetEmail(email, resetUrl);
+        if (!sent.ok) {
+          redirect("/forgot-password?error=email");
+        }
       }
-    } catch {
-      // Intentionally ignore to avoid account enumeration.
-    }
 
-    redirect("/forgot-password?success=1");
+      redirect("/forgot-password?success=1");
+    } catch (error) {
+      if (isRedirectError(error)) throw error;
+      console.error("[forgot-password] Unexpected error", error);
+      redirect("/forgot-password?error=email");
+    }
   }
 
   return (
@@ -73,6 +81,13 @@ export default async function ForgotPasswordPage({
       {success ? (
         <p className="mb-4 rounded-lg bg-primary/10 px-3 py-2 text-sm text-primary">
           입력하신 이메일이 등록되어 있다면 비밀번호 재설정 링크를 전송했습니다.
+        </p>
+      ) : null}
+
+      {error === "email" ? (
+        <p className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          이메일 발송에 실패했습니다. 잠시 후 다시 시도해 주세요. 문제가
+          계속되면 사무소 관리자에게 문의해 주세요.
         </p>
       ) : null}
 
