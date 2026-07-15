@@ -151,7 +151,7 @@ export function StaffUsersTableView({
                           </form>
                           <ConfirmDeleteDialog
                             title="직원 계정 삭제"
-                            description={`"${user.name}" (${user.email}) 계정을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`}
+                            description={`"${user.name}" (${user.email}) 계정을 삭제하시겠습니까? 활동 기록이 있는 계정은 비활성화됩니다.`}
                             action={deleteAction}
                             hiddenFields={{ userId: user.id }}
                             triggerLabel="삭제"

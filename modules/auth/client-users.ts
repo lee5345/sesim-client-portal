@@ -55,7 +55,11 @@ export async function toggleClientUserActiveAction(formData: FormData) {
   revalidatePath(CLIENT_ACCOUNTS_PATH);
 }
 
-export async function deleteClientUserAction(formData: FormData) {
+export type AccountDeleteResult = "deleted" | "deactivated";
+
+export async function deleteClientUserAction(
+  formData: FormData,
+): Promise<AccountDeleteResult> {
   await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
 
   if (!hasValidDeleteConfirmation(formData)) {
@@ -68,18 +72,20 @@ export async function deleteClientUserAction(formData: FormData) {
 
   const user = await requireClientAdminUser(input.userId);
 
-  await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const count = await tx.auditLog.count({ where: { actorId: input.userId } });
     if (count > 0) {
       await tx.user.update({
         where: { id: input.userId },
         data: { isActive: false },
       });
-      return;
+      return "deactivated" as const;
     }
 
     await tx.passwordSetupToken.deleteMany({ where: { userId: input.userId } });
+    await tx.passwordResetToken.deleteMany({ where: { userId: input.userId } });
     await tx.user.delete({ where: { id: input.userId } });
+    return "deleted" as const;
   });
 
   if (user.companyId) {
@@ -87,6 +93,7 @@ export async function deleteClientUserAction(formData: FormData) {
   }
 
   revalidatePath(CLIENT_ACCOUNTS_PATH);
+  return result;
 }
 
 function buildSignupPhoneByEmail(
@@ -111,6 +118,33 @@ function withSignupPhone<T extends { email: string }>(
   }));
 }
 
+function withPasswordSetupStatus<
+  T extends {
+    mustChangePassword: boolean;
+    passwordSetupTokens: { id: string }[];
+  },
+>(users: T[]) {
+  return users.map(({ passwordSetupTokens, ...user }) => ({
+    ...user,
+    mustChangePassword:
+      user.mustChangePassword || passwordSetupTokens.length > 0,
+  }));
+}
+
+const clientAdminSelect = {
+  id: true,
+  name: true,
+  email: true,
+  isActive: true,
+  mustChangePassword: true,
+  createdAt: true,
+  passwordSetupTokens: {
+    where: { usedAt: null },
+    select: { id: true },
+    take: 1,
+  },
+} as const;
+
 export async function listClientAccountsByCompany() {
   const [companies, unassigned, approvedRequests] = await Promise.all([
     prisma.company.findMany({
@@ -121,27 +155,13 @@ export async function listClientAccountsByCompany() {
         isActive: true,
         users: {
           where: { role: "CLIENT_ADMIN" },
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            isActive: true,
-            mustChangePassword: true,
-            createdAt: true,
-          },
+          select: clientAdminSelect,
         },
       },
     }),
     prisma.user.findMany({
       where: { role: "CLIENT_ADMIN", companyId: null },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        isActive: true,
-        mustChangePassword: true,
-        createdAt: true,
-      },
+      select: clientAdminSelect,
     }),
     prisma.registrationRequest.findMany({
       where: { status: "APPROVED" },
@@ -157,12 +177,15 @@ export async function listClientAccountsByCompany() {
       companies.map((company) => ({
         ...company,
         users: sortByActivityThenKoreanName(
-          withSignupPhone(company.users, phoneByEmail),
+          withSignupPhone(
+            withPasswordSetupStatus(company.users),
+            phoneByEmail,
+          ),
         ),
       })),
     ),
     unassigned: sortByActivityThenKoreanName(
-      withSignupPhone(unassigned, phoneByEmail),
+      withSignupPhone(withPasswordSetupStatus(unassigned), phoneByEmail),
     ),
   };
 }

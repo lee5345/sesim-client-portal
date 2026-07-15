@@ -90,7 +90,11 @@ const deleteSchema = z.object({
   userId: z.string().uuid(),
 });
 
-export async function deleteUserAction(formData: FormData) {
+export type AccountDeleteResult = "deleted" | "deactivated";
+
+export async function deleteUserAction(
+  formData: FormData,
+): Promise<AccountDeleteResult> {
   const session = await requireAuth("FIRM_ADMIN");
 
   if (!hasValidDeleteConfirmation(formData)) {
@@ -103,17 +107,20 @@ export async function deleteUserAction(formData: FormData) {
 
   redirectIfSelfTarget(session.user.userId, input.userId);
 
-  await prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx) => {
     const count = await tx.auditLog.count({ where: { actorId: input.userId } });
     if (count > 0) {
       await tx.user.update({
         where: { id: input.userId },
         data: { isActive: false },
       });
-      return;
+      return "deactivated";
     }
 
+    await tx.passwordResetToken.deleteMany({ where: { userId: input.userId } });
+    await tx.passwordSetupToken.deleteMany({ where: { userId: input.userId } });
     await tx.user.delete({ where: { id: input.userId } });
+    return "deleted";
   });
 }
 

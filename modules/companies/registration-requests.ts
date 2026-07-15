@@ -76,7 +76,7 @@ export async function approveRegistrationRequestAction(formData: FormData) {
           role: "CLIENT_ADMIN",
           companyId,
           isActive: true,
-          mustChangePassword: false,
+          mustChangePassword: true,
           passwordHash: unusable,
         },
         select: { id: true },

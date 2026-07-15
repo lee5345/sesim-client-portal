@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { Suspense } from "react";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "고객 계정 관리",
 };
-import { redirect } from "next/navigation";
 
+import { AccountDeleteResultDialog } from "@/components/firm/account-delete-result-dialog";
 import { ClientAccountsList } from "@/components/firm/client-accounts-list";
 import { RegistrationRequestsList } from "@/components/firm/registration-requests-list";
 import { PageHeader } from "@/components/layout/page-header";
@@ -66,8 +68,8 @@ export default async function ClientAccountsPage({
 
   async function deleteAction(formData: FormData) {
     "use server";
-    await deleteClientUserAction(formData);
-    redirect("/firm/client-accounts");
+    const result = await deleteClientUserAction(formData);
+    redirect(`/firm/client-accounts?accountResult=${result}`);
   }
 
   return (
@@ -76,6 +78,10 @@ export default async function ClientAccountsPage({
         title="고객 계정 관리"
         description="고객사 관리자 계정을 조회하고, 가입 신청을 검토합니다."
       />
+
+      <Suspense fallback={null}>
+        <AccountDeleteResultDialog accountLabel="고객 계정" />
+      </Suspense>
 
       {approved && !emailError ? (
         <div className="flex items-start gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-primary">

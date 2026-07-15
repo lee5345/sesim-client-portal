@@ -101,7 +101,7 @@ export default async function SetupPasswordPage({
     await prisma.$transaction(async (tx) => {
       await tx.user.update({
         where: { id: userId },
-        data: { passwordHash },
+        data: { passwordHash, mustChangePassword: false },
       });
       await consumePasswordSetupToken(input.token, tx);
     });

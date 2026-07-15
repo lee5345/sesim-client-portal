@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { AlertCircle } from "lucide-react";
+import { Suspense } from "react";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "직원 계정 관리",
 };
-import { redirect } from "next/navigation";
 
+import { AccountDeleteResultDialog } from "@/components/firm/account-delete-result-dialog";
 import { CreateStaffUserForm } from "@/components/firm/create-staff-user-form";
 import { StaffUsersTable } from "@/components/firm/staff-users-table";
 import { PageHeader } from "@/components/layout/page-header";
@@ -42,8 +44,8 @@ export default async function FirmAdminUsersPage({
 
   async function deleteAction(formData: FormData) {
     "use server";
-    await deleteUserAction(formData);
-    redirect("/firm/admin/users");
+    const result = await deleteUserAction(formData);
+    redirect(`/firm/admin/users?accountResult=${result}`);
   }
 
   return (
@@ -52,6 +54,10 @@ export default async function FirmAdminUsersPage({
         title="직원 계정 관리"
         description="사무소 직원 및 관리자 계정을 생성하고 운영 상태를 관리합니다."
       />
+
+      <Suspense fallback={null}>
+        <AccountDeleteResultDialog accountLabel="직원 계정" />
+      </Suspense>
 
       {error === "self" ? (
         <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
