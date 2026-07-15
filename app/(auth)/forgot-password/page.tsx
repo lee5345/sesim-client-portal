@@ -80,7 +80,7 @@ export default async function ForgotPasswordPage({
     >
       {success ? (
         <p className="mb-4 rounded-lg bg-primary/10 px-3 py-2 text-sm text-primary">
-          입력하신 이메일이 등록되어 있다면 비밀번호 재설정 링크를 전송했습니다.
+          등록된 계정이라면 받은메일함을 확인해 주세요.
         </p>
       ) : null}
 
