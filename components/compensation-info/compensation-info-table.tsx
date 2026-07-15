@@ -299,6 +299,8 @@ export function CompensationInfoTable({
   const [nameFilter, setNameFilter] = useState("");
   const [page, setPage] = useState(1);
 
+  const chromeLocked = isPending || editingRowId !== null || reviewActive;
+
   function showUnreadEntriesForPeriod(ids: string[]) {
     setUnreadIds(new Set(ids));
   }
@@ -527,7 +529,7 @@ type TableRow =
             companyName={companyName}
             filterSummary={filterSummary}
             entryCount={filteredRows.length}
-            disabled={isPending || editingRowId !== null}
+            disabled={chromeLocked}
             companyId={companyId}
             onExport={({ title }) =>
               exportCompensationInfosExcel({
@@ -541,7 +543,7 @@ type TableRow =
           />
           <Button
             type="button"
-            disabled={isPending || editingRowId !== null}
+            disabled={chromeLocked}
             onClick={startDraft}
           >
             <Plus className="size-4" />
@@ -555,13 +557,13 @@ type TableRow =
             year={year}
             month={month}
             basePath={basePath}
-            disabled={isPending || editingRowId !== null}
+            disabled={chromeLocked}
           />
           <Button
             type="button"
             variant="outline"
             className="h-8 shrink-0 self-end"
-            disabled={isPending || editingRowId !== null}
+            disabled={chromeLocked}
             onClick={handleCopyClick}
           >
             <Copy className="size-4" />
@@ -581,7 +583,7 @@ type TableRow =
                     value={draftNameFilter}
                     placeholder="이름으로 검색"
                     className="pl-8"
-                    disabled={isPending || editingRowId !== null}
+                    disabled={chromeLocked}
                     onChange={(event) => {
                       const name = event.target.value;
                       setPage(1);
@@ -601,7 +603,7 @@ type TableRow =
               <div className="flex shrink-0 items-center gap-2 lg:ml-auto">
                 <Button
                   type="button"
-                  disabled={isPending || editingRowId !== null}
+                  disabled={chromeLocked}
                   onClick={applyFilters}
                 >
                   <Search className="size-4" />
@@ -610,7 +612,7 @@ type TableRow =
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={isPending || editingRowId !== null}
+                  disabled={chromeLocked}
                   onClick={clearFilters}
                 >
                   <X className="size-4" />
@@ -930,7 +932,7 @@ type TableRow =
                                 type="button"
                                 variant="outline"
                                 size="icon-sm"
-                                disabled={isPending || editingRowId !== null}
+                                disabled={chromeLocked}
                                 aria-label="수정"
                                 onClick={() => {
                                   if (!row.isDraft) {
@@ -951,6 +953,7 @@ type TableRow =
                                   }}
                                   triggerLabel="삭제"
                                   triggerSize="sm"
+                                  disabled={chromeLocked}
                                 />
                               ) : null}
                             </>
@@ -969,7 +972,7 @@ type TableRow =
               rangeStart={pagination.rangeStart}
               rangeEnd={pagination.rangeEnd}
               total={pagination.total}
-              disabled={isPending || editingRowId !== null}
+              disabled={chromeLocked}
               onPageChange={setPage}
             />
           </div>

@@ -33,6 +33,7 @@ type HireIntakesTableViewProps = {
   onDraftChange: (next: HireIntakeFilterValues) => void;
   onSearch: () => void;
   onClear: () => void;
+  disabled?: boolean;
 };
 
 function toFormDateValue(date: Date | null) {
@@ -52,6 +53,7 @@ export function HireIntakesTableView({
   onDraftChange,
   onSearch,
   onClear,
+  disabled = false,
 }: HireIntakesTableViewProps) {
   const [page, setPage] = useState(1);
 
@@ -82,6 +84,7 @@ export function HireIntakesTableView({
           mode="edit"
           departments={departments}
           companyId={companyId}
+          disabled={disabled}
           hireIntake={{
             id: hireIntake.id,
             name: hireIntake.name,
@@ -111,6 +114,7 @@ export function HireIntakesTableView({
             ...(companyId ? { companyId } : {}),
           }}
           triggerLabel="삭제"
+          disabled={disabled}
         />
       </>
     );
@@ -124,6 +128,7 @@ export function HireIntakesTableView({
         onDraftChange={onDraftChange}
         onSearch={onSearch}
         onClear={onClear}
+        disabled={disabled}
       />
 
       {filteredHireIntakes.length === 0 ? (
@@ -143,6 +148,7 @@ export function HireIntakesTableView({
             rangeStart={pagination.rangeStart}
             rangeEnd={pagination.rangeEnd}
             total={pagination.total}
+            disabled={disabled}
             onPageChange={setPage}
           />
         </div>

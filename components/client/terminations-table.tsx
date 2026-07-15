@@ -40,6 +40,7 @@ export function TerminationsTable({
   embedded = false,
 }: TerminationsTableProps) {
   const [unreadIds, setUnreadIds] = useState<Set<string> | null>(null);
+  const [reviewActive, setReviewActive] = useState(false);
   const [draftFilters, setDraftFilters] = useState<TerminationFilterValues>(
     EMPTY_TERMINATION_FILTERS,
   );
@@ -97,6 +98,8 @@ export function TerminationsTable({
             <NewEntriesControls
               companyId={companyId}
               entityTypes={["TERMINATION"]}
+              reviewActive={reviewActive}
+              onReviewActiveChange={setReviewActive}
               onShowUnreadEntries={(ids) => {
                 setDraftFilters(EMPTY_TERMINATION_FILTERS);
                 setAppliedFilters(EMPTY_TERMINATION_FILTERS);
@@ -111,6 +114,7 @@ export function TerminationsTable({
             companyName={companyName}
             filterSummary={filterSummary}
             entryCount={visibleTerminations.length}
+            disabled={reviewActive}
             companyId={companyId}
             onExport={({ title }) =>
               exportTerminationsExcel({
@@ -120,7 +124,11 @@ export function TerminationsTable({
               })
             }
           />
-          <TerminationFormDialog mode="create" companyId={companyId} />
+          <TerminationFormDialog
+            mode="create"
+            companyId={companyId}
+            disabled={reviewActive}
+          />
         </div>
       </CardHeader>
       <CardContent className="min-w-0">
@@ -136,6 +144,7 @@ export function TerminationsTable({
             onDraftChange={handleDraftChange}
             onSearch={handleSearch}
             onClear={handleClear}
+            disabled={reviewActive}
           />
         )}
       </CardContent>

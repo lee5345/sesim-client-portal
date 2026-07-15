@@ -24,6 +24,7 @@ type TerminationsFiltersProps = {
   onDraftChange: (next: TerminationFilterValues) => void;
   onSearch: () => void;
   onClear: () => void;
+  disabled?: boolean;
 };
 
 const selectClassName =
@@ -34,6 +35,7 @@ export function TerminationsFilters({
   onDraftChange,
   onSearch,
   onClear,
+  disabled = false,
 }: TerminationsFiltersProps) {
   const [retirementPayMenuOpen, setRetirementPayMenuOpen] = useState(false);
 
@@ -50,7 +52,10 @@ export function TerminationsFilters({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3">
+    <fieldset
+      disabled={disabled}
+      className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3 disabled:opacity-60"
+    >
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
         <div className="min-w-0 flex-1 space-y-1.5">
           <Label htmlFor="termination-name-filter">이름</Label>
@@ -148,6 +153,6 @@ export function TerminationsFilters({
           </Button>
         </div>
       </div>
-    </div>
+    </fieldset>
   );
 }

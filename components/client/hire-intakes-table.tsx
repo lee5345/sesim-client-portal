@@ -45,6 +45,7 @@ export function HireIntakesTable({
   embedded = false,
 }: HireIntakesTableProps) {
   const [unreadIds, setUnreadIds] = useState<Set<string> | null>(null);
+  const [reviewActive, setReviewActive] = useState(false);
   const [draftFilters, setDraftFilters] = useState<HireIntakeFilterValues>(
     EMPTY_HIRE_INTAKE_FILTERS,
   );
@@ -102,6 +103,8 @@ export function HireIntakesTable({
             <NewEntriesControls
               companyId={companyId}
               entityTypes={["NEW_HIRE"]}
+              reviewActive={reviewActive}
+              onReviewActiveChange={setReviewActive}
               onShowUnreadEntries={(ids) => {
                 setDraftFilters(EMPTY_HIRE_INTAKE_FILTERS);
                 setAppliedFilters(EMPTY_HIRE_INTAKE_FILTERS);
@@ -116,6 +119,7 @@ export function HireIntakesTable({
             companyName={companyName}
             filterSummary={filterSummary}
             entryCount={visibleHireIntakes.length}
+            disabled={reviewActive}
             companyId={companyId}
             onExport={({ title }) =>
               exportHireIntakesExcel({
@@ -129,6 +133,7 @@ export function HireIntakesTable({
             mode="create"
             departments={departments}
             companyId={companyId}
+            disabled={reviewActive}
           />
         </div>
       </CardHeader>
@@ -146,6 +151,7 @@ export function HireIntakesTable({
             onDraftChange={handleDraftChange}
             onSearch={handleSearch}
             onClear={handleClear}
+            disabled={reviewActive}
           />
         )}
       </CardContent>

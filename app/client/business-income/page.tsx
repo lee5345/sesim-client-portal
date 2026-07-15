@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { requireAuth } from "@/lib/auth/guards";
 import { parseYearMonthSearchParams } from "@/lib/daily-workers/period";
-import { BusinessIncomeTable } from "@/components/client/business-income-table";
+import { BusinessIncomeTable } from "@/components/business-income/business-income-table";
 import { getCompanyById } from "@/modules/companies/companies";
 import { listBusinessIncomes } from "@/modules/business-income/actions";
 

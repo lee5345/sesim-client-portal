@@ -75,6 +75,7 @@ type DailyWorkerFormDialogProps = {
   year: number;
   month: number;
   companyId?: string;
+  disabled?: boolean;
   dailyWorker?: {
     id: string;
     name: string;
@@ -182,6 +183,7 @@ export function DailyWorkerFormDialog({
   year,
   month,
   companyId,
+  disabled = false,
   dailyWorker,
 }: DailyWorkerFormDialogProps) {
   const router = useRouter();
@@ -319,6 +321,7 @@ export function DailyWorkerFormDialog({
           variant="outline"
           size="icon-sm"
           aria-label="일용직 정보 수정"
+          disabled={disabled}
           onClick={() => setOpen(true)}
         >
           <Pencil className="size-4" />
@@ -326,6 +329,7 @@ export function DailyWorkerFormDialog({
       ) : (
         <Button
           type="button"
+          disabled={disabled}
           onClick={() => {
             if (isNonCurrentPeriod) {
               setPeriodConfirmOpen(true);

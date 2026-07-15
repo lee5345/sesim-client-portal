@@ -162,6 +162,7 @@ export function DailyWorkersTable({
             companyName={companyName}
             filterSummary={filterSummary}
             entryCount={visibleDailyWorkers.length}
+            disabled={reviewActive}
             companyId={companyId}
             onExport={({ title }) =>
               exportDailyWorkersExcel({
@@ -178,13 +179,19 @@ export function DailyWorkersTable({
             year={year}
             month={month}
             companyId={companyId}
+            disabled={reviewActive}
           />
         </div>
       </CardHeader>
       <CardContent className="min-w-0">
         {dailyWorkers.length === 0 ? (
           <div className="space-y-4">
-            <DailyWorkersMonthSelector year={year} month={month} basePath={basePath} />
+            <DailyWorkersMonthSelector
+              year={year}
+              month={month}
+              basePath={basePath}
+              disabled={reviewActive}
+            />
             <EmptyState message="등록된 일용직이 없습니다. 일용직 등록 버튼으로 첫 항목을 추가해 주세요." />
           </div>
         ) : (
@@ -200,6 +207,7 @@ export function DailyWorkersTable({
             onDraftChange={handleDraftChange}
             onSearch={handleSearch}
             onClear={handleClear}
+            disabled={reviewActive}
           />
         )}
       </CardContent>

@@ -29,6 +29,7 @@ type DailyWorkersFiltersProps = {
   onDraftChange: (next: DailyWorkersFilterValues) => void;
   onSearch: () => void;
   onClear: () => void;
+  disabled?: boolean;
 };
 
 const selectClassName =
@@ -39,6 +40,7 @@ export function DailyWorkersFilters({
   onDraftChange,
   onSearch,
   onClear,
+  disabled = false,
 }: DailyWorkersFiltersProps) {
   const [occupationMenuOpen, setOccupationMenuOpen] = useState(false);
 
@@ -66,6 +68,7 @@ export function DailyWorkersFilters({
               value={draft.name}
               placeholder="이름으로 검색"
               className="pl-8"
+              disabled={disabled}
               onChange={(event) => onDraftChange({ ...draft, name: event.target.value })}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
@@ -79,11 +82,19 @@ export function DailyWorkersFilters({
 
         <div className="space-y-1.5">
           <Label>직종</Label>
-          <Popover open={occupationMenuOpen} onOpenChange={setOccupationMenuOpen}>
+          <Popover
+            open={occupationMenuOpen}
+            onOpenChange={(open) => {
+              if (disabled) return;
+              setOccupationMenuOpen(open);
+            }}
+          >
             <PopoverTrigger
+              disabled={disabled}
               className={cn(
                 selectClassName,
                 draft.occupations.length > 0 && "border-primary/30",
+                disabled && "cursor-not-allowed opacity-50",
               )}
             >
               <span className="truncate">{occupationLabel}</span>
@@ -103,6 +114,7 @@ export function DailyWorkersFilters({
                         type="checkbox"
                         className="size-3.5 rounded border-input accent-primary"
                         checked={checked}
+                        disabled={disabled}
                         onChange={() => toggleOccupation(occupation.value)}
                       />
                       <span className="truncate">
@@ -127,6 +139,7 @@ export function DailyWorkersFilters({
                 draft.salaryBasis && "border-primary/30",
               )}
               value={draft.salaryBasis}
+              disabled={disabled}
               onChange={(event) =>
                 onDraftChange({
                   ...draft,
@@ -143,11 +156,11 @@ export function DailyWorkersFilters({
         </div>
 
         <div className="flex items-center gap-2">
-          <Button type="button" onClick={onSearch}>
+          <Button type="button" disabled={disabled} onClick={onSearch}>
             <Search />
             검색
           </Button>
-          <Button type="button" variant="outline" onClick={onClear}>
+          <Button type="button" variant="outline" disabled={disabled} onClick={onClear}>
             <X />
             필터 초기화
           </Button>

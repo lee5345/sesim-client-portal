@@ -39,6 +39,7 @@ type HireIntakesFiltersProps = {
   onDraftChange: (next: HireIntakeFilterValues) => void;
   onSearch: () => void;
   onClear: () => void;
+  disabled?: boolean;
 };
 
 export function HireIntakesFilters({
@@ -47,6 +48,7 @@ export function HireIntakesFilters({
   onDraftChange,
   onSearch,
   onClear,
+  disabled = false,
 }: HireIntakesFiltersProps) {
   const [departmentMenuOpen, setDepartmentMenuOpen] = useState(false);
 
@@ -67,7 +69,10 @@ export function HireIntakesFilters({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3">
+    <fieldset
+      disabled={disabled}
+      className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3 disabled:opacity-60"
+    >
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
         <div className="min-w-0 flex-1 space-y-1.5">
           <Label htmlFor="hire-intake-name-filter">이름</Label>
@@ -166,6 +171,6 @@ export function HireIntakesFilters({
           </Button>
         </div>
       </div>
-    </div>
+    </fieldset>
   );
 }

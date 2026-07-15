@@ -28,6 +28,7 @@ type DailyWorkersTableViewProps = {
   onDraftChange: (next: DailyWorkersFilterValues) => void;
   onSearch: () => void;
   onClear: () => void;
+  disabled?: boolean;
 };
 
 export function DailyWorkersTableView({
@@ -42,6 +43,7 @@ export function DailyWorkersTableView({
   onDraftChange,
   onSearch,
   onClear,
+  disabled = false,
 }: DailyWorkersTableViewProps) {
   const [page, setPage] = useState(1);
 
@@ -73,6 +75,7 @@ export function DailyWorkersTableView({
           year={year}
           month={month}
           companyId={companyId}
+          disabled={disabled}
           dailyWorker={{
             id: dailyWorker.id,
             name: dailyWorker.name,
@@ -92,6 +95,7 @@ export function DailyWorkersTableView({
             ...(companyId ? { companyId } : {}),
           }}
           triggerLabel="삭제"
+          disabled={disabled}
         />
       </>
     );
@@ -99,13 +103,19 @@ export function DailyWorkersTableView({
 
   return (
     <div className="space-y-4">
-      <DailyWorkersMonthSelector year={year} month={month} basePath={basePath} />
+      <DailyWorkersMonthSelector
+        year={year}
+        month={month}
+        basePath={basePath}
+        disabled={disabled}
+      />
 
       <DailyWorkersFilters
         draft={draftFilters}
         onDraftChange={onDraftChange}
         onSearch={onSearch}
         onClear={onClear}
+        disabled={disabled}
       />
 
       {filteredDailyWorkers.length === 0 ? (
@@ -127,6 +137,7 @@ export function DailyWorkersTableView({
             rangeStart={pagination.rangeStart}
             rangeEnd={pagination.rangeEnd}
             total={pagination.total}
+            disabled={disabled}
             onPageChange={setPage}
           />
         </div>

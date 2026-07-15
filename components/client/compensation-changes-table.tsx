@@ -82,6 +82,7 @@ export function CompensationChangesTable({
   embedded = false,
 }: CompensationChangesTableProps) {
   const [unreadIds, setUnreadIds] = useState<Set<string> | null>(null);
+  const [reviewActive, setReviewActive] = useState(false);
   const [draftFilters, setDraftFilters] = useState<CompensationChangeFilterValues>(
     EMPTY_COMPENSATION_CHANGE_FILTERS,
   );
@@ -159,6 +160,8 @@ export function CompensationChangesTable({
             <NewEntriesControls
               companyId={companyId}
               entityTypes={["COMPENSATION_CHANGE"]}
+              reviewActive={reviewActive}
+              onReviewActiveChange={setReviewActive}
               onShowUnreadEntries={(ids) => {
                 setPage(1);
                 setDraftFilters(EMPTY_COMPENSATION_CHANGE_FILTERS);
@@ -174,6 +177,7 @@ export function CompensationChangesTable({
             companyName={companyName}
             filterSummary={filterSummary}
             entryCount={filteredChanges.length}
+            disabled={reviewActive}
             companyId={companyId}
             onExport={({ title }) =>
               exportCompensationChangesExcel({
@@ -183,7 +187,11 @@ export function CompensationChangesTable({
               })
             }
           />
-          <CompensationChangeFormDialog mode="create" companyId={companyId} />
+          <CompensationChangeFormDialog
+            mode="create"
+            companyId={companyId}
+            disabled={reviewActive}
+          />
         </div>
       </CardHeader>
       <CardContent className="min-w-0 space-y-3">
@@ -191,7 +199,10 @@ export function CompensationChangesTable({
           <EmptyState message="등록된 급여변경 내역이 없습니다. 급여변경 등록 버튼으로 첫 항목을 추가해 주세요." />
         ) : (
           <>
-            <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3">
+            <fieldset
+              disabled={reviewActive}
+              className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3 disabled:opacity-60"
+            >
               <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
                 <div className="min-w-0 flex-1 space-y-1.5">
                   <Label htmlFor="compensation-change-name-filter">이름</Label>
@@ -250,7 +261,7 @@ export function CompensationChangesTable({
                   </Button>
                 </div>
               </div>
-            </div>
+            </fieldset>
 
             {filteredChanges.length === 0 ? (
               <div className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
@@ -316,6 +327,7 @@ export function CompensationChangesTable({
                           <CompensationChangeFormDialog
                             mode="edit"
                             companyId={companyId}
+                            disabled={reviewActive}
                             compensationChange={{
                               id: row.id,
                               name: row.name,
@@ -338,6 +350,7 @@ export function CompensationChangesTable({
                               ...(companyId ? { companyId } : {}),
                             }}
                             triggerLabel="삭제"
+                            disabled={reviewActive}
                           />
                         </div>
                       </td>
@@ -352,6 +365,7 @@ export function CompensationChangesTable({
               rangeStart={pagination.rangeStart}
               rangeEnd={pagination.rangeEnd}
               total={pagination.total}
+              disabled={reviewActive}
               onPageChange={setPage}
             />
           </div>

@@ -89,6 +89,7 @@ type HireIntakeFormDialogProps = {
   mode: "create" | "edit";
   departments: DepartmentOption[];
   companyId?: string;
+  disabled?: boolean;
   hireIntake?: {
     id: string;
     name: string;
@@ -248,6 +249,7 @@ export function HireIntakeFormDialog({
   mode,
   departments,
   companyId,
+  disabled = false,
   hireIntake,
 }: HireIntakeFormDialogProps) {
   const router = useRouter();
@@ -311,13 +313,21 @@ export function HireIntakeFormDialog({
       }}
     >
       <DialogTrigger
+        disabled={disabled}
         render={
           isEdit ? (
-            <Button variant="outline" size="icon-sm" aria-label="입사자 정보 수정">
+            <Button
+              variant="outline"
+              size="icon-sm"
+              aria-label="입사자 정보 수정"
+              disabled={disabled}
+            >
               <Pencil className="size-4" />
             </Button>
           ) : (
-            <Button type="button">입사자 등록</Button>
+            <Button type="button" disabled={disabled}>
+              입사자 등록
+            </Button>
           )
         }
       />

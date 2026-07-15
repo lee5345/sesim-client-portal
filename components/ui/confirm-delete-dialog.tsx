@@ -27,6 +27,7 @@ type ConfirmDeleteDialogProps = {
   triggerVariant?: "default" | "destructive" | "outline" | "secondary" | "ghost";
   triggerSize?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-sm" | "icon-lg";
   triggerClassName?: string;
+  disabled?: boolean;
 };
 
 export function ConfirmDeleteDialog({
@@ -40,6 +41,7 @@ export function ConfirmDeleteDialog({
   triggerVariant = "destructive",
   triggerSize = "sm",
   triggerClassName,
+  disabled = false,
 }: ConfirmDeleteDialogProps) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"confirm" | "type">("confirm");
@@ -63,12 +65,14 @@ export function ConfirmDeleteDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger
+        disabled={disabled}
         render={
           <Button
             type="button"
             variant={triggerVariant}
             size={triggerSize}
             className={triggerClassName}
+            disabled={disabled}
           >
             {triggerLabel}
           </Button>

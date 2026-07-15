@@ -51,6 +51,7 @@ type CompensationChangeFormValues = {
 type CompensationChangeFormDialogProps = {
   mode: "create" | "edit";
   companyId?: string;
+  disabled?: boolean;
   compensationChange?: {
     id: string;
     name: string;
@@ -109,6 +110,7 @@ function buildFormData(
 export function CompensationChangeFormDialog({
   mode,
   companyId,
+  disabled = false,
   compensationChange,
 }: CompensationChangeFormDialogProps) {
   const router = useRouter();
@@ -153,13 +155,21 @@ export function CompensationChangeFormDialog({
       }}
     >
       <DialogTrigger
+        disabled={disabled}
         render={
           isEdit ? (
-            <Button variant="outline" size="icon-sm" aria-label="급여변경 정보 수정">
+            <Button
+              variant="outline"
+              size="icon-sm"
+              aria-label="급여변경 정보 수정"
+              disabled={disabled}
+            >
               <Pencil className="size-4" />
             </Button>
           ) : (
-            <Button type="button">급여변경 등록</Button>
+            <Button type="button" disabled={disabled}>
+              급여변경 등록
+            </Button>
           )
         }
       />

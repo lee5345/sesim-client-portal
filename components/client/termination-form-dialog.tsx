@@ -56,6 +56,7 @@ type TerminationFormValues = {
 type TerminationFormDialogProps = {
   mode: "create" | "edit";
   companyId?: string;
+  disabled?: boolean;
   termination?: {
     id: string;
     name: string;
@@ -119,6 +120,7 @@ function buildFormData(
 export function TerminationFormDialog({
   mode,
   companyId,
+  disabled = false,
   termination,
 }: TerminationFormDialogProps) {
   const router = useRouter();
@@ -183,13 +185,21 @@ export function TerminationFormDialog({
       }}
     >
       <DialogTrigger
+        disabled={disabled}
         render={
           isEdit ? (
-            <Button variant="outline" size="icon-sm" aria-label="퇴사자 정보 수정">
+            <Button
+              variant="outline"
+              size="icon-sm"
+              aria-label="퇴사자 정보 수정"
+              disabled={disabled}
+            >
               <Pencil className="size-4" />
             </Button>
           ) : (
-            <Button type="button">퇴사자 등록</Button>
+            <Button type="button" disabled={disabled}>
+              퇴사자 등록
+            </Button>
           )
         }
       />

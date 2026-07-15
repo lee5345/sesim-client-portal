@@ -99,7 +99,7 @@ export async function listUnreadTenantChangeEntityIdsAction(input: {
 
 export async function getEarliestUnreadPeriodScopedPeriodAction(input: {
   companyId: string;
-  entityType: "DAILY_WORKER" | "COMPENSATION_INFO";
+  entityType: "DAILY_WORKER" | "COMPENSATION_INFO" | "BUSINESS_INCOME";
 }): Promise<YearMonthPeriod | null> {
   const session = await requireAuth([
     "CLIENT_ADMIN",

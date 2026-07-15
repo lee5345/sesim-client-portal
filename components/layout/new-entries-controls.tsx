@@ -54,12 +54,15 @@ function buildPeriodNavigationUrl(
 
 function getPeriodScopedEntityType(
   entityTypes: TenantChangeEntityType[],
-): "DAILY_WORKER" | "COMPENSATION_INFO" | undefined {
+): "DAILY_WORKER" | "COMPENSATION_INFO" | "BUSINESS_INCOME" | undefined {
   if (entityTypes.includes("DAILY_WORKER")) {
     return "DAILY_WORKER";
   }
   if (entityTypes.includes("COMPENSATION_INFO")) {
     return "COMPENSATION_INFO";
+  }
+  if (entityTypes.includes("BUSINESS_INCOME")) {
+    return "BUSINESS_INCOME";
   }
   return undefined;
 }
@@ -166,7 +169,9 @@ export function NewEntriesControls({
                     firmTab:
                       periodScopedType === "COMPENSATION_INFO"
                         ? "compensation-info"
-                        : "daily-workers",
+                        : periodScopedType === "BUSINESS_INCOME"
+                          ? "business-income"
+                          : "daily-workers",
                   },
                 ),
               );

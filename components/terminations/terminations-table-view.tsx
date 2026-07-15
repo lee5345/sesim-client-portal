@@ -25,6 +25,7 @@ type TerminationsTableViewProps = {
   onDraftChange: (next: TerminationFilterValues) => void;
   onSearch: () => void;
   onClear: () => void;
+  disabled?: boolean;
 };
 
 function toFormDateValue(date: Date | null) {
@@ -43,6 +44,7 @@ export function TerminationsTableView({
   onDraftChange,
   onSearch,
   onClear,
+  disabled = false,
 }: TerminationsTableViewProps) {
   const [page, setPage] = useState(1);
 
@@ -72,6 +74,7 @@ export function TerminationsTableView({
         <TerminationFormDialog
           mode="edit"
           companyId={companyId}
+          disabled={disabled}
           termination={{
             id: termination.id,
             name: termination.name,
@@ -91,6 +94,7 @@ export function TerminationsTableView({
             ...(companyId ? { companyId } : {}),
           }}
           triggerLabel="삭제"
+          disabled={disabled}
         />
       </>
     );
@@ -103,6 +107,7 @@ export function TerminationsTableView({
         onDraftChange={onDraftChange}
         onSearch={onSearch}
         onClear={onClear}
+        disabled={disabled}
       />
 
       {filteredTerminations.length === 0 ? (
@@ -122,6 +127,7 @@ export function TerminationsTableView({
             rangeStart={pagination.rangeStart}
             rangeEnd={pagination.rangeEnd}
             total={pagination.total}
+            disabled={disabled}
             onPageChange={setPage}
           />
         </div>

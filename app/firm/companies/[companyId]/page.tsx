@@ -27,7 +27,7 @@ import { CompanyInfoLink } from "@/components/companies/company-info-link";
 import { DepartmentManager } from "@/components/companies/department-manager";
 import { CompanyDetailTabs } from "@/components/firm/company-detail-tabs";
 import { CompanyTabIndicator } from "@/components/firm/company-tab-indicator";
-import { BusinessIncomeTable } from "@/components/client/business-income-table";
+import { BusinessIncomeTable } from "@/components/business-income/business-income-table";
 import { CompensationChangesTable } from "@/components/client/compensation-changes-table";
 import { CompensationInfoTable } from "@/components/compensation-info/compensation-info-table";
 import { DailyWorkersTable } from "@/components/client/daily-workers-table";
