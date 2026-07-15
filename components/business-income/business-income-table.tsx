@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   ClipboardList,
   Copy,
-  Eye,
   Pencil,
   Plus,
   Search,
@@ -175,8 +174,6 @@ export function BusinessIncomeTable({
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const [formValues, setFormValues] = useState<RowFormValues>(createEmptyFormValues);
   const [formError, setFormError] = useState<string | null>(null);
-  const [rrnEditing, setRrnEditing] = useState(false);
-  const [revealedRrn, setRevealedRrn] = useState<string | null>(null);
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
   const [copyModeDialogOpen, setCopyModeDialogOpen] = useState(false);
   const [unreadIds, setUnreadIds] = useState<Set<string> | null>(null);
@@ -276,36 +273,37 @@ export function BusinessIncomeTable({
   function startEdit(row: BusinessIncomeTableRow) {
     setEditingRowId(row.id);
     setFormValues(rowToFormValues(row));
-    setRrnEditing(false);
-    setRevealedRrn(null);
     setFormError(null);
+
+    if (!companyId) {
+      setFormError("주민등록번호를 불러오지 못했습니다.");
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const result = await revealBusinessIncomeRRN(row.id, companyId);
+        setFormValues((current) => ({
+          ...current,
+          rrnSegments: splitIntoSegments(result.rrn, [...RRN_SEGMENT_LENGTHS]),
+        }));
+      } catch {
+        setFormError("주민등록번호를 불러오지 못했습니다.");
+      }
+    });
   }
 
   function startDraft() {
     const draftId = `draft-${crypto.randomUUID()}`;
     setEditingRowId(draftId);
     setFormValues(createEmptyFormValues());
-    setRrnEditing(true);
-    setRevealedRrn(null);
     setFormError(null);
   }
 
   function cancelEdit() {
     setEditingRowId(null);
     setFormValues(createEmptyFormValues());
-    setRrnEditing(false);
-    setRevealedRrn(null);
     setFormError(null);
-  }
-
-  function startRrnEditing(rrn?: string) {
-    setRrnEditing(true);
-    if (rrn) {
-      setFormValues((current) => ({
-        ...current,
-        rrnSegments: splitIntoSegments(rrn, [...RRN_SEGMENT_LENGTHS]),
-      }));
-    }
   }
 
   function saveEdit() {
@@ -319,7 +317,7 @@ export function BusinessIncomeTable({
     startTransition(async () => {
       const formData = buildFormData(formValues, {
         companyId,
-        includeRrn: isDraft || rrnEditing,
+        includeRrn: true,
       });
       const result = isDraft
         ? await createBusinessIncome({ year, month, formData })
@@ -511,7 +509,11 @@ export function BusinessIncomeTable({
                     <tr className="border-b bg-muted/40 text-left">
                       <th className={stickyNameHeaderClassName}>이름</th>
                       <th className={headerCellClassName}>
-                        <MaskedRrnColumnHeader />
+                        {editingRowId ? (
+                          <span className="whitespace-nowrap">주민등록번호</span>
+                        ) : (
+                          <MaskedRrnColumnHeader />
+                        )}
                       </th>
                       <th className={headerCellClassName}>소득액</th>
                       <th className={headerCellClassName}>비고</th>
@@ -549,65 +551,15 @@ export function BusinessIncomeTable({
                           </td>
                           <td className={bodyCellClassName}>
                             {isEditing ? (
-                              isDraft || rrnEditing ? (
-                                <SegmentedDigitFields
-                                  idPrefix={`rrn-${row.id}`}
-                                  segmentLengths={RRN_SEGMENT_LENGTHS}
-                                  values={formValues.rrnSegments}
-                                  onChange={(rrnSegments) =>
-                                    updateFormValue("rrnSegments", rrnSegments)
-                                  }
-                                  disabled={isPending}
-                                />
-                              ) : (
-                                <div className="flex flex-wrap items-center gap-1">
-                                  <span className="font-mono text-sm text-muted-foreground">
-                                    {revealedRrn ?? "******-*******"}
-                                  </span>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="icon-sm"
-                                    disabled={isPending}
-                                    aria-label="주민등록번호 확인"
-                                    onClick={() => {
-                                      if (!companyId || isDraft) return;
-                                      startTransition(async () => {
-                                        const result = await revealBusinessIncomeRRN(
-                                          row.id,
-                                          companyId,
-                                        );
-                                        setRevealedRrn(result.rrn);
-                                      });
-                                    }}
-                                  >
-                                    <Eye className="size-4" />
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={isPending}
-                                    onClick={() => {
-                                      if (revealedRrn) {
-                                        startRrnEditing(revealedRrn);
-                                        return;
-                                      }
-                                      if (!companyId || isDraft) return;
-                                      startTransition(async () => {
-                                        const result = await revealBusinessIncomeRRN(
-                                          row.id,
-                                          companyId,
-                                        );
-                                        setRevealedRrn(result.rrn);
-                                        startRrnEditing(result.rrn);
-                                      });
-                                    }}
-                                  >
-                                    변경
-                                  </Button>
-                                </div>
-                              )
+                              <SegmentedDigitFields
+                                idPrefix={`rrn-${row.id}`}
+                                segmentLengths={RRN_SEGMENT_LENGTHS}
+                                values={formValues.rrnSegments}
+                                onChange={(rrnSegments) =>
+                                  updateFormValue("rrnSegments", rrnSegments)
+                                }
+                                disabled={isPending}
+                              />
                             ) : isDraft ? (
                               "—"
                             ) : (
