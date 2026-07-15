@@ -57,12 +57,12 @@ export function AccountDeleteResultDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {deactivated ? "계정이 비활성화되었습니다" : "계정이 삭제되었습니다"}
+            {deactivated ? "삭제 불가" : "삭제 완료"}
           </DialogTitle>
           <DialogDescription>
             {deactivated
-              ? `이 ${accountLabel}에는 CRUD 활동 기록이 있어 완전히 삭제할 수 없습니다. 대신 비활성 상태로 전환되었습니다.`
-              : `활동 기록이 없어 ${accountLabel}이(가) 완전히 삭제되었습니다.`}
+              ? `본 ${accountLabel}에 의한 활동 기록이 있어 삭제할 수 없습니다. 대신 비활성 상태로 전환되었습니다.`
+              : `성공적으로 삭제되었습니다.`}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
