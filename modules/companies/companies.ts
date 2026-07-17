@@ -56,6 +56,8 @@ const activeCompanySelect = {
       compensationInfos: { where: { deletedAt: null } },
       businessIncomes: { where: { deletedAt: null } },
       dailyWorkers: { where: { deletedAt: null } },
+      leaveRecords: { where: { deletedAt: null } },
+      dependentRecords: { where: { deletedAt: null } },
     },
   },
 } as const;

@@ -33,7 +33,7 @@ export default async function ClientCompensationChangesPage() {
     <div className="min-w-0 space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">급여변경 정보</h1>
-        <p className="mt-1 text-muted-foreground">등록된 급여변경 내역을 확인하고 관리합니다.</p>
+        <p className="mt-1 text-muted-foreground">직원의 급여변경 내역을 등록하고 관리합니다.</p>
       </div>
 
       <CompensationChangesTable

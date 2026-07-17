@@ -6,6 +6,8 @@ import { listDailyWorkers } from "@/modules/daily-workers/actions";
 import { listBusinessIncomes } from "@/modules/business-income/actions";
 import { listCompensationChanges } from "@/modules/compensation-changes/actions";
 import { listCompensationInfos } from "@/modules/compensation-info/actions";
+import { listDependentRecords } from "@/modules/dependents/actions";
+import { listLeaveRecords } from "@/modules/leave-records/actions";
 
 export async function listCompanyNewHires(companyId: string) {
   return listHireIntakes(companyId);
@@ -41,4 +43,12 @@ export async function listCompanyBusinessIncomes(
   month: number,
 ) {
   return listBusinessIncomes(companyId, year, month);
+}
+
+export async function listCompanyLeaveRecords(companyId: string) {
+  return listLeaveRecords(companyId);
+}
+
+export async function listCompanyDependents(companyId: string) {
+  return listDependentRecords(companyId);
 }

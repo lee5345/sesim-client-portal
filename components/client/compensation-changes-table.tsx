@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Search, Wallet, X } from "lucide-react";
+import { Search, X } from "lucide-react";
+
+import { NAV_ICONS } from "@/components/layout/nav-icons";
+
+const CompensationChangeIcon = NAV_ICONS["arrow-left-right"];
 
 import { CompensationChangeFormDialog } from "@/components/client/compensation-change-form-dialog";
 import { ExcelExportDialog } from "@/components/export/excel-export-dialog";
@@ -149,7 +153,7 @@ export function CompensationChangesTable({
         {embedded ? null : (
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Wallet className="size-4 text-primary" />
+              <CompensationChangeIcon className="size-4 text-primary" />
               급여변경 목록
             </CardTitle>
             <CardDescription>등록된 급여변경 내역을 확인하고 관리합니다.</CardDescription>

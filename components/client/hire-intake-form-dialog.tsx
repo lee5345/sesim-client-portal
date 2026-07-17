@@ -331,7 +331,7 @@ export function HireIntakeFormDialog({
           )
         }
       />
-      <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-2xl">
+      <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{isEdit ? "입사자 정보 수정" : "입사자 등록"}</DialogTitle>
           <DialogDescription>

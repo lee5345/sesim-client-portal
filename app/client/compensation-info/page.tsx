@@ -39,7 +39,7 @@ export default async function ClientCompensationInfoPage({
       <div>
         <h1 className="text-2xl font-bold tracking-tight">상세급여 정보</h1>
         <p className="mt-1 text-muted-foreground">
-          월별 상세급여 정보를 확인하고 관리합니다.
+          월별 구체적인 급여 정보를 등록하고 관리합니다.
         </p>
       </div>
 

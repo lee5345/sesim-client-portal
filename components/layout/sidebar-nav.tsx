@@ -2,41 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Building2,
-  Calculator,
-  CalendarDays,
-  ClipboardList,
-  LayoutDashboard,
-  Settings,
-  UserCog,
-  UserMinus,
-  UserPlus,
-  Users,
-  Wallet,
-  type LucideIcon,
-} from "lucide-react";
+import { type LucideIcon } from "lucide-react";
 
 import { NotificationCountBadge } from "@/components/layout/notification-count-badge";
+import { NAV_ICONS, type NavIconName } from "@/components/layout/nav-icons";
 import { useOptionalRealtimeSync } from "@/components/layout/realtime-sync-provider";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
-export const NAV_ICONS = {
-  "layout-dashboard": LayoutDashboard,
-  building2: Building2,
-  "clipboard-list": ClipboardList,
-  calculator: Calculator,
-  "calendar-days": CalendarDays,
-  users: Users,
-  "user-cog": UserCog,
-  "user-plus": UserPlus,
-  "user-minus": UserMinus,
-  wallet: Wallet,
-  settings: Settings,
-} as const;
-
-export type NavIconName = keyof typeof NAV_ICONS;
+export type { NavIconName };
+export { NAV_ICONS };
 
 export type SidebarNavItem = {
   href: string;

@@ -7,7 +7,7 @@ import { MoreHorizontal, UserCheck, X } from "lucide-react";
 
 import { NotificationCountBadge } from "@/components/layout/notification-count-badge";
 import { useOptionalRealtimeSync } from "@/components/layout/realtime-sync-provider";
-import { acknowledgeTenantChangesAction } from "@/lib/realtime/sync-actions";
+import { acknowledgeAllCompanyTenantChangesAction } from "@/lib/realtime/sync-actions";
 import { NO_WORKPLACE_MANAGEMENT_NUMBER_LABEL } from "@/lib/companies/labels";
 import { formatWorkplaceManagementNumber } from "@/lib/format/workplace-management-number";
 import { formatDateTime } from "@/lib/format/date";
@@ -273,13 +273,8 @@ function CompanyCard({
                   event.preventDefault();
                   event.stopPropagation();
                   startTransition(async () => {
-                    await acknowledgeTenantChangesAction({
+                    await acknowledgeAllCompanyTenantChangesAction({
                       companyId: company.id,
-                      entityTypes: [
-                        "NEW_HIRE",
-                        "TERMINATION",
-                        "DAILY_WORKER",
-                      ],
                     });
                     await realtime?.refreshNow?.();
                   });

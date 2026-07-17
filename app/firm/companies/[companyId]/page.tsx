@@ -18,6 +18,8 @@ import {
   listCompanyCompensationChanges,
   listCompanyCompensationInfos,
   listCompanyDailyWorkers,
+  listCompanyDependents,
+  listCompanyLeaveRecords,
   listCompanyNewHires,
   listCompanyTerminations,
 } from "@/modules/companies/company-activity";
@@ -29,6 +31,8 @@ import { CompanyDetailTabs } from "@/components/firm/company-detail-tabs";
 import { CompanyTabIndicator } from "@/components/firm/company-tab-indicator";
 import { BusinessIncomeTable } from "@/components/business-income/business-income-table";
 import { CompensationChangesTable } from "@/components/client/compensation-changes-table";
+import { DependentsTable } from "@/components/client/dependents-table";
+import { LeaveRecordsTable } from "@/components/client/leave-records-table";
 import { CompensationInfoTable } from "@/components/compensation-info/compensation-info-table";
 import { DailyWorkersTable } from "@/components/client/daily-workers-table";
 import { HireIntakesTable } from "@/components/client/hire-intakes-table";
@@ -72,6 +76,8 @@ export default async function FirmCompanyDetailPage({
     compensationChanges,
     compensationInfos,
     businessIncomes,
+    leaveRecords,
+    dependentRecords,
     departments,
     staffUsers,
   ] = await Promise.all([
@@ -82,6 +88,8 @@ export default async function FirmCompanyDetailPage({
     listCompanyCompensationChanges(companyId),
     listCompanyCompensationInfos(companyId, year, month),
     listCompanyBusinessIncomes(companyId, year, month),
+    listCompanyLeaveRecords(companyId),
+    listCompanyDependents(companyId),
     listDepartments(companyId),
     isFirmAdmin ? listFirmStaffUsers() : Promise.resolve([]),
   ]);
@@ -95,6 +103,8 @@ export default async function FirmCompanyDetailPage({
   const compensationChangeCount = company._count.compensationChanges;
   const compensationInfoCount = company._count.compensationInfos;
   const businessIncomeCount = company._count.businessIncomes;
+  const leaveRecordCount = company._count.leaveRecords;
+  const dependentRecordCount = company._count.dependentRecords;
 
   const changeRows = compensationChanges.map((row) => ({
     ...row,
@@ -104,6 +114,22 @@ export default async function FirmCompanyDetailPage({
 
   const infoRows = compensationInfos.map((row) => ({
     ...row,
+    createdAt: row.createdAt.toISOString(),
+  }));
+
+  const leaveRecordRows = leaveRecords.map((row) => ({
+    ...row,
+    periodStart: formatDate(row.periodStart),
+    periodEnd: formatDate(row.periodEnd),
+    expectedDeliveryDate: row.expectedDeliveryDate
+      ? formatDate(row.expectedDeliveryDate)
+      : null,
+    createdAt: row.createdAt.toISOString(),
+  }));
+
+  const dependentRows = dependentRecords.map((row) => ({
+    ...row,
+    registrationRequestedDate: formatDate(row.registrationRequestedDate),
     createdAt: row.createdAt.toISOString(),
   }));
 
@@ -209,6 +235,22 @@ export default async function FirmCompanyDetailPage({
               totalCount={businessIncomeCount}
             />
           </TabsTrigger>
+          <TabsTrigger value="leave-records">
+            휴직자 등 정보
+            <CompanyTabIndicator
+              companyId={companyId}
+              entityType="LEAVE_RECORD"
+              totalCount={leaveRecordCount}
+            />
+          </TabsTrigger>
+          <TabsTrigger value="dependents">
+            피부양자 정보
+            <CompanyTabIndicator
+              companyId={companyId}
+              entityType="DEPENDENT_RECORD"
+              totalCount={dependentRecordCount}
+            />
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="new-hires" className="space-y-4">
@@ -266,6 +308,18 @@ export default async function FirmCompanyDetailPage({
             companyId={companyId}
             companyName={company.name}
             basePath={firmDailyWorkersBasePath}
+          />
+        </TabsContent>
+        <TabsContent value="leave-records" className="space-y-4">
+          <LeaveRecordsTable
+            leaveRecords={leaveRecordRows}
+            companyId={companyId}
+          />
+        </TabsContent>
+        <TabsContent value="dependents" className="space-y-4">
+          <DependentsTable
+            dependentRecords={dependentRows}
+            companyId={companyId}
           />
         </TabsContent>
       </CompanyDetailTabs>

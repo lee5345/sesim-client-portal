@@ -34,9 +34,11 @@ export default async function ClientLayout({
     { href: "/client/new-hires", label: "입사자 정보", icon: "user-plus" as const },
     { href: "/client/terminations", label: "퇴사자 정보", icon: "user-minus" as const },
     { href: "/client/daily-workers", label: "일용직 정보", icon: "calendar-days" as const },
-    { href: "/client/compensation-changes", label: "급여변경 정보", icon: "wallet" as const },
+    { href: "/client/compensation-changes", label: "급여변경 정보", icon: "arrow-left-right" as const },
     { href: "/client/compensation-info", label: "상세급여 정보", icon: "calculator" as const },
-    { href: "/client/business-income", label: "사업소득 정보", icon: "clipboard-list" as const },
+    { href: "/client/business-income", label: "사업소득 정보", icon: "dollar-sign" as const },
+    { href: "/client/leave-records", label: "휴직자 등 정보", icon: "calendar-off" as const },
+    { href: "/client/dependents", label: "피부양자 정보", icon: "users" as const },
   ];
 
   return (

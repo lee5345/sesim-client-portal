@@ -47,6 +47,9 @@ model Company {
   compensationInfos         CompensationInfo[]
   dailyWorkers              DailyWorker[]
   departments               Department[]
+  dependentRecords          DependentRecord[]
+  fileAttachments           FileAttachment[]
+  leaveRecords              LeaveRecord[]
   newHires                  NewHire[]
   registrationRequests      RegistrationRequest[]
   tenantChanges             TenantChange[]
@@ -84,6 +87,9 @@ model User {
   createdCompensationChanges   CompensationChange[]     @relation("CompChangeCreatedBy")
   createdCompensationInfos     CompensationInfo[]       @relation("CompInfoCreatedBy")
   createdDailyWorkers          DailyWorker[]            @relation("DailyWorkerCreatedBy")
+  createdDependentRecords      DependentRecord[]        @relation("DependentRecordCreatedBy")
+  createdFileAttachments       FileAttachment[]         @relation("FileAttachmentCreatedBy")
+  createdLeaveRecords          LeaveRecord[]            @relation("LeaveRecordCreatedBy")
   createdNewHires              NewHire[]                @relation("NewHireCreatedBy")
   passwordSetupTokens          PasswordSetupToken[]
   passwordResetTokens          PasswordResetToken[]
@@ -322,6 +328,66 @@ model DailyWorker {
   @@index([companyId, deletedAt])
 }
 
+model LeaveRecord {
+  id                   String    @id @default(uuid()) @db.Uuid
+  companyId            String    @db.Uuid
+  name                 String
+  leaveType            LeaveType
+  periodStart          DateTime
+  periodEnd            DateTime
+  expectedDeliveryDate DateTime?
+  childName            String?
+  childRrnEncrypted    String?
+  childRrnIv           String?
+  hoursBeforeReduction Int?
+  hoursAfterReduction  Int?
+  deletedAt            DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  createdById          String    @db.Uuid
+  company              Company   @relation(fields: [companyId], references: [id])
+  createdBy            User      @relation("LeaveRecordCreatedBy", fields: [createdById], references: [id])
+
+  @@index([companyId, deletedAt])
+  @@index([companyId, periodStart, periodEnd, deletedAt])
+}
+
+model DependentRecord {
+  id                        String    @id @default(uuid()) @db.Uuid
+  companyId                 String    @db.Uuid
+  employeeName              String
+  dependentName             String
+  relationship              String
+  registrationRequestedDate DateTime
+  deletedAt                 DateTime?
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+  createdById               String    @db.Uuid
+  company                   Company   @relation(fields: [companyId], references: [id])
+  createdBy                 User      @relation("DependentRecordCreatedBy", fields: [createdById], references: [id])
+
+  @@index([companyId, deletedAt])
+  @@index([companyId, registrationRequestedDate, deletedAt])
+}
+
+model FileAttachment {
+  id          String                   @id @default(uuid()) @db.Uuid
+  companyId   String                   @db.Uuid
+  entityType  FileAttachmentEntityType
+  entityId    String                   @db.Uuid
+  blobPath    String
+  filename    String
+  mimeType    String
+  sizeBytes   Int
+  deletedAt   DateTime?
+  createdAt   DateTime                 @default(now())
+  createdById String                   @db.Uuid
+  company     Company                  @relation(fields: [companyId], references: [id])
+  createdBy   User                     @relation("FileAttachmentCreatedBy", fields: [createdById], references: [id])
+
+  @@index([companyId, entityType, entityId, deletedAt])
+}
+
 model PortalSyncCursor {
   scope     String   @id
   version   BigInt   @default(0)
@@ -438,6 +504,20 @@ enum RegistrationRequestStatus {
   REJECTED
 }
 
+enum LeaveType {
+  MATERNITY_LEAVE
+  SPOUSE_MATERNITY_LEAVE
+  PRENATAL_PARENTAL_LEAVE
+  GENERAL_PARENTAL_LEAVE
+  CHILD_CARE_WORK_HOUR_REDUCTION
+  PREGNANCY_WORK_HOUR_REDUCTION
+}
+
+enum FileAttachmentEntityType {
+  LEAVE_RECORD
+  DEPENDENT_RECORD
+}
+
 enum TenantChangeEntityType {
   NEW_HIRE
   TERMINATION
@@ -445,6 +525,8 @@ enum TenantChangeEntityType {
   COMPENSATION_CHANGE
   COMPENSATION_INFO
   BUSINESS_INCOME
+  LEAVE_RECORD
+  DEPENDENT_RECORD
   COMPANY_PROFILE
   DEPARTMENT
 }

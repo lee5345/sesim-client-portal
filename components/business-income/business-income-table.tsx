@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import {
-  ClipboardList,
   Copy,
   Pencil,
   Plus,
@@ -10,6 +9,10 @@ import {
   X,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+
+import { NAV_ICONS } from "@/components/layout/nav-icons";
+
+const BusinessIncomeIcon = NAV_ICONS["dollar-sign"];
 
 import { BusinessIncomeMonthSelector } from "@/components/business-income/business-income-month-selector";
 import {
@@ -364,11 +367,11 @@ export function BusinessIncomeTable({
       <CardHeader className="flex shrink-0 flex-row items-start justify-between gap-4">
         <div>
           <CardTitle className="flex items-center gap-2 text-base">
-            <ClipboardList className="size-4 text-primary" />
+            <BusinessIncomeIcon className="size-4 text-primary" />
             사업소득 목록
           </CardTitle>
           <CardDescription>
-            {year}년 {month}월 사업소득 정보를 관리합니다.
+            {year}년 {month}월로 등록된 사업소득 정보를 확인하고 관리합니다.
           </CardDescription>
         </div>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">

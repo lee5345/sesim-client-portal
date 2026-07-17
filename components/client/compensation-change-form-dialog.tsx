@@ -173,7 +173,7 @@ export function CompensationChangeFormDialog({
           )
         }
       />
-      <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-2xl">
+      <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{isEdit ? "급여변경 정보 수정" : "급여변경 등록"}</DialogTitle>
           <DialogDescription>
@@ -241,8 +241,8 @@ export function CompensationChangeFormDialog({
               </div>
             </div>
 
-            <div className="grid gap-4 rounded-lg border p-4 sm:grid-cols-3">
-              <p className="text-sm font-medium sm:col-span-3">변경 전 급여</p>
+            <div className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2">
+              <p className="text-sm font-medium sm:col-span-2">변경 전 급여</p>
 
               <div className="space-y-2">
                 <FieldLabel htmlFor={`salaryTypeBefore-${formId}`} required>
@@ -288,7 +288,7 @@ export function CompensationChangeFormDialog({
                 </select>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 sm:col-span-2">
                 <FieldLabel htmlFor={`salaryAmountBefore-${formId}`} required>
                   금액
                 </FieldLabel>
@@ -309,8 +309,8 @@ export function CompensationChangeFormDialog({
               </div>
             </div>
 
-            <div className="grid gap-4 rounded-lg border p-4 sm:grid-cols-3">
-              <p className="text-sm font-medium sm:col-span-3">변경 후 급여</p>
+            <div className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2">
+              <p className="text-sm font-medium sm:col-span-2">변경 후 급여</p>
 
               <div className="space-y-2">
                 <FieldLabel htmlFor={`salaryTypeAfter-${formId}`} required>
@@ -356,7 +356,7 @@ export function CompensationChangeFormDialog({
                 </select>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 sm:col-span-2">
                 <FieldLabel htmlFor={`salaryAmountAfter-${formId}`} required>
                   금액
                 </FieldLabel>

@@ -26,6 +26,8 @@ const CLIENT_NAV_ENTITY_MAP: Record<string, TenantChangeEntityType[]> = {
   "/client/compensation-changes": ["COMPENSATION_CHANGE"],
   "/client/compensation-info": ["COMPENSATION_INFO"],
   "/client/business-income": ["BUSINESS_INCOME"],
+  "/client/leave-records": ["LEAVE_RECORD"],
+  "/client/dependents": ["DEPENDENT_RECORD"],
 };
 
 const FIRM_TAB_ENTITY_MAP: Record<string, TenantChangeEntityType> = {
@@ -35,6 +37,8 @@ const FIRM_TAB_ENTITY_MAP: Record<string, TenantChangeEntityType> = {
   "compensation-changes": "COMPENSATION_CHANGE",
   "compensation-info": "COMPENSATION_INFO",
   "business-income": "BUSINESS_INCOME",
+  "leave-records": "LEAVE_RECORD",
+  dependents: "DEPENDENT_RECORD",
 };
 
 const PERIOD_SCOPED_ENTITY_TYPES = [
@@ -44,15 +48,17 @@ const PERIOD_SCOPED_ENTITY_TYPES = [
 ] as const;
 type PeriodScopedEntityType = (typeof PERIOD_SCOPED_ENTITY_TYPES)[number];
 
-const NOTIFICATION_ENTITY_TYPES = [
+export const TENANT_NOTIFICATION_ENTITY_TYPES = [
   "NEW_HIRE",
   "TERMINATION",
   "DAILY_WORKER",
   "COMPENSATION_CHANGE",
   "COMPENSATION_INFO",
   "BUSINESS_INCOME",
-] as const;
-type NotificationEntityType = (typeof NOTIFICATION_ENTITY_TYPES)[number];
+  "LEAVE_RECORD",
+  "DEPENDENT_RECORD",
+] as const satisfies readonly TenantChangeEntityType[];
+type NotificationEntityType = (typeof TENANT_NOTIFICATION_ENTITY_TYPES)[number];
 
 const NOTIFICATION_ACTIONS = ["CREATE", "UPDATE"] as const;
 
@@ -660,7 +666,7 @@ export async function getNotificationCounts(input: {
   const unreadByCompany = await getUnreadByCompany(
     input.userId,
     audience,
-    [...NOTIFICATION_ENTITY_TYPES],
+    [...TENANT_NOTIFICATION_ENTITY_TYPES],
     companyIds,
   );
 

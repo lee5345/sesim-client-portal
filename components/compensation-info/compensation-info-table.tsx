@@ -507,7 +507,7 @@ type TableRow =
               상세급여 목록
             </CardTitle>
             <CardDescription>
-              {year}년 {month}월 재직자 상세급여 정보를 관리합니다.
+              {year}년 {month}월로 등록된 상세급여 정보를 확인하고 관리합니다.
             </CardDescription>
           </div>
         )}

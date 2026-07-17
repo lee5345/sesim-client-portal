@@ -8,6 +8,7 @@ import {
   getEarliestUnreadPeriodScopedPeriod,
   getNotificationCounts,
   listUnreadTenantChangeEntityIds,
+  TENANT_NOTIFICATION_ENTITY_TYPES,
   type NotificationCounts,
   type YearMonthPeriod,
 } from "@/modules/notifications/tenant-changes";
@@ -72,6 +73,18 @@ export async function acknowledgeTenantChangesAction(input: {
     entityTypes: input.entityTypes,
     periodYear: input.periodYear,
     periodMonth: input.periodMonth,
+  });
+}
+
+export async function acknowledgeAllCompanyTenantChangesAction(input: {
+  companyId: string;
+}): Promise<void> {
+  const session = await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
+
+  await acknowledgeTenantChanges({
+    userId: session.user.userId,
+    companyId: input.companyId,
+    entityTypes: [...TENANT_NOTIFICATION_ENTITY_TYPES],
   });
 }
 
