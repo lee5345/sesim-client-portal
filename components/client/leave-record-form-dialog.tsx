@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Pencil } from "lucide-react";
+import { Eye, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { SegmentedDigitFields } from "@/components/client/segmented-digit-fields";
@@ -31,6 +31,7 @@ import {
 import type { LeaveType } from "@/lib/generated/prisma/client";
 import {
   createLeaveRecord,
+  revealLeaveRecordChildRrn,
   updateLeaveRecord,
 } from "@/modules/leave-records/actions";
 import {
@@ -161,6 +162,8 @@ export function LeaveRecordFormDialog({
   );
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [removedAttachmentIds, setRemovedAttachmentIds] = useState<string[]>([]);
+  const [childRrnEditing, setChildRrnEditing] = useState(mode === "create");
+  const [revealedChildRrn, setRevealedChildRrn] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -171,6 +174,7 @@ export function LeaveRecordFormDialog({
     leaveType !== "" && requiresExpectedDeliveryDate(leaveType);
   const showChildInfo = leaveType !== "" && requiresChildInfo(leaveType);
   const showHourReduction = leaveType !== "" && requiresHourReduction(leaveType);
+  const childRrnRequired = !isEdit || childRrnEditing;
 
   useEffect(() => {
     if (!open) {
@@ -179,8 +183,10 @@ export function LeaveRecordFormDialog({
     setFormValues(getInitialFormValues(leaveRecord));
     setPendingFiles([]);
     setRemovedAttachmentIds([]);
+    setChildRrnEditing(mode === "create");
+    setRevealedChildRrn(null);
     setFormError(null);
-  }, [open, leaveRecord]);
+  }, [open, leaveRecord, mode]);
 
   function updateFormValue<K extends keyof LeaveRecordFormValues>(
     key: K,
@@ -193,7 +199,19 @@ export function LeaveRecordFormDialog({
     setFormValues(getInitialFormValues(leaveRecord));
     setPendingFiles([]);
     setRemovedAttachmentIds([]);
+    setChildRrnEditing(mode === "create");
+    setRevealedChildRrn(null);
     setFormError(null);
+  }
+
+  function startChildRrnEditing(rrn?: string) {
+    setChildRrnEditing(true);
+    if (rrn) {
+      setFormValues((current) => ({
+        ...current,
+        childRrnSegments: splitIntoSegments(rrn, [...RRN_SEGMENT_LENGTHS]),
+      }));
+    }
   }
 
   return (
@@ -248,11 +266,7 @@ export function LeaveRecordFormDialog({
 
               try {
                 const includeChildRrn =
-                  showChildInfo &&
-                  joinRrnSegments(
-                    formValues.childRrnSegments[0] ?? "",
-                    formValues.childRrnSegments[1] ?? "",
-                  ).length > 0;
+                  showChildInfo && (!isEdit || childRrnEditing);
                 const formData = buildFormData(formValues, {
                   companyId,
                   pendingFiles,
@@ -388,21 +402,72 @@ export function LeaveRecordFormDialog({
                 </div>
 
                 <div className="space-y-2">
-                  <FieldLabel required>대상자녀 주민번호</FieldLabel>
-                  <SegmentedDigitFields
-                    idPrefix={`childRrn-${formId}`}
-                    segmentLengths={[...RRN_SEGMENT_LENGTHS]}
-                    values={formValues.childRrnSegments}
-                    onChange={(childRrnSegments) =>
-                      updateFormValue("childRrnSegments", childRrnSegments)
-                    }
-                    disabled={isPending}
-                  />
-                  {isEdit ? (
-                    <p className="text-xs text-muted-foreground">
-                      주민번호를 변경할 때만 다시 입력해 주세요.
-                    </p>
-                  ) : null}
+                  <FieldLabel required={childRrnRequired}>
+                    대상자녀 주민번호
+                  </FieldLabel>
+                  {isEdit && !childRrnEditing ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-sm text-muted-foreground">
+                        {revealedChildRrn ?? "******-*******"}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={isPending}
+                        onClick={() => {
+                          if (!leaveRecord) {
+                            return;
+                          }
+                          startTransition(async () => {
+                            const rrn = await revealLeaveRecordChildRrn(
+                              leaveRecord.id,
+                              companyId,
+                            );
+                            setRevealedChildRrn(rrn);
+                          });
+                        }}
+                      >
+                        <Eye className="size-4" />
+                        확인
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={isPending}
+                        onClick={() => {
+                          if (revealedChildRrn) {
+                            startChildRrnEditing(revealedChildRrn);
+                            return;
+                          }
+                          if (!leaveRecord) {
+                            return;
+                          }
+                          startTransition(async () => {
+                            const rrn = await revealLeaveRecordChildRrn(
+                              leaveRecord.id,
+                              companyId,
+                            );
+                            setRevealedChildRrn(rrn);
+                            startChildRrnEditing(rrn);
+                          });
+                        }}
+                      >
+                        변경
+                      </Button>
+                    </div>
+                  ) : (
+                    <SegmentedDigitFields
+                      idPrefix={`childRrn-${formId}`}
+                      segmentLengths={[...RRN_SEGMENT_LENGTHS]}
+                      values={formValues.childRrnSegments}
+                      onChange={(childRrnSegments) =>
+                        updateFormValue("childRrnSegments", childRrnSegments)
+                      }
+                      disabled={isPending}
+                    />
+                  )}
                 </div>
               </div>
             ) : null}

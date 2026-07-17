@@ -1,4 +1,4 @@
-import { del, head, put } from "@vercel/blob";
+import { del, issueSignedToken, presignUrl, put } from "@vercel/blob";
 
 import {
   getAttachmentValidationError,
@@ -57,11 +57,26 @@ export async function deleteAttachmentBlob(pathname: string): Promise<void> {
   await del(pathname, { token: getBlobToken() });
 }
 
+const ATTACHMENT_DOWNLOAD_URL_TTL_MS = 5 * 60 * 1000;
+
 export async function createPrivateAttachmentDownloadUrl(
   pathname: string,
 ): Promise<string> {
-  const blob = await head(pathname, { token: getBlobToken() });
-  return blob.url;
+  const token = await issueSignedToken({
+    pathname,
+    operations: ["get"],
+    validUntil: Date.now() + 60 * 60 * 1000,
+    token: getBlobToken(),
+  });
+
+  const { presignedUrl } = await presignUrl(token, {
+    operation: "get",
+    pathname,
+    access: "private",
+    validUntil: Date.now() + ATTACHMENT_DOWNLOAD_URL_TTL_MS,
+  });
+
+  return presignedUrl;
 }
 
 export function parseAttachmentFilesFromFormData(formData: FormData): File[] {
