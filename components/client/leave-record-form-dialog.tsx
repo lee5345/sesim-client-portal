@@ -384,7 +384,7 @@ export function LeaveRecordFormDialog({
             ) : null}
 
             {showChildInfo ? (
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <FieldLabel htmlFor={`childName-${formId}`} required>
                     대상자녀 이름
