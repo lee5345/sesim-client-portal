@@ -2,7 +2,7 @@ import { del, head, put } from "@vercel/blob";
 
 import {
   getAttachmentValidationError,
-  isAllowedAttachmentFile,
+  validateAttachmentFilesForUpload,
 } from "@/lib/storage/attachment-constraints";
 
 function getBlobToken(): string {
@@ -70,12 +70,15 @@ export function parseAttachmentFilesFromFormData(formData: FormData): File[] {
     .filter((entry): entry is File => entry instanceof File && entry.size > 0);
 
   for (const file of files) {
-    if (!isAllowedAttachmentFile(file)) {
-      throw new Error(
-        getAttachmentValidationError(file) ??
-          "허용되지 않는 파일 형식입니다.",
-      );
+    const validationError = getAttachmentValidationError(file);
+    if (validationError) {
+      throw new Error(validationError);
     }
+  }
+
+  const batchError = validateAttachmentFilesForUpload(files);
+  if (batchError) {
+    throw new Error(batchError);
   }
 
   return files;

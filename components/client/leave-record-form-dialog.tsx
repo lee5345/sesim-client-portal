@@ -24,6 +24,10 @@ import {
   RRN_SEGMENT_LENGTHS,
   splitIntoSegments,
 } from "@/lib/form/segmented-digits";
+import {
+  getAttachmentUploadErrorMessage,
+  validateAttachmentFilesForUpload,
+} from "@/lib/storage/attachment-constraints";
 import type { LeaveType } from "@/lib/generated/prisma/client";
 import {
   createLeaveRecord,
@@ -236,31 +240,41 @@ export function LeaveRecordFormDialog({
             setFormError(null);
 
             startTransition(async () => {
-              const includeChildRrn =
-                showChildInfo &&
-                joinRrnSegments(
-                  formValues.childRrnSegments[0] ?? "",
-                  formValues.childRrnSegments[1] ?? "",
-                ).length > 0;
-              const formData = buildFormData(formValues, {
-                companyId,
-                pendingFiles,
-                removedAttachmentIds,
-                includeChildRrn,
-              });
-              const result =
-                isEdit && leaveRecord
-                  ? await updateLeaveRecord(leaveRecord.id, formData)
-                  : await createLeaveRecord(formData);
-
-              if (!result.success) {
-                setFormError(result.error);
+              const attachmentError = validateAttachmentFilesForUpload(pendingFiles);
+              if (attachmentError) {
+                setFormError(attachmentError);
                 return;
               }
 
-              setOpen(false);
-              resetState();
-              router.refresh();
+              try {
+                const includeChildRrn =
+                  showChildInfo &&
+                  joinRrnSegments(
+                    formValues.childRrnSegments[0] ?? "",
+                    formValues.childRrnSegments[1] ?? "",
+                  ).length > 0;
+                const formData = buildFormData(formValues, {
+                  companyId,
+                  pendingFiles,
+                  removedAttachmentIds,
+                  includeChildRrn,
+                });
+                const result =
+                  isEdit && leaveRecord
+                    ? await updateLeaveRecord(leaveRecord.id, formData)
+                    : await createLeaveRecord(formData);
+
+                if (!result.success) {
+                  setFormError(result.error);
+                  return;
+                }
+
+                setOpen(false);
+                resetState();
+                router.refresh();
+              } catch (error) {
+                setFormError(getAttachmentUploadErrorMessage(error));
+              }
             });
           }}
         >
@@ -399,14 +413,17 @@ export function LeaveRecordFormDialog({
                   <FieldLabel htmlFor={`hoursBeforeReduction-${formId}`} required>
                     단축 전 근로시간
                   </FieldLabel>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">주</span>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="shrink-0 whitespace-nowrap text-sm text-muted-foreground">
+                      주
+                    </span>
                     <Input
                       id={`hoursBeforeReduction-${formId}`}
                       type="number"
                       inputMode="numeric"
                       min={1}
                       step={1}
+                      className="min-w-0 flex-1"
                       value={formValues.hoursBeforeReduction}
                       onChange={(event) =>
                         updateFormValue("hoursBeforeReduction", event.target.value)
@@ -414,7 +431,9 @@ export function LeaveRecordFormDialog({
                       required
                       disabled={isPending}
                     />
-                    <span className="text-sm text-muted-foreground">시간</span>
+                    <span className="shrink-0 whitespace-nowrap text-sm text-muted-foreground">
+                      시간
+                    </span>
                   </div>
                 </div>
 
@@ -422,14 +441,17 @@ export function LeaveRecordFormDialog({
                   <FieldLabel htmlFor={`hoursAfterReduction-${formId}`} required>
                     단축 후 근로시간
                   </FieldLabel>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">주</span>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="shrink-0 whitespace-nowrap text-sm text-muted-foreground">
+                      주
+                    </span>
                     <Input
                       id={`hoursAfterReduction-${formId}`}
                       type="number"
                       inputMode="numeric"
                       min={1}
                       step={1}
+                      className="min-w-0 flex-1"
                       value={formValues.hoursAfterReduction}
                       onChange={(event) =>
                         updateFormValue("hoursAfterReduction", event.target.value)
@@ -437,7 +459,9 @@ export function LeaveRecordFormDialog({
                       required
                       disabled={isPending}
                     />
-                    <span className="text-sm text-muted-foreground">시간</span>
+                    <span className="shrink-0 whitespace-nowrap text-sm text-muted-foreground">
+                      시간
+                    </span>
                   </div>
                 </div>
               </div>

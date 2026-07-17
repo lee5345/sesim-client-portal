@@ -7,9 +7,12 @@ import { Button } from "@/components/ui/button";
 import { FieldLabel } from "@/components/ui/field-label";
 import {
   ALLOWED_ATTACHMENT_EXTENSIONS,
+  formatAttachmentFileSize,
+  MAX_ATTACHMENT_FILE_SIZE_BYTES,
   MAX_ATTACHMENTS_PER_RECORD,
+  getAttachmentValidationError,
+  validateAttachmentFilesForUpload,
 } from "@/lib/storage/attachment-constraints";
-import { getAttachmentValidationError } from "@/lib/storage/attachment-constraints";
 import type { AttachmentSummary } from "@/modules/attachments/actions";
 
 type PendingFile = {
@@ -79,6 +82,15 @@ export function FileAttachmentField({
         return;
       }
 
+      const batchError = validateAttachmentFilesForUpload([
+        ...nextPending.map((item) => item.file),
+        file,
+      ]);
+      if (batchError) {
+        setError(batchError);
+        return;
+      }
+
       nextPending.push({
         key: `${file.name}-${file.size}-${file.lastModified}-${nextPending.length}`,
         file,
@@ -115,8 +127,9 @@ export function FileAttachmentField({
             파일 선택
           </Button>
           <span className="text-xs text-muted-foreground">
-            {formatAllowedExtensions()} · 최대 {MAX_ATTACHMENTS_PER_RECORD}개 ({totalCount}/
-            {MAX_ATTACHMENTS_PER_RECORD})
+            {formatAllowedExtensions()} · 파일당 최대{" "}
+            {formatAttachmentFileSize(MAX_ATTACHMENT_FILE_SIZE_BYTES)} · 최대{" "}
+            {MAX_ATTACHMENTS_PER_RECORD}개 ({totalCount}/{MAX_ATTACHMENTS_PER_RECORD})
           </span>
         </div>
 

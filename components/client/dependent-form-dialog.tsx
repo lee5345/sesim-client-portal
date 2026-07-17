@@ -19,6 +19,10 @@ import { FieldLabel } from "@/components/ui/field-label";
 import { FileAttachmentField } from "@/components/ui/file-attachment-field";
 import { Input } from "@/components/ui/input";
 import {
+  getAttachmentUploadErrorMessage,
+  validateAttachmentFilesForUpload,
+} from "@/lib/storage/attachment-constraints";
+import {
   createDependentRecord,
   updateDependentRecord,
 } from "@/modules/dependents/actions";
@@ -173,24 +177,34 @@ export function DependentFormDialog({
             setFormError(null);
 
             startTransition(async () => {
-              const formData = buildFormData(formValues, {
-                companyId,
-                pendingFiles,
-                removedAttachmentIds,
-              });
-              const result =
-                isEdit && dependentRecord
-                  ? await updateDependentRecord(dependentRecord.id, formData)
-                  : await createDependentRecord(formData);
-
-              if (!result.success) {
-                setFormError(result.error);
+              const attachmentError = validateAttachmentFilesForUpload(pendingFiles);
+              if (attachmentError) {
+                setFormError(attachmentError);
                 return;
               }
 
-              setOpen(false);
-              resetState();
-              router.refresh();
+              try {
+                const formData = buildFormData(formValues, {
+                  companyId,
+                  pendingFiles,
+                  removedAttachmentIds,
+                });
+                const result =
+                  isEdit && dependentRecord
+                    ? await updateDependentRecord(dependentRecord.id, formData)
+                    : await createDependentRecord(formData);
+
+                if (!result.success) {
+                  setFormError(result.error);
+                  return;
+                }
+
+                setOpen(false);
+                resetState();
+                router.refresh();
+              } catch (error) {
+                setFormError(getAttachmentUploadErrorMessage(error));
+              }
             });
           }}
         >
