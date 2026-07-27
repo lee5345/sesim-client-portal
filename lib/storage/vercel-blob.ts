@@ -1,6 +1,9 @@
+import { randomUUID } from "node:crypto";
+
 import { del, issueSignedToken, presignUrl, put } from "@vercel/blob";
 
 import {
+  getAttachmentExtension,
   getAttachmentValidationError,
   validateAttachmentFilesForUpload,
 } from "@/lib/storage/attachment-constraints";
@@ -13,18 +16,14 @@ function getBlobToken(): string {
   return token;
 }
 
-function sanitizeFilename(filename: string): string {
-  return filename.replace(/[^\w.\-()가-힣]/g, "_").slice(0, 200);
-}
-
 export function buildAttachmentBlobPath(input: {
   companyId: string;
   entityType: string;
   entityId: string;
   filename: string;
 }): string {
-  const safeName = sanitizeFilename(input.filename);
-  return `attachments/${input.companyId}/${input.entityType}/${input.entityId}/${Date.now()}-${safeName}`;
+  const extension = getAttachmentExtension(input.filename);
+  return `attachments/${input.companyId}/${input.entityType}/${input.entityId}/${Date.now()}-${randomUUID()}${extension}`;
 }
 
 export async function putPrivateAttachmentBlob(
@@ -62,8 +61,9 @@ const ATTACHMENT_DOWNLOAD_URL_TTL_MS = 5 * 60 * 1000;
 export async function createPrivateAttachmentDownloadUrl(
   pathname: string,
 ): Promise<string> {
+  // Scope to the whole store: issueSignedToken corrupts non-ASCII pathnames in the
+  // delegation payload, which makes presignUrl reject the real blob path.
   const token = await issueSignedToken({
-    pathname,
     operations: ["get"],
     validUntil: Date.now() + 60 * 60 * 1000,
     token: getBlobToken(),

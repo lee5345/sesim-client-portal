@@ -388,7 +388,9 @@ export function DailyWorkerFormDialog({
         <DialogHeader>
           <DialogTitle>{isEdit ? "일용직 정보 수정" : "일용직 등록"}</DialogTitle>
           <DialogDescription>
-            {year}년 {month}월 일용직 정보를 {isEdit ? "수정" : "등록"}합니다.
+            {isEdit
+              ? `${year}년 ${month}월 일용직 정보를 수정합니다. 주민등록번호는 별도 확인 후 변경할 수 있습니다.`
+              : `${year}년 ${month}월 일용직 정보를 등록합니다.`}
           </DialogDescription>
         </DialogHeader>
         <form
