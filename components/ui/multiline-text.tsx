@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 export const EMPTY_MULTILINE_TEXT = "—";
 
 export const notesBodyCellClassName =
-  "border-r border-border/30 px-4 py-3 align-top whitespace-normal break-words last:border-r-0";
+  "border-r border-border/30 px-4 py-3 align-middle whitespace-normal break-words last:border-r-0";
 
 type MultilineTextProps = {
   value: string | null | undefined;

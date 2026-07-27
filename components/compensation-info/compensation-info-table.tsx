@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { CompactDateTime } from "@/components/ui/compact-datetime";
 import { MultilineText, notesBodyCellClassName } from "@/components/ui/multiline-text";
+import { NotesTextarea } from "@/components/ui/notes-textarea";
 import {
   Dialog,
   DialogContent,
@@ -876,11 +877,9 @@ type TableRow =
                         className={`${notesBodyCellClassName}${hasAnyNotes ? " min-w-52" : ""}`}
                       >
                         {isEditing ? (
-                          <textarea
+                          <NotesTextarea
                             value={formValues.notes}
-                            onChange={(event) =>
-                              updateFormValue("notes", event.target.value)
-                            }
+                            onChange={(value) => updateFormValue("notes", value)}
                             disabled={isPending}
                             maxLength={500}
                             rows={1}

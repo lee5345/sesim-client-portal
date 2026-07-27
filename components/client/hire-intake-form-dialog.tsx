@@ -36,6 +36,7 @@ import {
 import { FieldLabel } from "@/components/ui/field-label";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NotesTextarea } from "@/components/ui/notes-textarea";
 import {
   joinRrnSegments,
   RRN_SEGMENT_LENGTHS,
@@ -869,10 +870,10 @@ export function HireIntakeFormDialog({
 
             <div className="space-y-2 sm:col-span-2">
               <FieldLabel htmlFor={`notes-${formId}`}>비고</FieldLabel>
-              <textarea
+              <NotesTextarea
                 id={`notes-${formId}`}
                 value={formValues.notes}
-                onChange={(event) => updateFormValue("notes", event.target.value)}
+                onChange={(value) => updateFormValue("notes", value)}
                 disabled={isPending}
                 maxLength={500}
                 rows={3}

@@ -18,6 +18,7 @@ import {
 import { FieldLabel } from "@/components/ui/field-label";
 import { FileAttachmentField } from "@/components/ui/file-attachment-field";
 import { Input } from "@/components/ui/input";
+import { NotesTextarea } from "@/components/ui/notes-textarea";
 import {
   getAttachmentUploadErrorMessage,
   validateAttachmentFilesForUpload,
@@ -291,10 +292,10 @@ export function DependentFormDialog({
 
             <div className="space-y-2">
               <FieldLabel htmlFor={`notes-${formId}`}>비고</FieldLabel>
-              <textarea
+              <NotesTextarea
                 id={`notes-${formId}`}
                 value={formValues.notes}
-                onChange={(event) => updateFormValue("notes", event.target.value)}
+                onChange={(value) => updateFormValue("notes", value)}
                 disabled={isPending}
                 maxLength={500}
                 rows={3}
