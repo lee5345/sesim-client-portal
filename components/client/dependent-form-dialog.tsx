@@ -28,11 +28,15 @@ import {
 } from "@/modules/dependents/actions";
 import type { AttachmentSummary } from "@/modules/attachments/actions";
 
+const textareaClassName =
+  "w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+
 type DependentFormValues = {
   employeeName: string;
   dependentName: string;
   relationship: string;
   registrationRequestedDate: string;
+  notes: string;
 };
 
 type DependentFormDialogProps = {
@@ -45,6 +49,7 @@ type DependentFormDialogProps = {
     dependentName: string;
     relationship: string;
     registrationRequestedDate: string;
+    notes: string | null;
     attachments: AttachmentSummary[];
   };
 };
@@ -57,6 +62,7 @@ function getInitialFormValues(
     dependentName: dependentRecord?.dependentName ?? "",
     relationship: dependentRecord?.relationship ?? "",
     registrationRequestedDate: dependentRecord?.registrationRequestedDate ?? "",
+    notes: dependentRecord?.notes ?? "",
   };
 }
 
@@ -78,6 +84,7 @@ function buildFormData(
   formData.set("dependentName", values.dependentName);
   formData.set("relationship", values.relationship);
   formData.set("registrationRequestedDate", values.registrationRequestedDate);
+  formData.set("notes", values.notes);
 
   if (options.removedAttachmentIds.length > 0) {
     formData.set("attachmentIdsToRemove", options.removedAttachmentIds.join(","));
@@ -280,6 +287,19 @@ export function DependentFormDialog({
                   disabled={isPending}
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <FieldLabel htmlFor={`notes-${formId}`}>비고</FieldLabel>
+              <textarea
+                id={`notes-${formId}`}
+                value={formValues.notes}
+                onChange={(event) => updateFormValue("notes", event.target.value)}
+                disabled={isPending}
+                maxLength={500}
+                rows={3}
+                className={textareaClassName}
+              />
             </div>
 
             <FileAttachmentField

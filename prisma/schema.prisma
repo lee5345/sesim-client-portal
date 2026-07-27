@@ -32,8 +32,10 @@ model Company {
   npsFax                    String?
   npsPhone                  String?
   phone                     String?
-  representativeName        String?
-  retirementPensionContact  String?
+  representativeName          String?
+  representativeRrnEncrypted  String?
+  representativeRrnIv         String?
+  retirementPensionContact    String?
   retirementPensionPhone    String?
   taxOfficeContact          String?
   taxOfficeName             String?
@@ -341,6 +343,7 @@ model LeaveRecord {
   childRrnIv           String?
   hoursBeforeReduction Int?
   hoursAfterReduction  Int?
+  notes                String?
   deletedAt            DateTime?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
@@ -359,6 +362,7 @@ model DependentRecord {
   dependentName             String
   relationship              String
   registrationRequestedDate DateTime
+  notes                     String?
   deletedAt                 DateTime?
   createdAt                 DateTime  @default(now())
   updatedAt                 DateTime  @updatedAt

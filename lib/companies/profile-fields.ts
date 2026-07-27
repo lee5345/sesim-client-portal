@@ -6,7 +6,8 @@ export type CompanyProfileFieldType =
   | "workplaceManagementNumber"
   | "textarea"
   | "boolean"
-  | "password";
+  | "password"
+  | "rrn";
 
 export type CompanyProfileFieldKey =
   | "name"
@@ -16,6 +17,7 @@ export type CompanyProfileFieldKey =
   | "businessNumber"
   | "workplaceManagementNumber"
   | "representativeName"
+  | "representativeRrn"
   | "companyContactName"
   | "companyContactTitle"
   | "phone"
@@ -70,12 +72,17 @@ export const COMPANY_PROFILE_SECTIONS: CompanyProfileSection[] = [
         label: "사업장관리번호",
         type: "workplaceManagementNumber",
       },
-      { key: "representativeName", label: "대표자", type: "text", maxLength: 50 },
       {
         key: "businessAddress",
         label: "사업장 소재지",
         type: "textarea",
         maxLength: 500,
+      },
+      { key: "representativeName", label: "대표자", type: "text", maxLength: 50 },
+      {
+        key: "representativeRrn",
+        label: "대표자 주민등록번호",
+        type: "rrn",
       },
     ],
   },
@@ -181,6 +188,7 @@ export type CompanyProfile = {
   businessNumber: string | null;
   workplaceManagementNumber: string | null;
   representativeName: string | null;
+  maskedRepresentativeRrn: string | null;
   companyContactName: string | null;
   companyContactTitle: string | null;
   phone: string | null;

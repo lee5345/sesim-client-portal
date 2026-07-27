@@ -7,6 +7,7 @@ import {
 } from "@/components/client/masked-rrn-cell";
 import { RetirementPayTypeIndicator } from "@/components/terminations/retirement-pay-type-indicator";
 import { CompactDateTime } from "@/components/ui/compact-datetime";
+import { MultilineText, notesBodyCellClassName } from "@/components/ui/multiline-text";
 import { formatDate } from "@/lib/format/date";
 import type { TerminationTableRow } from "@/lib/terminations/types";
 import { revealTerminationRRNs } from "@/modules/terminations/actions";
@@ -96,8 +97,8 @@ export function TerminationsDataTable({
               <td className={bodyCellClassName}>
                 <RetirementPayTypeIndicator type={termination.retirementPayType} />
               </td>
-              <td className={`${bodyCellClassName} text-muted-foreground`}>
-                {displayText(termination.notes)}
+              <td className={`${notesBodyCellClassName} text-muted-foreground`}>
+                <MultilineText value={termination.notes} />
               </td>
               <td className={bodyCellClassName}>{termination.createdByName}</td>
               <td className={bodyCellClassName}>

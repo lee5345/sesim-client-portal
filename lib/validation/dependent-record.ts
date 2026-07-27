@@ -13,11 +13,19 @@ function requiredDateSchema(label: string) {
     .transform(parseDateString);
 }
 
+const notesSchema = z
+  .string()
+  .trim()
+  .max(500, "비고는 500자 이하여야 합니다.")
+  .optional()
+  .transform((value) => (value ? value : undefined));
+
 const dependentRecordBaseSchema = z.object({
   employeeName: z.string().trim().min(1, "직원 이름을 입력해 주세요.").max(100),
   dependentName: z.string().trim().min(1, "피부양자 이름을 입력해 주세요.").max(100),
   relationship: z.string().trim().min(1, "관계를 입력해 주세요.").max(100),
   registrationRequestedDate: requiredDateSchema("등록 희망일"),
+  notes: notesSchema,
 });
 
 export const createDependentRecordSchema = dependentRecordBaseSchema;
@@ -35,12 +43,18 @@ function firstZodErrorMessage(error: z.ZodError): string {
   return translateZodErrorMessage(message);
 }
 
+function emptyToUndefined(value: FormDataEntryValue | null): string | undefined {
+  const text = String(value ?? "").trim();
+  return text ? text : undefined;
+}
+
 function parseDependentRecordFormData(formData: FormData) {
   return {
     employeeName: formData.get("employeeName"),
     dependentName: formData.get("dependentName"),
     relationship: formData.get("relationship"),
     registrationRequestedDate: formData.get("registrationRequestedDate"),
+    notes: emptyToUndefined(formData.get("notes")),
   };
 }
 
@@ -78,5 +92,6 @@ export function toDependentRecordAuditPayload(data: CreateDependentRecordInput) 
     dependentName: data.dependentName,
     relationship: data.relationship,
     registrationRequestedDate: data.registrationRequestedDate.toISOString(),
+    notes: data.notes ?? null,
   };
 }

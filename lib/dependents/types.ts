@@ -4,6 +4,7 @@ export type DependentRecordTableRow = {
   dependentName: string;
   relationship: string;
   registrationRequestedDate: string;
+  notes: string | null;
   attachments: { id: string; filename: string }[];
   createdAt: string;
   createdByName: string;

@@ -24,6 +24,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { CompactDateTime } from "@/components/ui/compact-datetime";
+import { MultilineText, notesBodyCellClassName } from "@/components/ui/multiline-text";
 import { formatSalaryAmount } from "@/lib/format/currency";
 import {
   EMPTY_COMPENSATION_CHANGE_FILTERS,
@@ -319,8 +320,8 @@ export function CompensationChangesTable({
                           </div>
                         </div>
                       </td>
-                      <td className={`${bodyCellClassName} text-muted-foreground`}>
-                        {displayText(row.notes)}
+                      <td className={`${notesBodyCellClassName} text-muted-foreground`}>
+                        <MultilineText value={row.notes} />
                       </td>
                       <td className={bodyCellClassName}>{row.createdByName}</td>
                       <td className={bodyCellClassName}>

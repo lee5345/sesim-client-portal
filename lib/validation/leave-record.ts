@@ -69,6 +69,13 @@ const leaveTypeSchema = z.enum(
   { error: "종류를 선택해 주세요." },
 );
 
+const notesSchema = z
+  .string()
+  .trim()
+  .max(500, "비고는 500자 이하여야 합니다.")
+  .optional()
+  .transform((value) => (value ? value : undefined));
+
 const leaveRecordBaseSchema = z.object({
   name: z.string().trim().min(1, "이름을 입력해 주세요.").max(100),
   leaveType: leaveTypeSchema,
@@ -88,6 +95,7 @@ const leaveRecordBaseSchema = z.object({
     .transform((value) => (value ? value : undefined)),
   hoursBeforeReduction: optionalWholeHoursSchema,
   hoursAfterReduction: optionalWholeHoursSchema,
+  notes: notesSchema,
 });
 
 function refineLeaveRecord(options: { requireChildRrn: boolean }) {
@@ -195,6 +203,7 @@ function parseLeaveRecordFormData(formData: FormData) {
     childRrn: emptyToUndefined(formData.get("childRrn")),
     hoursBeforeReduction: formData.get("hoursBeforeReduction"),
     hoursAfterReduction: formData.get("hoursAfterReduction"),
+    notes: emptyToUndefined(formData.get("notes")),
   };
 }
 
@@ -242,5 +251,6 @@ export function toLeaveRecordAuditPayload(
     childName: data.childName ?? null,
     hoursBeforeReduction: data.hoursBeforeReduction ?? null,
     hoursAfterReduction: data.hoursAfterReduction ?? null,
+    notes: data.notes ?? null,
   };
 }

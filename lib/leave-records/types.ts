@@ -11,6 +11,7 @@ export type LeaveRecordTableRow = {
   maskedChildRrn: string | null;
   hoursBeforeReduction: number | null;
   hoursAfterReduction: number | null;
+  notes: string | null;
   attachments: { id: string; filename: string }[];
   createdAt: string;
   createdByName: string;

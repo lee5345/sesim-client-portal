@@ -7,6 +7,7 @@ import {
 } from "@/components/client/masked-rrn-cell";
 import { Badge } from "@/components/ui/badge";
 import { CompactDateTime } from "@/components/ui/compact-datetime";
+import { MultilineText, notesBodyCellClassName } from "@/components/ui/multiline-text";
 import {
   formatDailyHourDayLabel,
   formatDailyHours,
@@ -134,8 +135,8 @@ export function DailyWorkersDataTable({
                   </span>
                 </div>
               </td>
-              <td className={`${bodyCellClassName} text-muted-foreground`}>
-                {displayText(dailyWorker.notes)}
+              <td className={`${notesBodyCellClassName} text-muted-foreground`}>
+                <MultilineText value={dailyWorker.notes} />
               </td>
               <td className={bodyCellClassName}>{dailyWorker.createdByName}</td>
               <td className={bodyCellClassName}>

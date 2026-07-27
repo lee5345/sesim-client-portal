@@ -46,6 +46,9 @@ import type { AttachmentSummary } from "@/modules/attachments/actions";
 const selectClassName =
   "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
 
+const textareaClassName =
+  "w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+
 type LeaveRecordFormValues = {
   name: string;
   leaveType: LeaveType | "";
@@ -56,6 +59,7 @@ type LeaveRecordFormValues = {
   childRrnSegments: string[];
   hoursBeforeReduction: string;
   hoursAfterReduction: string;
+  notes: string;
 };
 
 type LeaveRecordFormDialogProps = {
@@ -72,6 +76,7 @@ type LeaveRecordFormDialogProps = {
     childName: string | null;
     hoursBeforeReduction: number | null;
     hoursAfterReduction: number | null;
+    notes: string | null;
     attachments: AttachmentSummary[];
   };
 };
@@ -101,6 +106,7 @@ function getInitialFormValues(
       leaveRecord?.hoursAfterReduction !== undefined
         ? String(leaveRecord.hoursAfterReduction)
         : "",
+    notes: leaveRecord?.notes ?? "",
   };
 }
 
@@ -127,6 +133,7 @@ function buildFormData(
   formData.set("childName", values.childName);
   formData.set("hoursBeforeReduction", values.hoursBeforeReduction);
   formData.set("hoursAfterReduction", values.hoursAfterReduction);
+  formData.set("notes", values.notes);
 
   if (options.includeChildRrn) {
     formData.set(
@@ -531,6 +538,19 @@ export function LeaveRecordFormDialog({
                 </div>
               </div>
             ) : null}
+
+            <div className="space-y-2">
+              <FieldLabel htmlFor={`notes-${formId}`}>비고</FieldLabel>
+              <textarea
+                id={`notes-${formId}`}
+                value={formValues.notes}
+                onChange={(event) => updateFormValue("notes", event.target.value)}
+                disabled={isPending}
+                maxLength={500}
+                rows={3}
+                className={textareaClassName}
+              />
+            </div>
 
             <FileAttachmentField
               existingAttachments={leaveRecord?.attachments ?? []}

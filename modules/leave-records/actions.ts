@@ -69,6 +69,7 @@ function toLeaveRecordData(
     hoursAfterReduction: requiresHourReduction(input.leaveType)
       ? (input.hoursAfterReduction ?? null)
       : null,
+    notes: input.notes ?? null,
   };
 }
 
@@ -104,6 +105,7 @@ export async function listLeaveRecords(companyId: string) {
       childRrnIv: true,
       hoursBeforeReduction: true,
       hoursAfterReduction: true,
+      notes: true,
       createdAt: true,
       createdBy: { select: { name: true } },
     },

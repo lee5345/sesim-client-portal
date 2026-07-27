@@ -10,8 +10,10 @@ import {
   type CompanyProfile,
   type CompanyProfileFieldKey,
 } from "@/lib/companies/profile-fields";
+import { decryptRRN, encryptRRN, maskRRN } from "@/lib/encryption/rrn";
 import { optionalBusinessNumberSchema } from "@/lib/validation/business-number";
 import { stripPhoneDigits } from "@/lib/format/phone";
+import { normalizeRRN } from "@/lib/validation/hire-intake";
 import { optionalWorkplaceManagementNumberSchema } from "@/lib/validation/workplace-management-number";
 import { getFirstZodErrorMessage } from "@/lib/validation/zod-korean";
 import { prisma } from "@/lib/db/db";
@@ -31,6 +33,8 @@ const companyProfileSelect = {
   businessNumber: true,
   workplaceManagementNumber: true,
   representativeName: true,
+  representativeRrnEncrypted: true,
+  representativeRrnIv: true,
   companyContactName: true,
   companyContactTitle: true,
   phone: true,
@@ -57,6 +61,66 @@ const companyProfileSelect = {
 const fieldKeySchema = z.enum(
   COMPANY_PROFILE_FIELD_KEYS as [CompanyProfileFieldKey, ...CompanyProfileFieldKey[]],
 );
+
+const RRN_REGEX = /^\d{6}-?\d{7}$/;
+
+function toCompanyProfile(
+  company: {
+    id: string;
+    name: string;
+    firmContactName: string | null;
+    managesPayroll: boolean | null;
+    managesFourMajorInsurance: boolean | null;
+    businessNumber: string | null;
+    workplaceManagementNumber: string | null;
+    representativeName: string | null;
+    representativeRrnEncrypted: string | null;
+    representativeRrnIv: string | null;
+    companyContactName: string | null;
+    companyContactTitle: string | null;
+    phone: string | null;
+    mobile: string | null;
+    fax: string | null;
+    email: string | null;
+    businessAddress: string | null;
+    taxOfficeName: string | null;
+    taxOfficeContact: string | null;
+    certificatePassword: string | null;
+    workersCompPhone: string | null;
+    workersCompFax: string | null;
+    nhisPhone: string | null;
+    nhisFax: string | null;
+    npsPhone: string | null;
+    npsFax: string | null;
+    employmentCenterPhone: string | null;
+    employmentCenterFax: string | null;
+    retirementPensionContact: string | null;
+    retirementPensionPhone: string | null;
+    notes: string | null;
+  },
+): CompanyProfile {
+  const {
+    representativeRrnEncrypted,
+    representativeRrnIv,
+    ...rest
+  } = company;
+
+  let maskedRepresentativeRrn: string | null = null;
+  if (representativeRrnEncrypted && representativeRrnIv) {
+    try {
+      maskedRepresentativeRrn = maskRRN(
+        decryptRRN(representativeRrnEncrypted, representativeRrnIv),
+      );
+    } catch {
+      maskedRepresentativeRrn = "******-*******";
+    }
+  }
+
+  return {
+    ...rest,
+    maskedRepresentativeRrn,
+  };
+}
 
 function parseFieldValue(key: CompanyProfileFieldKey, rawValue: FormDataEntryValue | null) {
   const field = COMPANY_PROFILE_FIELD_MAP.get(key);
@@ -94,6 +158,13 @@ function parseFieldValue(key: CompanyProfileFieldKey, rawValue: FormDataEntryVal
     return digits;
   }
 
+  if (field.type === "rrn") {
+    z.string()
+      .regex(RRN_REGEX, "주민등록번호 형식이 올바르지 않습니다.")
+      .parse(value);
+    return normalizeRRN(value);
+  }
+
   if (field.type === "email") {
     z.string().email("올바른 이메일 형식이 아닙니다.").parse(value);
   }
@@ -110,10 +181,16 @@ function parseFieldValue(key: CompanyProfileFieldKey, rawValue: FormDataEntryVal
 export async function getCompanyProfile(
   companyId: string,
 ): Promise<CompanyProfile | null> {
-  return prisma.company.findFirst({
+  const company = await prisma.company.findFirst({
     where: { id: companyId, deletedAt: null },
     select: companyProfileSelect,
   });
+
+  if (!company) {
+    return null;
+  }
+
+  return toCompanyProfile(company);
 }
 
 export async function updateCompanyProfileFieldAction(
@@ -152,10 +229,31 @@ export async function updateCompanyProfileFieldAction(
     redirect("/firm/companies");
   }
 
-  await prisma.company.update({
-    where: { id: companyId },
-    data: { [field]: parsedValue },
-  });
+  if (field === "representativeRrn") {
+    if (parsedValue === null) {
+      await prisma.company.update({
+        where: { id: companyId },
+        data: {
+          representativeRrnEncrypted: null,
+          representativeRrnIv: null,
+        },
+      });
+    } else {
+      const { encrypted, iv } = encryptRRN(parsedValue as string);
+      await prisma.company.update({
+        where: { id: companyId },
+        data: {
+          representativeRrnEncrypted: encrypted,
+          representativeRrnIv: iv,
+        },
+      });
+    }
+  } else {
+    await prisma.company.update({
+      where: { id: companyId },
+      data: { [field]: parsedValue },
+    });
+  }
 
   await bumpSyncCursors(companyId);
 
@@ -167,4 +265,27 @@ export async function updateCompanyProfileFieldAction(
   revalidatePath("/client", "layout");
   revalidatePath("/firm", "layout");
   return { success: true };
+}
+
+export async function revealCompanyRepresentativeRrn(companyId: string) {
+  await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
+
+  const company = await prisma.company.findFirst({
+    where: { id: companyId, deletedAt: null },
+    select: {
+      representativeRrnEncrypted: true,
+      representativeRrnIv: true,
+    },
+  });
+
+  if (!company?.representativeRrnEncrypted || !company.representativeRrnIv) {
+    throw new Error("Representative RRN not found");
+  }
+
+  return {
+    rrn: decryptRRN(
+      company.representativeRrnEncrypted,
+      company.representativeRrnIv,
+    ),
+  };
 }

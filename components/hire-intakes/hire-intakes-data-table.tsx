@@ -6,6 +6,7 @@ import {
 } from "@/modules/hire-intakes/labels";
 import { formatSalaryAmount } from "@/lib/format/currency";
 import { CompactDateTime } from "@/components/ui/compact-datetime";
+import { MultilineText, notesBodyCellClassName } from "@/components/ui/multiline-text";
 import { formatDate } from "@/lib/format/date";
 import { formatPhone } from "@/lib/format/phone";
 import type { NonTaxableAllowance } from "@/lib/validation/hire-intake";
@@ -190,8 +191,8 @@ export function HireIntakesDataTable({
               <td className={`${bodyCellClassName} text-muted-foreground`}>
                 {hireIntake.phone ? formatPhone(hireIntake.phone) : EMPTY_CELL}
               </td>
-              <td className={`${bodyCellClassName} text-muted-foreground`}>
-                {displayText(hireIntake.notes)}
+              <td className={`${notesBodyCellClassName} text-muted-foreground`}>
+                <MultilineText value={hireIntake.notes} />
               </td>
               <td className={bodyCellClassName}>{hireIntake.createdByName}</td>
               <td className={bodyCellClassName}>

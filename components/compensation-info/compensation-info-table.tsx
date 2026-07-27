@@ -11,6 +11,7 @@ import { NewEntriesControls } from "@/components/layout/new-entries-controls";
 import { Button } from "@/components/ui/button";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { CompactDateTime } from "@/components/ui/compact-datetime";
+import { MultilineText, notesBodyCellClassName } from "@/components/ui/multiline-text";
 import {
   Dialog,
   DialogContent,
@@ -872,7 +873,7 @@ type TableRow =
                         )}
                       </td>
                       <td
-                        className={`${bodyCellClassName}${hasAnyNotes ? " min-w-52" : ""} whitespace-normal break-all align-middle`}
+                        className={`${notesBodyCellClassName}${hasAnyNotes ? " min-w-52" : ""}`}
                       >
                         {isEditing ? (
                           <textarea
@@ -888,9 +889,10 @@ type TableRow =
                         ) : isDraft ? (
                           "—"
                         ) : (
-                          <span className="block whitespace-pre-wrap break-all text-muted-foreground">
-                            {row.notes?.trim() ? row.notes : "—"}
-                          </span>
+                          <MultilineText
+                            value={row.notes}
+                            className="text-muted-foreground"
+                          />
                         )}
                       </td>
                       <td className={bodyCellClassName}>

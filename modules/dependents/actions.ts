@@ -46,6 +46,7 @@ function toDependentRecordData(input: CreateDependentRecordInput) {
     dependentName: input.dependentName,
     relationship: input.relationship,
     registrationRequestedDate: input.registrationRequestedDate,
+    notes: input.notes ?? null,
   };
 }
 
@@ -78,6 +79,7 @@ export async function listDependentRecords(companyId: string) {
       dependentName: true,
       relationship: true,
       registrationRequestedDate: true,
+      notes: true,
       createdAt: true,
       createdBy: { select: { name: true } },
     },

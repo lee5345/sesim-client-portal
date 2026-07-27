@@ -18,6 +18,7 @@ import {
 } from "@/components/leave-records/leave-records-filters";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { CompactDateTime } from "@/components/ui/compact-datetime";
+import { MultilineText, notesBodyCellClassName } from "@/components/ui/multiline-text";
 import { FileAttachmentList } from "@/components/ui/file-attachment-list";
 import {
   Card,
@@ -225,6 +226,9 @@ export function LeaveRecordsTable({
                             첨부파일
                           </th>
                           <th rowSpan={2} className={`${headerCellClassName} align-middle`}>
+                            비고
+                          </th>
+                          <th rowSpan={2} className={`${headerCellClassName} align-middle`}>
                             등록자
                           </th>
                           <th rowSpan={2} className={`${headerCellClassName} align-middle`}>
@@ -290,6 +294,9 @@ export function LeaveRecordsTable({
                                 companyId={companyId}
                                 disabled={reviewActive}
                               />
+                            </td>
+                            <td className={`${notesBodyCellClassName} text-muted-foreground`}>
+                              <MultilineText value={row.notes} />
                             </td>
                             <td className={bodyCellClassName}>{row.createdByName}</td>
                             <td className={bodyCellClassName}>

@@ -13,6 +13,7 @@ import {
 } from "@/components/dependents/dependents-filters";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { CompactDateTime } from "@/components/ui/compact-datetime";
+import { MultilineText, notesBodyCellClassName } from "@/components/ui/multiline-text";
 import { FileAttachmentList } from "@/components/ui/file-attachment-list";
 import {
   Card,
@@ -168,6 +169,7 @@ export function DependentsTable({
                         <th className={headerCellClassName}>관계</th>
                         <th className={headerCellClassName}>등록 희망일</th>
                         <th className={headerCellClassName}>첨부파일</th>
+                        <th className={headerCellClassName}>비고</th>
                         <th className={headerCellClassName}>등록자</th>
                         <th className={headerCellClassName}>등록일</th>
                         <th className={stickyActionHeaderClassName}>관리</th>
@@ -191,6 +193,9 @@ export function DependentsTable({
                               companyId={companyId}
                               disabled={reviewActive}
                             />
+                          </td>
+                          <td className={`${notesBodyCellClassName} text-muted-foreground`}>
+                            <MultilineText value={row.notes} />
                           </td>
                           <td className={bodyCellClassName}>{row.createdByName}</td>
                           <td className={bodyCellClassName}>

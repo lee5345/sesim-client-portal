@@ -18,7 +18,11 @@ type CompanyProfileViewProps = {
 };
 
 function fieldGridClass(field: CompanyProfileFieldDef) {
-  return field.type === "textarea" ? "sm:col-span-2" : undefined;
+  if (field.type !== "textarea" || field.key === "businessAddress") {
+    return undefined;
+  }
+
+  return "sm:col-span-2";
 }
 
 export function CompanyProfileView({
