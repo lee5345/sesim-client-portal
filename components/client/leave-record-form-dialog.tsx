@@ -208,7 +208,7 @@ export function LeaveRecordFormDialog({
     setRemovedAttachmentIds([]);
     setFormError(null);
 
-    if (isEdit && leaveRecord && requiresChildInfo(getInitialFormValues(leaveRecord).leaveType)) {
+    if (isEdit && leaveRecord && requiresChildInfo(leaveRecord.leaveType)) {
       startTransition(async () => {
         const rrn = await revealLeaveRecordChildRrn(leaveRecord.id, companyId);
         setFormValues((current) => ({
