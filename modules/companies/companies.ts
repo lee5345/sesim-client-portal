@@ -17,22 +17,26 @@ export type CompanyActionResult =
   | { success: true }
   | { success: false; error: string };
 
+const firmContactNameSchema = z
+  .string()
+  .trim()
+  .max(50)
+  .optional()
+  .transform((value) => value || null);
+
 const companyFieldsSchema = z.object({
   name: z.string().trim().min(1, "회사명을 입력해 주세요.").max(100),
   workplaceManagementNumber: optionalWorkplaceManagementNumberSchema,
 });
 
-const createCompanySchema = companyFieldsSchema;
+const createCompanySchema = companyFieldsSchema.extend({
+  firmContactName: firmContactNameSchema,
+});
 
 const updateCompanySchema = companyFieldsSchema.extend({
   companyId: z.string().uuid(),
   isActive: z.enum(["true", "false"]),
-  firmContactName: z
-    .string()
-    .trim()
-    .max(50)
-    .optional()
-    .transform((value) => value || null),
+  firmContactName: firmContactNameSchema,
 });
 
 const companyIdSchema = z.object({
@@ -99,6 +103,7 @@ export async function createCompanyAction(
   const parsed = createCompanySchema.safeParse({
     name: formData.get("name"),
     workplaceManagementNumber: formData.get("workplaceManagementNumber") || undefined,
+    firmContactName: formData.get("firmContactName") || undefined,
   });
 
   if (!parsed.success) {
@@ -111,6 +116,7 @@ export async function createCompanyAction(
     data: {
       name: input.name,
       workplaceManagementNumber: input.workplaceManagementNumber,
+      firmContactName: input.firmContactName,
     },
   });
 

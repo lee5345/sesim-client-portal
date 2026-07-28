@@ -27,7 +27,15 @@ export default async function FirmCompaniesPage() {
             등록된 고객사를 조회하고 관리합니다.
           </p>
         </div>
-        {isAdmin ? <AddCompanyDialog /> : null}
+        {isAdmin ? (
+          <AddCompanyDialog
+            staffUsers={staffUsers.map((user) => ({
+              id: user.id,
+              name: user.name,
+              isActive: user.isActive,
+            }))}
+          />
+        ) : null}
       </div>
 
       <CompaniesList

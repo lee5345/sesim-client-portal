@@ -20,8 +20,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { FieldLabel } from "@/components/ui/field-label";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { formatWorkplaceManagementNumber } from "@/lib/format/workplace-management-number";
 import { EMPTY_FIELD_LABEL } from "@/lib/companies/labels";
 
@@ -119,7 +119,9 @@ export function CompanyEditForm({
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor={`name-${company.id}`}>회사명</Label>
+              <FieldLabel htmlFor={`name-${company.id}`} required>
+                회사명
+              </FieldLabel>
               <Input
                 id={`name-${company.id}`}
                 name="name"
@@ -130,7 +132,19 @@ export function CompanyEditForm({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor={`firmContactName-${company.id}`}>담당 직원</Label>
+              <FieldLabel>사업장관리번호</FieldLabel>
+              <WorkplaceManagementNumberInput
+                idPrefix={`workplaceManagementNumber-${company.id}`}
+                name="workplaceManagementNumber"
+                value={workplaceManagementNumber}
+                onChange={setWorkplaceManagementNumber}
+                disabled={isPending}
+              />
+            </div>
+            <div className="space-y-2">
+              <FieldLabel htmlFor={`firmContactName-${company.id}`}>
+                담당 직원
+              </FieldLabel>
               <select
                 id={`firmContactName-${company.id}`}
                 value={firmContactName}
@@ -149,17 +163,9 @@ export function CompanyEditForm({
               </select>
             </div>
             <div className="space-y-2">
-              <Label>사업장관리번호</Label>
-              <WorkplaceManagementNumberInput
-                idPrefix={`workplaceManagementNumber-${company.id}`}
-                name="workplaceManagementNumber"
-                value={workplaceManagementNumber}
-                onChange={setWorkplaceManagementNumber}
-                disabled={isPending}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={`isActive-${company.id}`}>운영 상태</Label>
+              <FieldLabel htmlFor={`isActive-${company.id}`} required>
+                운영 상태
+              </FieldLabel>
               <select
                 id={`isActive-${company.id}`}
                 value={isActive}

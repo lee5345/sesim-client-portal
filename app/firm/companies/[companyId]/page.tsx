@@ -174,13 +174,13 @@ export default async function FirmCompanyDetailPage({
           </div>
         </div>
         <div className="space-y-1 text-sm text-muted-foreground">
-          <p>
-            담당 직원: {company.firmContactName ?? EMPTY_FIELD_LABEL}
-          </p>
           <p className="font-mono">
             사업장관리번호:{" "}
             {formatWorkplaceManagementNumber(company.workplaceManagementNumber) ??
               NO_WORKPLACE_MANAGEMENT_NUMBER_LABEL}
+          </p>
+          <p>
+            담당 직원: {company.firmContactName ?? EMPTY_FIELD_LABEL}
           </p>
         </div>
       </div>
