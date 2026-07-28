@@ -28,7 +28,6 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { CompactDateTime } from "@/components/ui/compact-datetime";
 import { MultilineText, notesBodyCellClassName } from "@/components/ui/multiline-text";
-import { NotesTextarea } from "@/components/ui/notes-textarea";
 import {
   Dialog,
   DialogContent,
@@ -623,9 +622,11 @@ export function BusinessIncomeTable({
                           </td>
                           <td className={`${notesBodyCellClassName} text-muted-foreground`}>
                             {isEditing ? (
-                              <NotesTextarea
+                              <textarea
                                 value={formValues.notes}
-                                onChange={(value) => updateFormValue("notes", value)}
+                                onChange={(event) =>
+                                  updateFormValue("notes", event.target.value)
+                                }
                                 disabled={isPending}
                                 maxLength={500}
                                 rows={1}
