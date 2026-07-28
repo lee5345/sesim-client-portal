@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/card";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
 import { filterLeaveRecords } from "@/lib/filters/leave-records";
+import { formatSalaryAmount } from "@/lib/format/currency";
 import type { LeaveRecordTableRow } from "@/lib/leave-records/types";
 import { paginate } from "@/lib/pagination";
 import {
@@ -216,11 +217,17 @@ export function LeaveRecordsTable({
                           >
                             대상자녀
                           </th>
-                          <th rowSpan={2} className={`${headerCellClassName} align-middle`}>
-                            단축 전 근로시간
+                          <th
+                            className={`${headerCellClassName} align-middle`}
+                            colSpan={2}
+                          >
+                            단축 전
                           </th>
-                          <th rowSpan={2} className={`${headerCellClassName} align-middle`}>
-                            단축 후 근로시간
+                          <th
+                            className={`${headerCellClassName} align-middle`}
+                            colSpan={2}
+                          >
+                            단축 후
                           </th>
                           <th rowSpan={2} className={`${headerCellClassName} align-middle`}>
                             첨부파일
@@ -248,6 +255,10 @@ export function LeaveRecordsTable({
                           <th className={headerCellClassName}>
                             <MaskedRrnColumnHeader />
                           </th>
+                          <th className={headerCellClassName}>근로시간</th>
+                          <th className={headerCellClassName}>급여</th>
+                          <th className={headerCellClassName}>근로시간</th>
+                          <th className={headerCellClassName}>급여</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -286,7 +297,17 @@ export function LeaveRecordsTable({
                               {formatWeeklyHours(row.hoursBeforeReduction)}
                             </td>
                             <td className={bodyCellClassName}>
+                              {row.salaryBeforeReduction !== null
+                                ? formatSalaryAmount(row.salaryBeforeReduction)
+                                : EMPTY_CELL}
+                            </td>
+                            <td className={bodyCellClassName}>
                               {formatWeeklyHours(row.hoursAfterReduction)}
+                            </td>
+                            <td className={bodyCellClassName}>
+                              {row.salaryAfterReduction !== null
+                                ? formatSalaryAmount(row.salaryAfterReduction)
+                                : EMPTY_CELL}
                             </td>
                             <td className={bodyCellClassName}>
                               <FileAttachmentList

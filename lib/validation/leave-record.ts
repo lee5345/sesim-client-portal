@@ -43,7 +43,7 @@ function optionalDateSchema(label: string) {
   );
 }
 
-const optionalWholeHoursSchema = z.preprocess(
+const optionalDecimalHoursSchema = z.preprocess(
   (value) => {
     if (value === "" || value === null || value === undefined) {
       return undefined;
@@ -52,8 +52,26 @@ const optionalWholeHoursSchema = z.preprocess(
   },
   z
     .number({ error: "근로시간은 숫자로 입력해 주세요." })
-    .int("근로시간은 정수로 입력해 주세요.")
     .positive("근로시간은 0보다 커야 합니다.")
+    .refine(
+      (value) => Math.round(value * 10) === value * 10,
+      "근로시간은 소수점 첫째 자리까지 입력해 주세요.",
+    )
+    .refine((value) => value < 1000, "근로시간을 확인해 주세요.")
+    .optional(),
+);
+
+const optionalSalaryAmountSchema = z.preprocess(
+  (value) => {
+    if (value === "" || value === null || value === undefined) {
+      return undefined;
+    }
+    return Number(String(value).replace(/,/g, ""));
+  },
+  z
+    .number({ error: "급여는 숫자로 입력해 주세요." })
+    .int("급여는 정수로 입력해 주세요.")
+    .positive("급여는 0보다 커야 합니다.")
     .optional(),
 );
 
@@ -93,8 +111,10 @@ const leaveRecordBaseSchema = z.object({
     .trim()
     .optional()
     .transform((value) => (value ? value : undefined)),
-  hoursBeforeReduction: optionalWholeHoursSchema,
-  hoursAfterReduction: optionalWholeHoursSchema,
+  hoursBeforeReduction: optionalDecimalHoursSchema,
+  hoursAfterReduction: optionalDecimalHoursSchema,
+  salaryBeforeReduction: optionalSalaryAmountSchema,
+  salaryAfterReduction: optionalSalaryAmountSchema,
   notes: notesSchema,
 });
 
@@ -164,6 +184,7 @@ function refineLeaveRecord(options: { requireChildRrn: boolean }) {
           path: ["hoursAfterReduction"],
         });
       }
+
     }
   });
 }
@@ -203,6 +224,8 @@ function parseLeaveRecordFormData(formData: FormData) {
     childRrn: emptyToUndefined(formData.get("childRrn")),
     hoursBeforeReduction: formData.get("hoursBeforeReduction"),
     hoursAfterReduction: formData.get("hoursAfterReduction"),
+    salaryBeforeReduction: formData.get("salaryBeforeReduction"),
+    salaryAfterReduction: formData.get("salaryAfterReduction"),
     notes: emptyToUndefined(formData.get("notes")),
   };
 }
@@ -251,6 +274,8 @@ export function toLeaveRecordAuditPayload(
     childName: data.childName ?? null,
     hoursBeforeReduction: data.hoursBeforeReduction ?? null,
     hoursAfterReduction: data.hoursAfterReduction ?? null,
+    salaryBeforeReduction: data.salaryBeforeReduction ?? null,
+    salaryAfterReduction: data.salaryAfterReduction ?? null,
     notes: data.notes ?? null,
   };
 }

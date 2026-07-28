@@ -341,8 +341,10 @@ model LeaveRecord {
   childName            String?
   childRrnEncrypted    String?
   childRrnIv           String?
-  hoursBeforeReduction Int?
-  hoursAfterReduction  Int?
+  hoursBeforeReduction Decimal?  @db.Decimal(4, 1)
+  hoursAfterReduction  Decimal?  @db.Decimal(4, 1)
+  salaryBeforeReduction Int?
+  salaryAfterReduction  Int?
   notes                String?
   deletedAt            DateTime?
   createdAt            DateTime  @default(now())

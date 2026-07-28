@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Eye, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { SegmentedDigitFields } from "@/components/client/segmented-digit-fields";
@@ -20,6 +20,7 @@ import { FieldLabel } from "@/components/ui/field-label";
 import { FileAttachmentField } from "@/components/ui/file-attachment-field";
 import { Input } from "@/components/ui/input";
 import { NotesTextarea } from "@/components/ui/notes-textarea";
+import { formatSalaryInput, parseSalaryInput } from "@/lib/format/currency";
 import {
   joinRrnSegments,
   RRN_SEGMENT_LENGTHS,
@@ -60,6 +61,8 @@ type LeaveRecordFormValues = {
   childRrnSegments: string[];
   hoursBeforeReduction: string;
   hoursAfterReduction: string;
+  salaryBeforeReduction: string;
+  salaryAfterReduction: string;
   notes: string;
 };
 
@@ -77,6 +80,8 @@ type LeaveRecordFormDialogProps = {
     childName: string | null;
     hoursBeforeReduction: number | null;
     hoursAfterReduction: number | null;
+    salaryBeforeReduction: number | null;
+    salaryAfterReduction: number | null;
     notes: string | null;
     attachments: AttachmentSummary[];
   };
@@ -107,6 +112,16 @@ function getInitialFormValues(
       leaveRecord?.hoursAfterReduction !== undefined
         ? String(leaveRecord.hoursAfterReduction)
         : "",
+    salaryBeforeReduction:
+      leaveRecord?.salaryBeforeReduction !== null &&
+      leaveRecord?.salaryBeforeReduction !== undefined
+        ? String(leaveRecord.salaryBeforeReduction)
+        : "",
+    salaryAfterReduction:
+      leaveRecord?.salaryAfterReduction !== null &&
+      leaveRecord?.salaryAfterReduction !== undefined
+        ? String(leaveRecord.salaryAfterReduction)
+        : "",
     notes: leaveRecord?.notes ?? "",
   };
 }
@@ -134,6 +149,8 @@ function buildFormData(
   formData.set("childName", values.childName);
   formData.set("hoursBeforeReduction", values.hoursBeforeReduction);
   formData.set("hoursAfterReduction", values.hoursAfterReduction);
+  formData.set("salaryBeforeReduction", values.salaryBeforeReduction);
+  formData.set("salaryAfterReduction", values.salaryAfterReduction);
   formData.set("notes", values.notes);
 
   if (options.includeChildRrn) {
@@ -170,8 +187,6 @@ export function LeaveRecordFormDialog({
   );
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [removedAttachmentIds, setRemovedAttachmentIds] = useState<string[]>([]);
-  const [childRrnEditing, setChildRrnEditing] = useState(mode === "create");
-  const [revealedChildRrn, setRevealedChildRrn] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -182,7 +197,7 @@ export function LeaveRecordFormDialog({
     leaveType !== "" && requiresExpectedDeliveryDate(leaveType);
   const showChildInfo = leaveType !== "" && requiresChildInfo(leaveType);
   const showHourReduction = leaveType !== "" && requiresHourReduction(leaveType);
-  const childRrnRequired = !isEdit || childRrnEditing;
+  const childRrnRequired = true;
 
   useEffect(() => {
     if (!open) {
@@ -191,9 +206,17 @@ export function LeaveRecordFormDialog({
     setFormValues(getInitialFormValues(leaveRecord));
     setPendingFiles([]);
     setRemovedAttachmentIds([]);
-    setChildRrnEditing(mode === "create");
-    setRevealedChildRrn(null);
     setFormError(null);
+
+    if (isEdit && leaveRecord && requiresChildInfo(getInitialFormValues(leaveRecord).leaveType)) {
+      startTransition(async () => {
+        const rrn = await revealLeaveRecordChildRrn(leaveRecord.id, companyId);
+        setFormValues((current) => ({
+          ...current,
+          childRrnSegments: splitIntoSegments(rrn, [...RRN_SEGMENT_LENGTHS]),
+        }));
+      });
+    }
   }, [open, leaveRecord, mode]);
 
   function updateFormValue<K extends keyof LeaveRecordFormValues>(
@@ -207,19 +230,7 @@ export function LeaveRecordFormDialog({
     setFormValues(getInitialFormValues(leaveRecord));
     setPendingFiles([]);
     setRemovedAttachmentIds([]);
-    setChildRrnEditing(mode === "create");
-    setRevealedChildRrn(null);
     setFormError(null);
-  }
-
-  function startChildRrnEditing(rrn?: string) {
-    setChildRrnEditing(true);
-    if (rrn) {
-      setFormValues((current) => ({
-        ...current,
-        childRrnSegments: splitIntoSegments(rrn, [...RRN_SEGMENT_LENGTHS]),
-      }));
-    }
   }
 
   return (
@@ -274,7 +285,8 @@ export function LeaveRecordFormDialog({
 
               try {
                 const includeChildRrn =
-                  showChildInfo && (!isEdit || childRrnEditing);
+                  showChildInfo &&
+                  formValues.childRrnSegments.some((segment) => segment.trim() !== "");
                 const formData = buildFormData(formValues, {
                   companyId,
                   pendingFiles,
@@ -413,128 +425,118 @@ export function LeaveRecordFormDialog({
                   <FieldLabel required={childRrnRequired}>
                     대상자녀 주민번호
                   </FieldLabel>
-                  {isEdit && !childRrnEditing ? (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-sm text-muted-foreground">
-                        {revealedChildRrn ?? "******-*******"}
-                      </span>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={isPending}
-                        onClick={() => {
-                          if (!leaveRecord) {
-                            return;
-                          }
-                          startTransition(async () => {
-                            const rrn = await revealLeaveRecordChildRrn(
-                              leaveRecord.id,
-                              companyId,
-                            );
-                            setRevealedChildRrn(rrn);
-                          });
-                        }}
-                      >
-                        <Eye className="size-4" />
-                        확인
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={isPending}
-                        onClick={() => {
-                          if (revealedChildRrn) {
-                            startChildRrnEditing(revealedChildRrn);
-                            return;
-                          }
-                          if (!leaveRecord) {
-                            return;
-                          }
-                          startTransition(async () => {
-                            const rrn = await revealLeaveRecordChildRrn(
-                              leaveRecord.id,
-                              companyId,
-                            );
-                            setRevealedChildRrn(rrn);
-                            startChildRrnEditing(rrn);
-                          });
-                        }}
-                      >
-                        변경
-                      </Button>
-                    </div>
-                  ) : (
-                    <SegmentedDigitFields
-                      idPrefix={`childRrn-${formId}`}
-                      segmentLengths={[...RRN_SEGMENT_LENGTHS]}
-                      values={formValues.childRrnSegments}
-                      onChange={(childRrnSegments) =>
-                        updateFormValue("childRrnSegments", childRrnSegments)
-                      }
-                      disabled={isPending}
-                    />
-                  )}
+                  <SegmentedDigitFields
+                    idPrefix={`childRrn-${formId}`}
+                    segmentLengths={[...RRN_SEGMENT_LENGTHS]}
+                    values={formValues.childRrnSegments}
+                    onChange={(childRrnSegments) =>
+                      updateFormValue("childRrnSegments", childRrnSegments)
+                    }
+                    disabled={isPending}
+                  />
                 </div>
               </div>
             ) : null}
 
             {showHourReduction ? (
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <FieldLabel htmlFor={`hoursBeforeReduction-${formId}`} required>
-                    단축 전 근로시간
-                  </FieldLabel>
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span className="shrink-0 whitespace-nowrap text-sm text-muted-foreground">
-                      주
-                    </span>
+                <div className="space-y-4 rounded-lg border p-4">
+                  <p className="text-sm font-medium">단축 전</p>
+                  <div className="space-y-2">
+                    <FieldLabel htmlFor={`hoursBeforeReduction-${formId}`} required>
+                      근로시간
+                    </FieldLabel>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="shrink-0 whitespace-nowrap text-sm text-muted-foreground">
+                        주
+                      </span>
+                      <Input
+                        id={`hoursBeforeReduction-${formId}`}
+                        type="number"
+                        inputMode="decimal"
+                        min={0.1}
+                        step={0.1}
+                        className="min-w-0 flex-1"
+                        value={formValues.hoursBeforeReduction}
+                        onChange={(event) =>
+                          updateFormValue("hoursBeforeReduction", event.target.value)
+                        }
+                        required
+                        disabled={isPending}
+                      />
+                      <span className="shrink-0 whitespace-nowrap text-sm text-muted-foreground">
+                        시간
+                      </span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <FieldLabel htmlFor={`salaryBeforeReduction-${formId}`}>
+                      급여
+                    </FieldLabel>
                     <Input
-                      id={`hoursBeforeReduction-${formId}`}
-                      type="number"
+                      id={`salaryBeforeReduction-${formId}`}
+                      type="text"
                       inputMode="numeric"
-                      min={1}
-                      step={1}
-                      className="min-w-0 flex-1"
-                      value={formValues.hoursBeforeReduction}
+                      value={formatSalaryInput(formValues.salaryBeforeReduction)}
                       onChange={(event) =>
-                        updateFormValue("hoursBeforeReduction", event.target.value)
+                        updateFormValue(
+                          "salaryBeforeReduction",
+                          parseSalaryInput(event.target.value),
+                        )
                       }
                       required
                       disabled={isPending}
                     />
-                    <span className="shrink-0 whitespace-nowrap text-sm text-muted-foreground">
-                      시간
-                    </span>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <FieldLabel htmlFor={`hoursAfterReduction-${formId}`} required>
-                    단축 후 근로시간
-                  </FieldLabel>
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span className="shrink-0 whitespace-nowrap text-sm text-muted-foreground">
-                      주
-                    </span>
+                <div className="space-y-4 rounded-lg border p-4">
+                  <p className="text-sm font-medium">단축 후</p>
+                  <div className="space-y-2">
+                    <FieldLabel htmlFor={`hoursAfterReduction-${formId}`} required>
+                      근로시간
+                    </FieldLabel>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="shrink-0 whitespace-nowrap text-sm text-muted-foreground">
+                        주
+                      </span>
+                      <Input
+                        id={`hoursAfterReduction-${formId}`}
+                        type="number"
+                        inputMode="decimal"
+                        min={0.1}
+                        step={0.1}
+                        className="min-w-0 flex-1"
+                        value={formValues.hoursAfterReduction}
+                        onChange={(event) =>
+                          updateFormValue("hoursAfterReduction", event.target.value)
+                        }
+                        required
+                        disabled={isPending}
+                      />
+                      <span className="shrink-0 whitespace-nowrap text-sm text-muted-foreground">
+                        시간
+                      </span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <FieldLabel htmlFor={`salaryAfterReduction-${formId}`}>
+                      급여
+                    </FieldLabel>
                     <Input
-                      id={`hoursAfterReduction-${formId}`}
-                      type="number"
+                      id={`salaryAfterReduction-${formId}`}
+                      type="text"
                       inputMode="numeric"
-                      min={1}
-                      step={1}
-                      className="min-w-0 flex-1"
-                      value={formValues.hoursAfterReduction}
+                      value={formatSalaryInput(formValues.salaryAfterReduction)}
                       onChange={(event) =>
-                        updateFormValue("hoursAfterReduction", event.target.value)
+                        updateFormValue(
+                          "salaryAfterReduction",
+                          parseSalaryInput(event.target.value),
+                        )
                       }
                       required
                       disabled={isPending}
                     />
-                    <span className="shrink-0 whitespace-nowrap text-sm text-muted-foreground">
-                      시간
-                    </span>
                   </div>
                 </div>
               </div>

@@ -47,6 +47,14 @@ function revalidateLeaveRecordPaths(companyId: string) {
   revalidatePath("/client", "layout");
 }
 
+function decimalToNumber(value: { toNumber(): number } | null): number | null {
+  if (value === null) {
+    return null;
+  }
+
+  return Math.round(value.toNumber() * 10) / 10;
+}
+
 function toLeaveRecordData(
   input: CreateLeaveRecordInput,
   childRrnEncrypted: string | null,
@@ -68,6 +76,12 @@ function toLeaveRecordData(
       : null,
     hoursAfterReduction: requiresHourReduction(input.leaveType)
       ? (input.hoursAfterReduction ?? null)
+      : null,
+    salaryBeforeReduction: requiresHourReduction(input.leaveType)
+      ? (input.salaryBeforeReduction ?? null)
+      : null,
+    salaryAfterReduction: requiresHourReduction(input.leaveType)
+      ? (input.salaryAfterReduction ?? null)
       : null,
     notes: input.notes ?? null,
   };
@@ -105,6 +119,8 @@ export async function listLeaveRecords(companyId: string) {
       childRrnIv: true,
       hoursBeforeReduction: true,
       hoursAfterReduction: true,
+      salaryBeforeReduction: true,
+      salaryAfterReduction: true,
       notes: true,
       createdAt: true,
       createdBy: { select: { name: true } },
@@ -131,6 +147,8 @@ export async function listLeaveRecords(companyId: string) {
 
     return {
       ...rest,
+      hoursBeforeReduction: decimalToNumber(rest.hoursBeforeReduction),
+      hoursAfterReduction: decimalToNumber(rest.hoursAfterReduction),
       createdByName: createdBy.name,
       maskedChildRrn,
       attachments: attachmentsByEntityId[record.id] ?? [],

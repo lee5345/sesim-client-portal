@@ -31,6 +31,7 @@ const CHILD_INFO_TYPES = new Set<LeaveType>([
 ]);
 
 const HOUR_REDUCTION_TYPES = new Set<LeaveType>([
+  "PREGNANCY_WORK_HOUR_REDUCTION",
   "CHILD_CARE_WORK_HOUR_REDUCTION",
 ]);
 
@@ -50,5 +51,8 @@ export function formatWeeklyHours(value: number | null | undefined): string {
   if (value === null || value === undefined) {
     return "—";
   }
-  return `주 ${value}시간`;
+
+  const rounded = Math.round(value * 10) / 10;
+  const formatted = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+  return `주 ${formatted}시간`;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { Eye, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { SegmentedDigitFields } from "@/components/client/segmented-digit-fields";
@@ -196,14 +196,12 @@ export function DailyWorkerFormDialog({
   const [hourDrafts, setHourDrafts] = useState<
     Partial<Record<DailyHourFieldName, string>>
   >({});
-  const [rrnEditing, setRrnEditing] = useState(mode === "create");
-  const [revealedRrn, setRevealedRrn] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const isEdit = mode === "edit";
   const formId = `${mode}-${dailyWorker?.id ?? "new"}-${year}-${month}`;
-  const rrnRequired = !isEdit || rrnEditing;
+  const rrnRequired = true;
   const dayNumbers = useMemo(() => getDailyHourDayNumbers(), []);
   const isNonCurrentPeriod = useMemo(() => {
     if (isEdit) return false;
@@ -227,9 +225,17 @@ export function DailyWorkerFormDialog({
 
     setFormValues(getInitialFormValues(dailyWorker));
     setHourDrafts({});
-    setRrnEditing(mode === "create");
-    setRevealedRrn(null);
     setFormError(null);
+
+    if (isEdit && dailyWorker) {
+      startTransition(async () => {
+        const result = await revealDailyWorkerRRN(dailyWorker.id, companyId);
+        setFormValues((current) => ({
+          ...current,
+          rrnSegments: splitIntoSegments(result.rrn, [...RRN_SEGMENT_LENGTHS]),
+        }));
+      });
+    }
   }, [open, dailyWorker, mode]);
 
   function updateFormValue<K extends keyof DailyWorkerFormValues>(
@@ -299,19 +305,7 @@ export function DailyWorkerFormDialog({
   function resetState() {
     setFormValues(getInitialFormValues(dailyWorker));
     setHourDrafts({});
-    setRrnEditing(mode === "create");
-    setRevealedRrn(null);
     setFormError(null);
-  }
-
-  function startRrnEditing(rrn?: string) {
-    setRrnEditing(true);
-    if (rrn) {
-      setFormValues((current) => ({
-        ...current,
-        rrnSegments: splitIntoSegments(rrn, [...RRN_SEGMENT_LENGTHS]),
-      }));
-    }
   }
 
   return (
@@ -390,7 +384,7 @@ export function DailyWorkerFormDialog({
           <DialogTitle>{isEdit ? "일용직 정보 수정" : "일용직 등록"}</DialogTitle>
           <DialogDescription>
             {isEdit
-              ? `${year}년 ${month}월 일용직 정보를 수정합니다. 주민등록번호는 별도 확인 후 변경할 수 있습니다.`
+              ? `${year}년 ${month}월 일용직 정보를 수정합니다.`
               : `${year}년 ${month}월 일용직 정보를 등록합니다.`}
           </DialogDescription>
         </DialogHeader>
@@ -411,7 +405,8 @@ export function DailyWorkerFormDialog({
               const formData = buildFormData(
                 { ...formValues, hours: resolvedHours },
                 {
-                includeRrn: !isEdit || rrnEditing,
+                includeRrn:
+                  !isEdit || formValues.rrnSegments.some((segment) => segment.trim() !== ""),
                 companyId,
                 year,
                 month,
@@ -481,69 +476,15 @@ export function DailyWorkerFormDialog({
 
             <div className="space-y-2">
               <FieldLabel required={rrnRequired}>주민등록번호</FieldLabel>
-              {isEdit && !rrnEditing ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-sm text-muted-foreground">
-                    {revealedRrn ?? "******-*******"}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={isPending}
-                    onClick={() => {
-                      if (!dailyWorker) {
-                        return;
-                      }
-                      startTransition(async () => {
-                        const result = await revealDailyWorkerRRN(
-                          dailyWorker.id,
-                          companyId,
-                        );
-                        setRevealedRrn(result.rrn);
-                      });
-                    }}
-                  >
-                    <Eye className="size-4" />
-                    확인
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={isPending}
-                    onClick={() => {
-                      if (revealedRrn) {
-                        startRrnEditing(revealedRrn);
-                        return;
-                      }
-                      if (!dailyWorker) {
-                        return;
-                      }
-                      startTransition(async () => {
-                        const result = await revealDailyWorkerRRN(
-                          dailyWorker.id,
-                          companyId,
-                        );
-                        setRevealedRrn(result.rrn);
-                        startRrnEditing(result.rrn);
-                      });
-                    }}
-                  >
-                    변경
-                  </Button>
-                </div>
-              ) : (
-                <SegmentedDigitFields
-                  idPrefix={`rrn-${formId}`}
-                  segmentLengths={RRN_SEGMENT_LENGTHS}
-                  values={formValues.rrnSegments}
-                  onChange={(rrnSegments) =>
-                    updateFormValue("rrnSegments", rrnSegments)
-                  }
-                  disabled={isPending}
-                />
-              )}
+              <SegmentedDigitFields
+                idPrefix={`rrn-${formId}`}
+                segmentLengths={RRN_SEGMENT_LENGTHS}
+                values={formValues.rrnSegments}
+                onChange={(rrnSegments) =>
+                  updateFormValue("rrnSegments", rrnSegments)
+                }
+                disabled={isPending}
+              />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">

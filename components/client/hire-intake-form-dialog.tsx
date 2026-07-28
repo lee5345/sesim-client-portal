@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Eye, Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -258,15 +258,13 @@ export function HireIntakeFormDialog({
   const [formValues, setFormValues] = useState<HireIntakeFormValues>(() =>
     getInitialFormValues(hireIntake),
   );
-  const [rrnEditing, setRrnEditing] = useState(mode === "create");
-  const [revealedRrn, setRevealedRrn] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const isEdit = mode === "edit";
   const formId = `${mode}-${hireIntake?.id ?? "new"}`;
   const isContract = formValues.isContract === "true";
-  const rrnRequired = !isEdit || rrnEditing;
+  const rrnRequired = true;
 
   useEffect(() => {
     if (!open) {
@@ -274,9 +272,17 @@ export function HireIntakeFormDialog({
     }
 
     setFormValues(getInitialFormValues(hireIntake));
-    setRrnEditing(mode === "create");
-    setRevealedRrn(null);
     setFormError(null);
+
+    if (isEdit && hireIntake) {
+      startTransition(async () => {
+        const result = await revealRRN(hireIntake.id, companyId);
+        setFormValues((current) => ({
+          ...current,
+          rrnSegments: splitIntoSegments(result.rrn, [...RRN_SEGMENT_LENGTHS]),
+        }));
+      });
+    }
   }, [open, hireIntake, mode]);
 
   function updateFormValue<K extends keyof HireIntakeFormValues>(
@@ -288,19 +294,7 @@ export function HireIntakeFormDialog({
 
   function resetState() {
     setFormValues(getInitialFormValues(hireIntake));
-    setRrnEditing(mode === "create");
-    setRevealedRrn(null);
     setFormError(null);
-  }
-
-  function startRrnEditing(rrn?: string) {
-    setRrnEditing(true);
-    if (rrn) {
-      setFormValues((current) => ({
-        ...current,
-        rrnSegments: splitIntoSegments(rrn, [...RRN_SEGMENT_LENGTHS]),
-      }));
-    }
   }
 
   return (
@@ -337,7 +331,7 @@ export function HireIntakeFormDialog({
           <DialogTitle>{isEdit ? "입사자 정보 수정" : "입사자 등록"}</DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "입사자 정보를 수정합니다. 주민등록번호는 별도 확인 후 변경할 수 있습니다."
+              ? "입사자 정보를 수정합니다."
               : "신규 입사자 정보를 등록합니다."}
           </DialogDescription>
         </DialogHeader>
@@ -350,7 +344,8 @@ export function HireIntakeFormDialog({
 
             startTransition(async () => {
               const formData = buildFormData(formValues, {
-                includeRrn: !isEdit || rrnEditing,
+                includeRrn:
+                  !isEdit || formValues.rrnSegments.some((segment) => segment.trim() !== ""),
                 companyId,
               });
               const result =
@@ -410,61 +405,13 @@ export function HireIntakeFormDialog({
 
             <div className="space-y-2 sm:col-span-2">
               <FieldLabel required={rrnRequired}>주민등록번호</FieldLabel>
-              {isEdit && !rrnEditing ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-sm text-muted-foreground">
-                    {revealedRrn ?? "******-*******"}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={isPending}
-                    onClick={() => {
-                      if (!hireIntake) {
-                        return;
-                      }
-                      startTransition(async () => {
-                        const result = await revealRRN(hireIntake.id, companyId);
-                        setRevealedRrn(result.rrn);
-                      });
-                    }}
-                  >
-                    <Eye className="size-4" />
-                    확인
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={isPending}
-                    onClick={() => {
-                      if (revealedRrn) {
-                        startRrnEditing(revealedRrn);
-                        return;
-                      }
-                      if (!hireIntake) {
-                        return;
-                      }
-                      startTransition(async () => {
-                        const result = await revealRRN(hireIntake.id, companyId);
-                        setRevealedRrn(result.rrn);
-                        startRrnEditing(result.rrn);
-                      });
-                    }}
-                  >
-                    변경
-                  </Button>
-                </div>
-              ) : (
-                <SegmentedDigitFields
-                  idPrefix={`rrn-${formId}`}
-                  segmentLengths={RRN_SEGMENT_LENGTHS}
-                  values={formValues.rrnSegments}
-                  onChange={(rrnSegments) => updateFormValue("rrnSegments", rrnSegments)}
-                  disabled={isPending}
-                />
-              )}
+              <SegmentedDigitFields
+                idPrefix={`rrn-${formId}`}
+                segmentLengths={RRN_SEGMENT_LENGTHS}
+                values={formValues.rrnSegments}
+                onChange={(rrnSegments) => updateFormValue("rrnSegments", rrnSegments)}
+                disabled={isPending}
+              />
             </div>
 
             <div className="space-y-2">

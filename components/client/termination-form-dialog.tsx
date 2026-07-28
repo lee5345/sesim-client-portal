@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Eye, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { SegmentedDigitFields } from "@/components/client/segmented-digit-fields";
@@ -129,14 +129,12 @@ export function TerminationFormDialog({
   const [formValues, setFormValues] = useState<TerminationFormValues>(() =>
     getInitialFormValues(termination),
   );
-  const [rrnEditing, setRrnEditing] = useState(mode === "create");
-  const [revealedRrn, setRevealedRrn] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const isEdit = mode === "edit";
   const formId = `${mode}-${termination?.id ?? "new"}`;
-  const rrnRequired = !isEdit || rrnEditing;
+  const rrnRequired = true;
   const isCustomReason =
     formValues.reasonPreset === TERMINATION_REASON_CUSTOM_VALUE;
 
@@ -146,9 +144,17 @@ export function TerminationFormDialog({
     }
 
     setFormValues(getInitialFormValues(termination));
-    setRrnEditing(mode === "create");
-    setRevealedRrn(null);
     setFormError(null);
+
+    if (isEdit && termination) {
+      startTransition(async () => {
+        const result = await revealTerminationRRN(termination.id, companyId);
+        setFormValues((current) => ({
+          ...current,
+          rrnSegments: splitIntoSegments(result.rrn, [...RRN_SEGMENT_LENGTHS]),
+        }));
+      });
+    }
   }, [open, termination, mode]);
 
   function updateFormValue<K extends keyof TerminationFormValues>(
@@ -160,19 +166,7 @@ export function TerminationFormDialog({
 
   function resetState() {
     setFormValues(getInitialFormValues(termination));
-    setRrnEditing(mode === "create");
-    setRevealedRrn(null);
     setFormError(null);
-  }
-
-  function startRrnEditing(rrn?: string) {
-    setRrnEditing(true);
-    if (rrn) {
-      setFormValues((current) => ({
-        ...current,
-        rrnSegments: splitIntoSegments(rrn, [...RRN_SEGMENT_LENGTHS]),
-      }));
-    }
   }
 
   return (
@@ -209,7 +203,7 @@ export function TerminationFormDialog({
           <DialogTitle>{isEdit ? "퇴사자 정보 수정" : "퇴사자 등록"}</DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "퇴사자 정보를 수정합니다. 주민등록번호는 별도 확인 후 변경할 수 있습니다."
+              ? "퇴사자 정보를 수정합니다."
               : "퇴사자 정보를 등록합니다."}
           </DialogDescription>
         </DialogHeader>
@@ -222,7 +216,8 @@ export function TerminationFormDialog({
 
             startTransition(async () => {
               const formData = buildFormData(formValues, {
-                includeRrn: !isEdit || rrnEditing,
+                includeRrn:
+                  !isEdit || formValues.rrnSegments.some((segment) => segment.trim() !== ""),
                 companyId,
               });
               const result =
@@ -263,69 +258,15 @@ export function TerminationFormDialog({
 
             <div className="space-y-2">
               <FieldLabel required={rrnRequired}>주민등록번호</FieldLabel>
-              {isEdit && !rrnEditing ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-sm text-muted-foreground">
-                    {revealedRrn ?? "******-*******"}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={isPending}
-                    onClick={() => {
-                      if (!termination) {
-                        return;
-                      }
-                      startTransition(async () => {
-                        const result = await revealTerminationRRN(
-                          termination.id,
-                          companyId,
-                        );
-                        setRevealedRrn(result.rrn);
-                      });
-                    }}
-                  >
-                    <Eye className="size-4" />
-                    확인
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={isPending}
-                    onClick={() => {
-                      if (revealedRrn) {
-                        startRrnEditing(revealedRrn);
-                        return;
-                      }
-                      if (!termination) {
-                        return;
-                      }
-                      startTransition(async () => {
-                        const result = await revealTerminationRRN(
-                          termination.id,
-                          companyId,
-                        );
-                        setRevealedRrn(result.rrn);
-                        startRrnEditing(result.rrn);
-                      });
-                    }}
-                  >
-                    변경
-                  </Button>
-                </div>
-              ) : (
-                <SegmentedDigitFields
-                  idPrefix={`rrn-${formId}`}
-                  segmentLengths={RRN_SEGMENT_LENGTHS}
-                  values={formValues.rrnSegments}
-                  onChange={(rrnSegments) =>
-                    updateFormValue("rrnSegments", rrnSegments)
-                  }
-                  disabled={isPending}
-                />
-              )}
+              <SegmentedDigitFields
+                idPrefix={`rrn-${formId}`}
+                segmentLengths={RRN_SEGMENT_LENGTHS}
+                values={formValues.rrnSegments}
+                onChange={(rrnSegments) =>
+                  updateFormValue("rrnSegments", rrnSegments)
+                }
+                disabled={isPending}
+              />
             </div>
 
             <div className="space-y-2">
