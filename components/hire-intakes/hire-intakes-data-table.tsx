@@ -21,17 +21,17 @@ import {
 const EMPTY_CELL = "—";
 
 const headerCellClassName =
-  "border-r border-border/30 px-4 py-3 font-medium whitespace-nowrap last:border-r-0";
+  "border-r border-border/30 px-4 py-3 text-left font-medium whitespace-nowrap last:border-r-0";
 const bodyCellClassName =
-  "border-r border-border/30 px-4 py-3 whitespace-nowrap last:border-r-0";
+  "border-r border-border/30 px-4 py-3 align-middle whitespace-nowrap last:border-r-0";
 const stickyNameHeaderClassName =
-  "sticky left-0 z-40 border-r border-border bg-muted px-4 py-3 font-medium whitespace-nowrap shadow-[10px_0_20px_-10px_rgba(0,0,0,0.15)]";
+  "sticky left-0 z-40 border-r border-border bg-muted px-4 py-3 text-left font-medium whitespace-nowrap shadow-[10px_0_20px_-10px_rgba(0,0,0,0.15)]";
 const stickyNameCellClassName =
-  "sticky left-0 z-30 border-r border-border bg-muted px-4 py-3 text-muted-foreground whitespace-nowrap shadow-[10px_0_20px_-10px_rgba(0,0,0,0.12)] group-hover:bg-muted";
+  "sticky left-0 z-30 border-r border-border bg-muted px-4 py-3 align-middle text-muted-foreground whitespace-nowrap shadow-[10px_0_20px_-10px_rgba(0,0,0,0.12)] group-hover:bg-muted";
 const stickyActionHeaderClassName =
   "sticky right-0 z-30 border-l border-border bg-muted px-4 py-3 text-center font-medium whitespace-nowrap shadow-[-10px_0_20px_-10px_rgba(0,0,0,0.15)]";
 const stickyActionCellClassName =
-  "sticky right-0 z-20 border-l border-border bg-muted px-4 py-3 text-center whitespace-nowrap shadow-[-10px_0_20px_-10px_rgba(0,0,0,0.12)] group-hover:bg-muted";
+  "sticky right-0 z-20 border-l border-border bg-muted px-4 py-3 text-center align-middle whitespace-nowrap shadow-[-10px_0_20px_-10px_rgba(0,0,0,0.12)] group-hover:bg-muted";
 
 export type HireIntakeTableRow = {
   id: string;
@@ -102,30 +102,67 @@ export function HireIntakesDataTable({
         <table className="w-max min-w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/40 text-left">
-              <th className={stickyNameHeaderClassName}>이름</th>
-              <th className={headerCellClassName}>사번</th>
-              <th className={headerCellClassName}>
+              <th rowSpan={2} className={`${stickyNameHeaderClassName} align-middle`}>
+                이름
+              </th>
+              <th rowSpan={2} className={`${headerCellClassName} align-middle`}>
+                사번
+              </th>
+              <th rowSpan={2} className={`${headerCellClassName} align-middle`}>
                 <MaskedRrnColumnHeader />
               </th>
-            <th className={headerCellClassName}>입사일</th>
-            <th className={headerCellClassName}>부서</th>
-            <th className={headerCellClassName}>급여</th>
-            <th className={headerCellClassName}>고용 형태</th>
-            <th className={headerCellClassName}>계약 시작일</th>
-            <th className={headerCellClassName}>계약 종료일</th>
-            <th className={headerCellClassName}>비과세 항목</th>
-            <th className={headerCellClassName}>은행</th>
-            <th className={headerCellClassName}>계좌번호</th>
-            <th className={headerCellClassName}>이메일</th>
-            <th className={headerCellClassName}>연락처</th>
-            <th className={headerCellClassName}>비고</th>
-            <th className={headerCellClassName}>등록자</th>
-            <th className={headerCellClassName}>등록일</th>
-            {showActions ? (
-              <th className={stickyActionHeaderClassName}>관리</th>
-            ) : null}
-          </tr>
-        </thead>
+              <th rowSpan={2} className={`${headerCellClassName} align-middle`}>
+                입사일
+              </th>
+              <th rowSpan={2} className={`${headerCellClassName} align-middle`}>
+                부서
+              </th>
+              <th rowSpan={2} className={`${headerCellClassName} align-middle`}>
+                급여
+              </th>
+              <th rowSpan={2} className={`${headerCellClassName} align-middle`}>
+                고용 형태
+              </th>
+              <th className={`${headerCellClassName} text-center`} colSpan={2}>
+                계약 기간
+              </th>
+              <th rowSpan={2} className={`${headerCellClassName} align-middle`}>
+                비과세 항목
+              </th>
+              <th className={`${headerCellClassName} text-center`} colSpan={2}>
+                급여계좌
+              </th>
+              <th rowSpan={2} className={`${headerCellClassName} align-middle`}>
+                이메일
+              </th>
+              <th rowSpan={2} className={`${headerCellClassName} align-middle`}>
+                연락처
+              </th>
+              <th rowSpan={2} className={`${headerCellClassName} align-middle`}>
+                비고
+              </th>
+              <th rowSpan={2} className={`${headerCellClassName} align-middle`}>
+                등록자
+              </th>
+              <th rowSpan={2} className={`${headerCellClassName} align-middle`}>
+                등록일
+              </th>
+              {showActions ? (
+                <th
+                  rowSpan={2}
+                  className={`${stickyActionHeaderClassName} align-middle`}
+                >
+                  관리
+                </th>
+              ) : null}
+            </tr>
+            <tr className="border-b bg-muted/20 text-left">
+              <th className={headerCellClassName}>시작일</th>
+              <th className={headerCellClassName}>종료일</th>
+              <th className={headerCellClassName}>은행</th>
+              <th className={headerCellClassName}>계좌번호</th>
+            </tr>
+          </thead>
         <tbody>
           {hireIntakes.map((hireIntake) => (
             <tr

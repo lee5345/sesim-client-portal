@@ -463,65 +463,75 @@ export function HireIntakeFormDialog({
               ) : null}
             </div>
 
-            <div className="space-y-2">
-              <FieldLabel htmlFor={`salaryType-${formId}`} required>
-                급여 유형
-              </FieldLabel>
-              <select
-                id={`salaryType-${formId}`}
-                value={formValues.salaryType}
-                onChange={(event) =>
-                  updateFormValue("salaryType", event.target.value as SalaryType)
-                }
-                className={selectClassName}
-                required
-              >
-                {SALARY_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {SALARY_TYPE_LABELS[type]}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <div className="grid gap-4 rounded-lg border p-4 sm:col-span-2 sm:grid-cols-2">
+              <p className="text-sm font-medium sm:col-span-2">급여</p>
 
-            <div className="space-y-2">
-              <FieldLabel htmlFor={`salaryBasis-${formId}`} required>
-                급여 기준
-              </FieldLabel>
-              <select
-                id={`salaryBasis-${formId}`}
-                value={formValues.salaryBasis}
-                onChange={(event) =>
-                  updateFormValue("salaryBasis", event.target.value as SalaryBasis)
-                }
-                className={selectClassName}
-                required
-              >
-                {SALARY_BASES.map((basis) => (
-                  <option key={basis} value={basis}>
-                    {SALARY_BASIS_LABELS[basis]}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <div className="space-y-2">
+                <FieldLabel htmlFor={`salaryType-${formId}`} required>
+                  급여 유형
+                </FieldLabel>
+                <select
+                  id={`salaryType-${formId}`}
+                  value={formValues.salaryType}
+                  onChange={(event) =>
+                    updateFormValue(
+                      "salaryType",
+                      event.target.value as SalaryType,
+                    )
+                  }
+                  className={selectClassName}
+                  required
+                >
+                  {SALARY_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {SALARY_TYPE_LABELS[type]}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="space-y-2 sm:col-span-2">
-              <FieldLabel htmlFor={`salaryAmount-${formId}`} required>
-                급여 금액
-              </FieldLabel>
-              <Input
-                id={`salaryAmount-${formId}`}
-                type="text"
-                inputMode="numeric"
-                value={formatSalaryInput(formValues.salaryAmount)}
-                onChange={(event) =>
-                  updateFormValue(
-                    "salaryAmount",
-                    parseSalaryInput(event.target.value),
-                  )
-                }
-                required
-              />
+              <div className="space-y-2">
+                <FieldLabel htmlFor={`salaryBasis-${formId}`} required>
+                  급여 기준
+                </FieldLabel>
+                <select
+                  id={`salaryBasis-${formId}`}
+                  value={formValues.salaryBasis}
+                  onChange={(event) =>
+                    updateFormValue(
+                      "salaryBasis",
+                      event.target.value as SalaryBasis,
+                    )
+                  }
+                  className={selectClassName}
+                  required
+                >
+                  {SALARY_BASES.map((basis) => (
+                    <option key={basis} value={basis}>
+                      {SALARY_BASIS_LABELS[basis]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2 sm:col-span-2">
+                <FieldLabel htmlFor={`salaryAmount-${formId}`} required>
+                  금액
+                </FieldLabel>
+                <Input
+                  id={`salaryAmount-${formId}`}
+                  type="text"
+                  inputMode="numeric"
+                  value={formatSalaryInput(formValues.salaryAmount)}
+                  onChange={(event) =>
+                    updateFormValue(
+                      "salaryAmount",
+                      parseSalaryInput(event.target.value),
+                    )
+                  }
+                  required
+                />
+              </div>
             </div>
 
             <div className="space-y-2 sm:col-span-2">
@@ -543,22 +553,27 @@ export function HireIntakeFormDialog({
             </div>
 
             {isContract ? (
-              <>
+              <div className="grid gap-4 rounded-lg border p-4 sm:col-span-2 sm:grid-cols-2">
+                <p className="text-sm font-medium sm:col-span-2">계약 기간</p>
+
                 <div className="space-y-2">
                   <FieldLabel htmlFor={`contractStart-${formId}`} required>
-                    계약 시작일
+                    시작일
                   </FieldLabel>
                   <DateInput
                     id={`contractStart-${formId}`}
                     value={formValues.contractStart}
-                    onChange={(value) => updateFormValue("contractStart", value)}
+                    onChange={(value) =>
+                      updateFormValue("contractStart", value)
+                    }
                     required
                     disabled={isPending}
                   />
                 </div>
+
                 <div className="space-y-2">
                   <FieldLabel htmlFor={`contractEnd-${formId}`} required>
-                    계약 종료일
+                    종료일
                   </FieldLabel>
                   <DateInput
                     id={`contractEnd-${formId}`}
@@ -568,7 +583,7 @@ export function HireIntakeFormDialog({
                     disabled={isPending}
                   />
                 </div>
-              </>
+              </div>
             ) : null}
           </div>
 
@@ -724,10 +739,11 @@ export function HireIntakeFormDialog({
           </div>
 
           <div className="space-y-3 border-t pt-4">
-            <Label>급여계좌</Label>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2">
+              <p className="text-sm font-medium sm:col-span-2">급여계좌</p>
+
               <div className="space-y-2">
-                <Label htmlFor={`bankPreset-${formId}`}>은행</Label>
+                <FieldLabel htmlFor={`bankPreset-${formId}`}>은행</FieldLabel>
                 <select
                   id={`bankPreset-${formId}`}
                   value={formValues.bankPreset}
@@ -745,29 +761,27 @@ export function HireIntakeFormDialog({
                   ))}
                   <option value={BANK_CUSTOM_VALUE}>직접입력</option>
                 </select>
+
+                {formValues.bankPreset === BANK_CUSTOM_VALUE ? (
+                  <div className="space-y-2">
+                    <FieldLabel htmlFor={`bankNameCustom-${formId}`}>
+                      은행명
+                    </FieldLabel>
+                    <Input
+                      id={`bankNameCustom-${formId}`}
+                      value={formValues.bankNameCustom}
+                      onChange={(event) =>
+                        updateFormValue("bankNameCustom", event.target.value)
+                      }
+                      disabled={isPending}
+                      maxLength={50}
+                    />
+                  </div>
+                ) : null}
               </div>
-              {formValues.bankPreset === BANK_CUSTOM_VALUE ? (
-                <div className="space-y-2">
-                  <Label htmlFor={`bankNameCustom-${formId}`}>은행명</Label>
-                  <Input
-                    id={`bankNameCustom-${formId}`}
-                    value={formValues.bankNameCustom}
-                    onChange={(event) =>
-                      updateFormValue("bankNameCustom", event.target.value)
-                    }
-                    disabled={isPending}
-                    maxLength={50}
-                  />
-                </div>
-              ) : null}
-              <div
-                className={
-                  formValues.bankPreset === BANK_CUSTOM_VALUE
-                    ? "space-y-2 sm:col-span-2"
-                    : "space-y-2"
-                }
-              >
-                <Label htmlFor={`accountNumber-${formId}`}>계좌번호</Label>
+
+              <div className="space-y-2">
+                <FieldLabel htmlFor={`accountNumber-${formId}`}>계좌번호</FieldLabel>
                 <Input
                   id={`accountNumber-${formId}`}
                   type="text"
@@ -786,7 +800,7 @@ export function HireIntakeFormDialog({
             </div>
           </div>
 
-          <div className="grid gap-4 border-t pt-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <FieldLabel htmlFor={`email-${formId}`}>이메일</FieldLabel>
               <Input
