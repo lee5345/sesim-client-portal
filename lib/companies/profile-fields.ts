@@ -36,6 +36,8 @@ export type CompanyProfileFieldKey =
   | "npsFax"
   | "employmentCenterPhone"
   | "employmentCenterFax"
+  | "laborOfficePhone"
+  | "laborOfficeFax"
   | "retirementPensionContact"
   | "retirementPensionPhone"
   | "notes";
@@ -145,6 +147,14 @@ export const COMPANY_PROFILE_SECTIONS: CompanyProfileSection[] = [
           { key: "employmentCenterFax", label: "팩스", type: "phone", maxLength: 20 },
         ],
       },
+      {
+        id: "labor-office",
+        title: "노동지청",
+        fields: [
+          { key: "laborOfficePhone", label: "전화", type: "phone", maxLength: 20 },
+          { key: "laborOfficeFax", label: "팩스", type: "phone", maxLength: 20 },
+        ],
+      },
     ],
   },
   {
@@ -207,6 +217,8 @@ export type CompanyProfile = {
   npsFax: string | null;
   employmentCenterPhone: string | null;
   employmentCenterFax: string | null;
+  laborOfficePhone: string | null;
+  laborOfficeFax: string | null;
   retirementPensionContact: string | null;
   retirementPensionPhone: string | null;
   notes: string | null;

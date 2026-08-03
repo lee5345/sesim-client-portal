@@ -53,6 +53,8 @@ const companyProfileSelect = {
   npsFax: true,
   employmentCenterPhone: true,
   employmentCenterFax: true,
+  laborOfficePhone: true,
+  laborOfficeFax: true,
   retirementPensionContact: true,
   retirementPensionPhone: true,
   notes: true,
@@ -94,6 +96,8 @@ function toCompanyProfile(
     npsFax: string | null;
     employmentCenterPhone: string | null;
     employmentCenterFax: string | null;
+    laborOfficePhone: string | null;
+    laborOfficeFax: string | null;
     retirementPensionContact: string | null;
     retirementPensionPhone: string | null;
     notes: string | null;

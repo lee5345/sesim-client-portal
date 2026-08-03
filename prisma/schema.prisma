@@ -24,6 +24,8 @@ model Company {
   employmentCenterFax       String?
   employmentCenterPhone     String?
   fax                       String?
+  laborOfficeFax            String?
+  laborOfficePhone          String?
   firmContactName           String?
   mobile                    String?
   nhisFax                   String?
