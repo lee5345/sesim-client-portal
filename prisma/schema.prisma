@@ -152,7 +152,7 @@ model PasswordResetToken {
 model NewHire {
   id                   String      @id @default(uuid()) @db.Uuid
   companyId            String      @db.Uuid
-  name                 String[]
+  name                 String
   rrnEncrypted         String
   rrnIv                String
   employeeNumber       String?     @db.VarChar(6)
