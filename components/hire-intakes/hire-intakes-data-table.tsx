@@ -106,10 +106,10 @@ export function HireIntakesDataTable({
                 이름
               </th>
               <th rowSpan={2} className={`${headerCellClassName} align-middle`}>
-                사번
+                <MaskedRrnColumnHeader />
               </th>
               <th rowSpan={2} className={`${headerCellClassName} align-middle`}>
-                <MaskedRrnColumnHeader />
+                사번
               </th>
               <th rowSpan={2} className={`${headerCellClassName} align-middle`}>
                 입사일
@@ -170,14 +170,14 @@ export function HireIntakesDataTable({
               className="group border-b last:border-0 hover:bg-muted/20"
             >
               <td className={stickyNameCellClassName}>{hireIntake.name}</td>
-              <td className={`${bodyCellClassName} font-mono text-muted-foreground`}>
-                {displayText(hireIntake.employeeNumber)}
-              </td>
               <td className={bodyCellClassName}>
                 <MaskedRrnCell
                   id={hireIntake.id}
                   maskedRrn={hireIntake.maskedRrn}
                 />
+              </td>
+              <td className={`${bodyCellClassName} font-mono text-muted-foreground`}>
+                {displayText(hireIntake.employeeNumber)}
               </td>
               <td className={`${bodyCellClassName} text-muted-foreground`}>
                 {formatDate(hireIntake.hireDate)}

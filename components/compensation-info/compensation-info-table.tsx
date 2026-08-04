@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { CompensationInfoMonthSelector } from "@/components/compensation-info/compensation-info-month-selector";
 import { ExcelExportDialog } from "@/components/export/excel-export-dialog";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { SortBySelect } from "@/components/filters/sort-by-select";
 import { NewEntriesControls } from "@/components/layout/new-entries-controls";
 import { Button } from "@/components/ui/button";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
@@ -48,6 +49,11 @@ import {
 } from "@/modules/compensation-info/actions";
 import { exportCompensationInfosExcel } from "@/modules/compensation-info/export";
 import { paginate } from "@/lib/pagination";
+import {
+  compareNameAscThenCreatedAtAsc,
+  sortListRows,
+  type ListSortMode,
+} from "@/lib/sort/list-sort";
 import { listUnreadTenantChangeEntityIdsAction } from "@/lib/realtime/sync-actions";
 
 function clearShowUnreadParam(
@@ -299,6 +305,7 @@ export function CompensationInfoTable({
   const [draftNameFilter, setDraftNameFilter] = useState("");
   const [nameFilter, setNameFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [sortMode, setSortMode] = useState<ListSortMode>("default");
 
   const chromeLocked = isPending || editingRowId !== null || reviewActive;
 
@@ -336,8 +343,13 @@ export function CompensationInfoTable({
   }, [compensationInfos, unreadIds]);
 
   const filteredRows = useMemo(
-    () => filterCompensationInfos(visibleRows, { name: nameFilter }),
-    [nameFilter, visibleRows],
+    () =>
+      sortListRows(
+        filterCompensationInfos(visibleRows, { name: nameFilter }),
+        sortMode,
+        compareNameAscThenCreatedAtAsc,
+      ),
+    [nameFilter, sortMode, visibleRows],
   );
 
   const filterSummary = useMemo(
@@ -361,6 +373,11 @@ export function CompensationInfoTable({
     setPage(1);
     setDraftNameFilter("");
     setNameFilter("");
+  }
+
+  function handleSortModeChange(next: ListSortMode) {
+    setPage(1);
+    setSortMode(next);
   }
 
   const pagination = useMemo(() => paginate(filteredRows, page), [filteredRows, page]);
@@ -601,7 +618,7 @@ type TableRow =
                 </div>
               </div>
 
-              <div className="flex shrink-0 items-center gap-2 lg:ml-auto">
+              <div className="flex shrink-0 items-end gap-2 lg:ml-auto">
                 <Button
                   type="button"
                   disabled={chromeLocked}
@@ -619,6 +636,13 @@ type TableRow =
                   <X className="size-4" />
                   필터 초기화
                 </Button>
+                <SortBySelect
+                  id="compensation-info-sort"
+                  defaultLabel="이름"
+                  value={sortMode}
+                  onChange={handleSortModeChange}
+                  disabled={chromeLocked}
+                />
               </div>
             </div>
           </div>

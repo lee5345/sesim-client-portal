@@ -449,3 +449,168 @@ export async function deleteDailyWorkerAction(formData: FormData) {
     parseOptionalCompanyId(formData),
   );
 }
+
+export async function copyDailyWorkerNamesFromMostRecentMonth(input: {
+  companyId: string;
+  year: number;
+  month: number;
+  mode: "overwrite" | "append";
+}) {
+  const session = await requireDataEditAuth();
+  resolveCompanyId(session, input.companyId);
+  const period = periodSchema.parse({ year: input.year, month: input.month });
+
+  const mostRecent = await prisma.dailyWorker.findFirst({
+    where: {
+      companyId: input.companyId,
+      deletedAt: null,
+      NOT: { year: period.year, month: period.month },
+    },
+    orderBy: [{ year: "desc" }, { month: "desc" }, { createdAt: "desc" }],
+    select: { year: true, month: true },
+  });
+
+  if (!mostRecent) {
+    return { success: true as const, created: 0, skipped: 0 };
+  }
+
+  const source = await prisma.dailyWorker.findMany({
+    where: {
+      companyId: input.companyId,
+      year: mostRecent.year,
+      month: mostRecent.month,
+      deletedAt: null,
+    },
+    orderBy: [{ name: "asc" }, { createdAt: "asc" }],
+    select: {
+      name: true,
+      rrnEncrypted: true,
+      rrnIv: true,
+      occupation: true,
+      occupationCode: true,
+    },
+  });
+
+  const sourceByName = new Map<
+    string,
+    {
+      name: string;
+      rrnEncrypted: string;
+      rrnIv: string;
+      occupation: (typeof source)[number]["occupation"];
+      occupationCode: string;
+    }
+  >();
+  for (const record of source) {
+    const name = record.name.trim();
+    if (!name || sourceByName.has(name)) {
+      continue;
+    }
+    sourceByName.set(name, {
+      name,
+      rrnEncrypted: record.rrnEncrypted,
+      rrnIv: record.rrnIv,
+      occupation: record.occupation,
+      occupationCode: record.occupationCode,
+    });
+  }
+
+  const sourceEntries = [...sourceByName.values()];
+
+  if (sourceEntries.length === 0) {
+    return { success: true as const, created: 0, skipped: 0 };
+  }
+
+  const existing = await prisma.dailyWorker.findMany({
+    where: {
+      companyId: input.companyId,
+      year: period.year,
+      month: period.month,
+      deletedAt: null,
+    },
+    select: { id: true, name: true },
+  });
+
+  const existingNameSet = new Set(existing.map((r) => r.name.trim()));
+
+  const toInsert =
+    input.mode === "append"
+      ? sourceEntries.filter((entry) => !existingNameSet.has(entry.name))
+      : sourceEntries;
+
+  const skipped =
+    input.mode === "append" ? sourceEntries.length - toInsert.length : 0;
+
+  const now = new Date();
+  const emptyHours = Object.fromEntries(
+    DAILY_HOUR_FIELD_NAMES.map((fieldName) => [fieldName, null]),
+  );
+
+  await prisma.$transaction(async (tx) => {
+    if (input.mode === "overwrite" && existing.length > 0) {
+      await tx.dailyWorker.updateMany({
+        where: {
+          companyId: input.companyId,
+          year: period.year,
+          month: period.month,
+          deletedAt: null,
+        },
+        data: { deletedAt: now },
+      });
+    }
+
+    if (toInsert.length > 0) {
+      await tx.dailyWorker.createMany({
+        data: toInsert.map((entry) => ({
+          companyId: input.companyId,
+          createdById: session.user.userId,
+          year: period.year,
+          month: period.month,
+          name: entry.name,
+          rrnEncrypted: entry.rrnEncrypted,
+          rrnIv: entry.rrnIv,
+          occupation: entry.occupation,
+          occupationCode: entry.occupationCode,
+          ...emptyHours,
+          daysWorked: 0,
+          avgHoursPerDay: 0,
+          salaryBasis: "GROSS",
+          totalWage: 0,
+          notes: null,
+          deletedAt: null,
+          createdAt: now,
+          updatedAt: now,
+        })),
+      });
+    }
+
+    await tx.auditLog.create({
+      data: {
+        actorId: session.user.userId,
+        companyId: input.companyId,
+        action: "CREATE",
+        tableName: "daily_workers",
+        recordId: null,
+        payload: {
+          mode: input.mode,
+          targetYear: period.year,
+          targetMonth: period.month,
+          sourceYear: mostRecent.year,
+          sourceMonth: mostRecent.month,
+          created: toInsert.length,
+          skipped,
+        },
+      },
+    });
+  });
+
+  await afterDataMutation({
+    session,
+    companyId: input.companyId,
+    entityType: "DAILY_WORKER",
+    action: "CREATE",
+  });
+
+  revalidateDailyWorkerPaths(input.companyId);
+  return { success: true as const, created: toInsert.length, skipped };
+}

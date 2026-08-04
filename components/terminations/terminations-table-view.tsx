@@ -14,6 +14,11 @@ import type { TerminationTableRow } from "@/lib/terminations/types";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
 import { paginate } from "@/lib/pagination";
+import {
+  compareTimestamps,
+  sortListRows,
+  type ListSortMode,
+} from "@/lib/sort/list-sort";
 import { deleteTerminationAction } from "@/modules/terminations/actions";
 
 type TerminationsTableViewProps = {
@@ -35,6 +40,21 @@ function toFormDateValue(date: Date | null) {
   return formatDate(date);
 }
 
+function compareTerminationDefault(
+  a: TerminationTableRow,
+  b: TerminationTableRow,
+) {
+  const byTerminationDate = compareTimestamps(
+    a.terminationDate,
+    b.terminationDate,
+    "desc",
+  );
+  if (byTerminationDate !== 0) {
+    return byTerminationDate;
+  }
+  return compareTimestamps(a.createdAt, b.createdAt, "desc");
+}
+
 export function TerminationsTableView({
   terminations,
   companyId,
@@ -47,10 +67,16 @@ export function TerminationsTableView({
   disabled = false,
 }: TerminationsTableViewProps) {
   const [page, setPage] = useState(1);
+  const [sortMode, setSortMode] = useState<ListSortMode>("default");
 
   const filteredTerminations = useMemo(
-    () => filterTerminations(terminations, appliedFilters),
-    [terminations, appliedFilters],
+    () =>
+      sortListRows(
+        filterTerminations(terminations, appliedFilters),
+        sortMode,
+        compareTerminationDefault,
+      ),
+    [terminations, appliedFilters, sortMode],
   );
 
   const pagination = useMemo(
@@ -60,7 +86,7 @@ export function TerminationsTableView({
 
   useEffect(() => {
     setPage(1);
-  }, [appliedFilters]);
+  }, [appliedFilters, sortMode]);
 
   useEffect(() => {
     if (page > pagination.totalPages) {
@@ -107,6 +133,8 @@ export function TerminationsTableView({
         onDraftChange={onDraftChange}
         onSearch={onSearch}
         onClear={onClear}
+        sortMode={sortMode}
+        onSortModeChange={setSortMode}
         disabled={disabled}
       />
 

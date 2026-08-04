@@ -65,25 +65,15 @@ export function StaffUsersTableView({
           {query.trim() ? "검색 결과가 없습니다." : "등록된 직원 계정이 없습니다."}
         </p>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-lg border">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/40 text-left">
-                <th className="border-r border-border/30 px-4 py-3 font-medium last:border-r-0">
-                  이름
-                </th>
-                <th className="border-r border-border/30 px-4 py-3 font-medium last:border-r-0">
-                  이메일
-                </th>
-                <th className="border-r border-border/30 px-4 py-3 font-medium last:border-r-0">
-                  역할
-                </th>
-                <th className="border-r border-border/30 px-4 py-3 font-medium last:border-r-0">
-                  상태
-                </th>
-                <th className="border-r border-border/30 px-4 py-3 font-medium last:border-r-0">
-                  생성일
-                </th>
+                <th className="px-4 py-3 font-medium">이름</th>
+                <th className="px-4 py-3 font-medium">이메일</th>
+                <th className="px-4 py-3 font-medium">역할</th>
+                <th className="px-4 py-3 font-medium">상태</th>
+                <th className="px-4 py-3 font-medium">생성일</th>
                 <th className="px-4 py-3 text-right font-medium">관리</th>
               </tr>
             </thead>
@@ -96,13 +86,9 @@ export function StaffUsersTableView({
                     key={user.id}
                     className="border-b last:border-0 hover:bg-muted/20"
                   >
-                    <td className="border-r border-border/30 px-4 py-3 font-medium last:border-r-0">
-                      {user.name}
-                    </td>
-                    <td className="border-r border-border/30 px-4 py-3 text-muted-foreground last:border-r-0">
-                      {user.email}
-                    </td>
-                    <td className="border-r border-border/30 px-4 py-3 last:border-r-0">
+                    <td className="px-4 py-3 font-medium">{user.name}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{user.email}</td>
+                    <td className="px-4 py-3">
                       <Badge
                         variant={
                           user.role === "FIRM_ADMIN" ? "default" : "secondary"
@@ -111,7 +97,7 @@ export function StaffUsersTableView({
                         {getRoleLabel(user.role)}
                       </Badge>
                     </td>
-                    <td className="border-r border-border/30 px-4 py-3 last:border-r-0">
+                    <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1.5">
                         <Badge
                           variant={user.isActive ? "outline" : "destructive"}
@@ -128,7 +114,7 @@ export function StaffUsersTableView({
                         ) : null}
                       </div>
                     </td>
-                    <td className="border-r border-border/30 px-4 py-3 text-muted-foreground last:border-r-0">
+                    <td className="px-4 py-3 text-muted-foreground">
                       {formatDate(user.createdAt)}
                     </td>
                     <td className="px-4 py-3">

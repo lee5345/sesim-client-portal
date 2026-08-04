@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, Search, X } from "lucide-react";
 
+import { SortBySelect } from "@/components/filters/sort-by-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +14,7 @@ import {
 } from "@/components/ui/popover";
 import type { DailyWorkerFilterValues } from "@/lib/filters/daily-workers";
 import type { DailyWorkerOccupation, SalaryBasis } from "@/lib/generated/prisma/client";
+import type { ListSortMode } from "@/lib/sort/list-sort";
 import { cn } from "@/lib/utils";
 import {
   DAILY_WORKER_OCCUPATIONS,
@@ -29,6 +31,8 @@ type DailyWorkersFiltersProps = {
   onDraftChange: (next: DailyWorkersFilterValues) => void;
   onSearch: () => void;
   onClear: () => void;
+  sortMode: ListSortMode;
+  onSortModeChange: (next: ListSortMode) => void;
   disabled?: boolean;
 };
 
@@ -40,6 +44,8 @@ export function DailyWorkersFilters({
   onDraftChange,
   onSearch,
   onClear,
+  sortMode,
+  onSortModeChange,
   disabled = false,
 }: DailyWorkersFiltersProps) {
   const [occupationMenuOpen, setOccupationMenuOpen] = useState(false);
@@ -155,7 +161,7 @@ export function DailyWorkersFilters({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-end gap-2">
           <Button type="button" disabled={disabled} onClick={onSearch}>
             <Search />
             검색
@@ -164,6 +170,13 @@ export function DailyWorkersFilters({
             <X />
             필터 초기화
           </Button>
+          <SortBySelect
+            id="daily-worker-sort"
+            defaultLabel="이름"
+            value={sortMode}
+            onChange={onSortModeChange}
+            disabled={disabled}
+          />
         </div>
       </div>
     </div>

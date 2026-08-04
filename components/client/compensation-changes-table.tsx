@@ -10,6 +10,7 @@ const CompensationChangeIcon = NAV_ICONS["arrow-left-right"];
 import { CompensationChangeFormDialog } from "@/components/client/compensation-change-form-dialog";
 import { ExcelExportDialog } from "@/components/export/excel-export-dialog";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { SortBySelect } from "@/components/filters/sort-by-select";
 import { NewEntriesControls } from "@/components/layout/new-entries-controls";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { DateInput } from "@/components/ui/date-input";
@@ -34,6 +35,11 @@ import {
 import { summarizeCompensationChangeFilters } from "@/lib/export/filter-summaries";
 import type { SalaryBasis, SalaryType } from "@/lib/generated/prisma/client";
 import { paginate } from "@/lib/pagination";
+import {
+  compareTimestamps,
+  sortListRows,
+  type ListSortMode,
+} from "@/lib/sort/list-sort";
 import { SALARY_BASIS_LABELS, SALARY_TYPE_LABELS } from "@/modules/hire-intakes/labels";
 import { deleteCompensationChangeAction } from "@/modules/compensation-changes/actions";
 import { exportCompensationChangesExcel } from "@/modules/compensation-changes/export";
@@ -80,6 +86,17 @@ function displayText(value: string | null | undefined) {
   return value?.trim() ? value : EMPTY_CELL;
 }
 
+function compareCompensationChangeDefault(
+  a: CompensationChangeRow,
+  b: CompensationChangeRow,
+) {
+  const byChangeDate = compareTimestamps(a.changeDate, b.changeDate, "desc");
+  if (byChangeDate !== 0) {
+    return byChangeDate;
+  }
+  return compareTimestamps(a.createdAt, b.createdAt, "desc");
+}
+
 export function CompensationChangesTable({
   compensationChanges,
   companyId,
@@ -95,6 +112,7 @@ export function CompensationChangesTable({
     EMPTY_COMPENSATION_CHANGE_FILTERS,
   );
   const [page, setPage] = useState(1);
+  const [sortMode, setSortMode] = useState<ListSortMode>("default");
 
   const visibleChanges = useMemo(() => {
     if (!unreadIds) {
@@ -104,8 +122,13 @@ export function CompensationChangesTable({
   }, [compensationChanges, unreadIds]);
 
   const filteredChanges = useMemo(
-    () => filterCompensationChanges(visibleChanges, appliedFilters),
-    [appliedFilters, visibleChanges],
+    () =>
+      sortListRows(
+        filterCompensationChanges(visibleChanges, appliedFilters),
+        sortMode,
+        compareCompensationChangeDefault,
+      ),
+    [appliedFilters, sortMode, visibleChanges],
   );
 
   const filterSummary = useMemo(
@@ -144,6 +167,11 @@ export function CompensationChangesTable({
     setPage(1);
     setDraftFilters(EMPTY_COMPENSATION_CHANGE_FILTERS);
     setAppliedFilters(EMPTY_COMPENSATION_CHANGE_FILTERS);
+  }
+
+  function handleSortModeChange(next: ListSortMode) {
+    setPage(1);
+    setSortMode(next);
   }
 
   return (
@@ -255,7 +283,7 @@ export function CompensationChangesTable({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-end gap-2">
                   <Button type="button" onClick={onSearch}>
                     <Search />
                     검색
@@ -264,6 +292,13 @@ export function CompensationChangesTable({
                     <X />
                     필터 초기화
                   </Button>
+                  <SortBySelect
+                    id="compensation-change-sort"
+                    defaultLabel="급여변경일"
+                    value={sortMode}
+                    onChange={handleSortModeChange}
+                    disabled={reviewActive}
+                  />
                 </div>
               </div>
             </fieldset>

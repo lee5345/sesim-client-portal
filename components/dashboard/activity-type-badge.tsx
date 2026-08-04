@@ -1,24 +1,103 @@
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import Link from "next/link";
+import {
+  ArrowLeftRight,
+  CalendarDays,
+  CalendarOff,
+  Calculator,
+  DollarSign,
+  UserMinus,
+  UserPlus,
+  Users,
+} from "lucide-react";
 
-export const DASHBOARD_ACTIVITY_TYPES = ["입사자", "퇴사자", "일용직"] as const;
+import { Badge } from "@/components/ui/badge";
+
+export const DASHBOARD_ACTIVITY_TYPES = [
+  "입사자",
+  "퇴사자",
+  "일용직",
+  "급여변경",
+  "상세급여",
+  "사업소득",
+  "휴직자 등",
+  "피부양자",
+] as const;
 
 export type DashboardActivityType = (typeof DASHBOARD_ACTIVITY_TYPES)[number];
 
-const ACTIVITY_TYPE_BADGE_CLASS: Record<DashboardActivityType, string> = {
-  입사자: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  퇴사자: "border-red-200 bg-red-50 text-red-700",
-  일용직: "border-blue-200 bg-blue-50 text-blue-700",
+export const DASHBOARD_ACTIVITY_MODULE_PATHS: Record<
+  DashboardActivityType,
+  string
+> = {
+  입사자: "new-hires",
+  퇴사자: "terminations",
+  일용직: "daily-workers",
+  급여변경: "compensation-changes",
+  상세급여: "compensation-info",
+  사업소득: "business-income",
+  "휴직자 등": "leave-records",
+  피부양자: "dependents",
 };
+
+const ACTIVITY_TYPE_META: Record<
+  DashboardActivityType,
+  {
+    label: string;
+    Icon: React.ComponentType<{ className?: string }>;
+  }
+> = {
+  입사자: { label: "입사자", Icon: UserPlus },
+  퇴사자: { label: "퇴사자", Icon: UserMinus },
+  일용직: { label: "일용직", Icon: CalendarDays },
+  급여변경: { label: "급여변경", Icon: ArrowLeftRight },
+  상세급여: { label: "상세급여", Icon: Calculator },
+  사업소득: { label: "사업소득", Icon: DollarSign },
+  "휴직자 등": { label: "휴직자 등", Icon: CalendarOff },
+  피부양자: { label: "피부양자", Icon: Users },
+};
+
+export function getDashboardActivityHref(input: {
+  type: DashboardActivityType;
+  mode: "client" | "firm";
+  companyId?: string;
+}) {
+  const modulePath = DASHBOARD_ACTIVITY_MODULE_PATHS[input.type];
+
+  if (input.mode === "firm") {
+    if (!input.companyId) {
+      return undefined;
+    }
+    return `/firm/companies/${input.companyId}?tab=${modulePath}`;
+  }
+
+  return `/client/${modulePath}`;
+}
 
 type ActivityTypeBadgeProps = {
   type: DashboardActivityType;
+  href?: string;
 };
 
-export function ActivityTypeBadge({ type }: ActivityTypeBadgeProps) {
-  return (
-    <Badge variant="outline" className={cn(ACTIVITY_TYPE_BADGE_CLASS[type])}>
-      {type}
+export function ActivityTypeBadge({ type, href }: ActivityTypeBadgeProps) {
+  const { label, Icon } = ACTIVITY_TYPE_META[type];
+
+  const badge = (
+    <Badge
+      variant="outline"
+      className="h-6 gap-1.5 rounded-full border-border/70 bg-muted/60 px-2.5 text-xs text-foreground transition-colors hover:bg-muted"
+    >
+      <Icon className="size-3.5" />
+      {label}
     </Badge>
+  );
+
+  if (!href) {
+    return badge;
+  }
+
+  return (
+    <Link href={href} className="inline-flex">
+      {badge}
+    </Link>
   );
 }

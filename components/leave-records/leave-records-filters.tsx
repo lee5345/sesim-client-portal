@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, Search, X } from "lucide-react";
 
+import { SortBySelect } from "@/components/filters/sort-by-select";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ import {
 } from "@/components/ui/popover";
 import type { LeaveRecordFilterValues } from "@/lib/filters/leave-records";
 import type { LeaveType } from "@/lib/generated/prisma/client";
+import type { ListSortMode } from "@/lib/sort/list-sort";
 import { cn } from "@/lib/utils";
 import {
   LEAVE_TYPES,
@@ -28,6 +30,8 @@ type LeaveRecordsFiltersProps = {
   onDraftChange: (next: LeaveRecordFilterValues) => void;
   onSearch: () => void;
   onClear: () => void;
+  sortMode: ListSortMode;
+  onSortModeChange: (next: ListSortMode) => void;
   disabled?: boolean;
 };
 
@@ -39,6 +43,8 @@ export function LeaveRecordsFilters({
   onDraftChange,
   onSearch,
   onClear,
+  sortMode,
+  onSortModeChange,
   disabled = false,
 }: LeaveRecordsFiltersProps) {
   const [leaveTypeMenuOpen, setLeaveTypeMenuOpen] = useState(false);
@@ -142,7 +148,7 @@ export function LeaveRecordsFilters({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-end gap-2">
           <Button type="button" onClick={onSearch} disabled={disabled}>
             <Search />
             검색
@@ -151,6 +157,13 @@ export function LeaveRecordsFilters({
             <X />
             필터 초기화
           </Button>
+          <SortBySelect
+            id="leave-record-sort"
+            defaultLabel="시작일"
+            value={sortMode}
+            onChange={onSortModeChange}
+            disabled={disabled}
+          />
         </div>
       </div>
     </div>

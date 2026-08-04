@@ -33,6 +33,11 @@ import { formatSalaryAmount } from "@/lib/format/currency";
 import type { LeaveRecordTableRow } from "@/lib/leave-records/types";
 import { paginate } from "@/lib/pagination";
 import {
+  compareTimestamps,
+  sortListRows,
+  type ListSortMode,
+} from "@/lib/sort/list-sort";
+import {
   formatWeeklyHours,
   LEAVE_TYPE_LABELS,
 } from "@/modules/leave-records/constants";
@@ -66,6 +71,17 @@ function displayText(value: string | null | undefined) {
   return value?.trim() ? value : EMPTY_CELL;
 }
 
+function compareLeaveRecordDefault(
+  a: LeaveRecordTableRow,
+  b: LeaveRecordTableRow,
+) {
+  const byPeriodStart = compareTimestamps(a.periodStart, b.periodStart, "desc");
+  if (byPeriodStart !== 0) {
+    return byPeriodStart;
+  }
+  return compareTimestamps(a.createdAt, b.createdAt, "desc");
+}
+
 export function LeaveRecordsTable({
   leaveRecords,
   companyId,
@@ -80,6 +96,7 @@ export function LeaveRecordsTable({
     EMPTY_LEAVE_RECORD_FILTERS,
   );
   const [page, setPage] = useState(1);
+  const [sortMode, setSortMode] = useState<ListSortMode>("default");
 
   const visibleRecords = useMemo(() => {
     if (!unreadIds) {
@@ -89,8 +106,13 @@ export function LeaveRecordsTable({
   }, [leaveRecords, unreadIds]);
 
   const filteredRecords = useMemo(
-    () => filterLeaveRecords(visibleRecords, appliedFilters),
-    [appliedFilters, visibleRecords],
+    () =>
+      sortListRows(
+        filterLeaveRecords(visibleRecords, appliedFilters),
+        sortMode,
+        compareLeaveRecordDefault,
+      ),
+    [appliedFilters, sortMode, visibleRecords],
   );
 
   const rrnEntries = useMemo(
@@ -127,6 +149,11 @@ export function LeaveRecordsTable({
     setPage(1);
     setDraftFilters(EMPTY_LEAVE_RECORD_FILTERS);
     setAppliedFilters(EMPTY_LEAVE_RECORD_FILTERS);
+  }
+
+  function handleSortModeChange(next: ListSortMode) {
+    setPage(1);
+    setSortMode(next);
   }
 
   return (
@@ -177,6 +204,8 @@ export function LeaveRecordsTable({
                 onDraftChange={handleDraftChange}
                 onSearch={onSearch}
                 onClear={onClear}
+                sortMode={sortMode}
+                onSortModeChange={handleSortModeChange}
                 disabled={reviewActive}
               />
             </fieldset>

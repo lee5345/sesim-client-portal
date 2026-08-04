@@ -65,6 +65,8 @@ export function CompaniesList({
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
   const [staffFilter, setStaffFilter] = useState("");
+  const [unreadOnly, setUnreadOnly] = useState(false);
+  const realtime = useOptionalRealtimeSync();
 
   const filtered = useMemo(() => {
     const trimmed = query.trim().toLowerCase();
@@ -75,16 +77,22 @@ export function CompaniesList({
       }
 
       if (staffFilter === UNASSIGNED_STAFF_FILTER) {
-        return !company.firmContactName;
+        if (company.firmContactName) {
+          return false;
+        }
+      } else if (staffFilter) {
+        if (company.firmContactName !== staffFilter) {
+          return false;
+        }
       }
 
-      if (staffFilter) {
-        return company.firmContactName === staffFilter;
+      if (unreadOnly && (realtime?.getCompanyBadge(company.id) ?? 0) <= 0) {
+        return false;
       }
 
       return true;
     });
-  }, [companies, query, staffFilter]);
+  }, [companies, query, staffFilter, unreadOnly, realtime]);
 
   const { assignedToMe, activeUnassigned, inactive } = useMemo(() => {
     const assignedToMe = filtered.filter(
@@ -123,16 +131,17 @@ export function CompaniesList({
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="w-full max-w-sm space-y-1.5">
+        <div className="w-full max-w-xs space-y-1.5">
           <Label htmlFor="company-name-search">회사명</Label>
           <Input
             id="company-name-search"
+            className="h-8 text-sm"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="회사명 검색"
           />
         </div>
-        <div className="w-full max-w-xs space-y-1.5">
+        <div className="w-full max-w-[13rem] space-y-1.5">
           <Label htmlFor="company-staff-filter">담당 직원</Label>
           <select
             id="company-staff-filter"
@@ -163,6 +172,20 @@ export function CompaniesList({
           <X />
           필터 초기화
         </Button>
+        <div className="w-full max-w-[13rem]">
+          <div className="flex h-8 items-center gap-2 rounded-md bg-background px-2">
+            <input
+              id="company-unread-filter"
+              type="checkbox"
+              checked={unreadOnly}
+              onChange={(event) => setUnreadOnly(event.target.checked)}
+              className="size-4"
+            />
+            <span className="text-sm leading-none text-muted-foreground">
+              변경사항 있음
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className="space-y-6">
@@ -280,7 +303,7 @@ function CompanyCard({
                   });
                 }}
               >
-                알림 무시하기
+                알림 무시
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

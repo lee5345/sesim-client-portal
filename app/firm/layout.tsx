@@ -31,9 +31,15 @@ export default async function FirmLayout({
       badgeVariant: "registration" as const,
     },
     {
-      href: "/firm/calculator",
-      label: "사대보험 계산기",
-      icon: "calculator" as const,
+      href: "/firm/task-manager",
+      label: "사무실 업무 관리",
+      icon: "clipboard-list" as const,
+      disabled: true,
+    },
+    {
+      href: "/firm/activity-log",
+      label: "활동 기록",
+      icon: "history" as const,
       disabled: true,
     },
     ...(session.user.role === "FIRM_ADMIN"

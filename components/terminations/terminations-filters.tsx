@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, Search, X } from "lucide-react";
 
+import { SortBySelect } from "@/components/filters/sort-by-select";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ import {
 } from "@/components/ui/popover";
 import type { TerminationFilterValues } from "@/lib/filters/terminations";
 import type { RetirementPayType } from "@/lib/generated/prisma/client";
+import type { ListSortMode } from "@/lib/sort/list-sort";
 import { cn } from "@/lib/utils";
 import { RETIREMENT_PAY_TYPE_OPTIONS } from "@/modules/terminations/constants";
 
@@ -24,6 +26,8 @@ type TerminationsFiltersProps = {
   onDraftChange: (next: TerminationFilterValues) => void;
   onSearch: () => void;
   onClear: () => void;
+  sortMode: ListSortMode;
+  onSortModeChange: (next: ListSortMode) => void;
   disabled?: boolean;
 };
 
@@ -35,6 +39,8 @@ export function TerminationsFilters({
   onDraftChange,
   onSearch,
   onClear,
+  sortMode,
+  onSortModeChange,
   disabled = false,
 }: TerminationsFiltersProps) {
   const [retirementPayMenuOpen, setRetirementPayMenuOpen] = useState(false);
@@ -142,7 +148,7 @@ export function TerminationsFilters({
           </Popover>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-end gap-2">
           <Button type="button" onClick={onSearch}>
             <Search />
             검색
@@ -151,6 +157,13 @@ export function TerminationsFilters({
             <X />
             필터 초기화
           </Button>
+          <SortBySelect
+            id="termination-sort"
+            defaultLabel="퇴사일"
+            value={sortMode}
+            onChange={onSortModeChange}
+            disabled={disabled}
+          />
         </div>
       </div>
     </fieldset>

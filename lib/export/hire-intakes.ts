@@ -35,8 +35,8 @@ export type HireIntakeExportRow = {
 
 const HEADERS = [
   "이름",
-  "사번",
   "주민등록번호",
+  "사번",
   "입사일",
   "부서",
   "급여 유형",
@@ -72,8 +72,8 @@ function formatAllowances(allowances: NonTaxableAllowance[] | null) {
 function toRow(record: HireIntakeExportRow): StyledCell[] {
   return [
     { value: record.name },
-    { value: record.employeeNumber },
     { value: formatRrnForExport(record.rrn) },
+    { value: record.employeeNumber },
     { value: formatDate(record.hireDate) },
     { value: record.department },
     { value: SALARY_TYPE_LABELS[record.salaryType] },
@@ -117,7 +117,7 @@ export function buildHireIntakesExportBuffer(input: {
     ],
     headers: [...HEADERS],
     rows: input.records.map(toRow),
-    columnWidths: [12, 10, 16, 12, 14, 10, 10, 14, 10, 12, 12, 28, 12, 18, 22, 14, 24],
+    columnWidths: [12, 16, 10, 12, 14, 10, 10, 14, 10, 12, 12, 28, 12, 18, 22, 14, 24],
     centerHeaderIndexes: [5, 6, 8, 9, 10],
     monoColumnIndexes: [1, 2, 13],
     numberColumnIndexes: [7],

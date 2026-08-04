@@ -23,6 +23,7 @@ import {
 import { SegmentedDigitFields } from "@/components/client/segmented-digit-fields";
 import { ExcelExportDialog } from "@/components/export/excel-export-dialog";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { SortBySelect } from "@/components/filters/sort-by-select";
 import { NewEntriesControls } from "@/components/layout/new-entries-controls";
 import { Button } from "@/components/ui/button";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
@@ -57,6 +58,11 @@ import {
 } from "@/lib/form/segmented-digits";
 import type { SalaryBasis } from "@/lib/generated/prisma/client";
 import { paginate } from "@/lib/pagination";
+import {
+  compareNameAscThenCreatedAtAsc,
+  sortListRows,
+  type ListSortMode,
+} from "@/lib/sort/list-sort";
 import { listUnreadTenantChangeEntityIdsAction } from "@/lib/realtime/sync-actions";
 import {
   copyBusinessIncomeNamesFromMostRecentMonth,
@@ -185,6 +191,7 @@ export function BusinessIncomeTable({
   const [draftNameFilter, setDraftNameFilter] = useState("");
   const [nameFilter, setNameFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [sortMode, setSortMode] = useState<ListSortMode>("default");
 
   const chromeLocked = isPending || editingRowId !== null || reviewActive;
 
@@ -225,8 +232,13 @@ export function BusinessIncomeTable({
   }, [businessIncomes, unreadIds]);
 
   const filteredRows = useMemo(
-    () => filterBusinessIncomes(visibleRows, { name: nameFilter }),
-    [nameFilter, visibleRows],
+    () =>
+      sortListRows(
+        filterBusinessIncomes(visibleRows, { name: nameFilter }),
+        sortMode,
+        compareNameAscThenCreatedAtAsc,
+      ),
+    [nameFilter, sortMode, visibleRows],
   );
 
   const filterSummary = useMemo(
@@ -245,6 +257,11 @@ export function BusinessIncomeTable({
     setPage(1);
     setDraftNameFilter("");
     setNameFilter("");
+  }
+
+  function handleSortModeChange(next: ListSortMode) {
+    setPage(1);
+    setSortMode(next);
   }
 
   const pagination = useMemo(() => paginate(filteredRows, page), [filteredRows, page]);
@@ -463,7 +480,7 @@ export function BusinessIncomeTable({
                   />
                 </div>
               </div>
-              <div className="flex shrink-0 items-center gap-2 lg:ml-auto">
+              <div className="flex shrink-0 items-end gap-2 lg:ml-auto">
                 <Button
                   type="button"
                   disabled={chromeLocked}
@@ -481,6 +498,13 @@ export function BusinessIncomeTable({
                   <X className="size-4" />
                   필터 초기화
                 </Button>
+                <SortBySelect
+                  id="business-income-sort"
+                  defaultLabel="이름"
+                  value={sortMode}
+                  onChange={handleSortModeChange}
+                  disabled={chromeLocked}
+                />
               </div>
             </div>
           </div>

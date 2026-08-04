@@ -8,10 +8,14 @@ import {
   DailyWorkersFilters,
   type DailyWorkersFilterValues,
 } from "@/components/daily-workers/daily-workers-filters";
-import { DailyWorkersMonthSelector } from "@/components/daily-workers/daily-workers-month-selector";
 import type { DailyWorkerTableRow } from "@/lib/daily-workers/types";
 import { filterDailyWorkers } from "@/lib/filters/daily-workers";
 import { paginate } from "@/lib/pagination";
+import {
+  compareNameAscThenCreatedAtAsc,
+  sortListRows,
+  type ListSortMode,
+} from "@/lib/sort/list-sort";
 import { deleteDailyWorkerAction } from "@/modules/daily-workers/actions";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
@@ -21,7 +25,6 @@ type DailyWorkersTableViewProps = {
   year: number;
   month: number;
   companyId?: string;
-  basePath: string;
   hasBaseRows: boolean;
   draftFilters: DailyWorkersFilterValues;
   appliedFilters: DailyWorkersFilterValues;
@@ -36,7 +39,6 @@ export function DailyWorkersTableView({
   year,
   month,
   companyId,
-  basePath,
   hasBaseRows,
   draftFilters,
   appliedFilters,
@@ -46,10 +48,16 @@ export function DailyWorkersTableView({
   disabled = false,
 }: DailyWorkersTableViewProps) {
   const [page, setPage] = useState(1);
+  const [sortMode, setSortMode] = useState<ListSortMode>("default");
 
   const filteredDailyWorkers = useMemo(
-    () => filterDailyWorkers(dailyWorkers, appliedFilters),
-    [dailyWorkers, appliedFilters],
+    () =>
+      sortListRows(
+        filterDailyWorkers(dailyWorkers, appliedFilters),
+        sortMode,
+        compareNameAscThenCreatedAtAsc,
+      ),
+    [dailyWorkers, appliedFilters, sortMode],
   );
 
   const pagination = useMemo(
@@ -59,7 +67,7 @@ export function DailyWorkersTableView({
 
   useEffect(() => {
     setPage(1);
-  }, [appliedFilters]);
+  }, [appliedFilters, sortMode]);
 
   useEffect(() => {
     if (page > pagination.totalPages) {
@@ -103,18 +111,13 @@ export function DailyWorkersTableView({
 
   return (
     <div className="space-y-4">
-      <DailyWorkersMonthSelector
-        year={year}
-        month={month}
-        basePath={basePath}
-        disabled={disabled}
-      />
-
       <DailyWorkersFilters
         draft={draftFilters}
         onDraftChange={onDraftChange}
         onSearch={onSearch}
         onClear={onClear}
+        sortMode={sortMode}
+        onSortModeChange={setSortMode}
         disabled={disabled}
       />
 

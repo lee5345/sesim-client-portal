@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, Search, X } from "lucide-react";
 
+import { SortBySelect } from "@/components/filters/sort-by-select";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import type { ListSortMode } from "@/lib/sort/list-sort";
 import { cn } from "@/lib/utils";
 
 export type HireIntakeFilterValues = {
@@ -39,6 +41,8 @@ type HireIntakesFiltersProps = {
   onDraftChange: (next: HireIntakeFilterValues) => void;
   onSearch: () => void;
   onClear: () => void;
+  sortMode: ListSortMode;
+  onSortModeChange: (next: ListSortMode) => void;
   disabled?: boolean;
 };
 
@@ -48,6 +52,8 @@ export function HireIntakesFilters({
   onDraftChange,
   onSearch,
   onClear,
+  sortMode,
+  onSortModeChange,
   disabled = false,
 }: HireIntakesFiltersProps) {
   const [departmentMenuOpen, setDepartmentMenuOpen] = useState(false);
@@ -160,7 +166,7 @@ export function HireIntakesFilters({
           </Popover>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-end gap-2">
           <Button type="button" onClick={onSearch}>
             <Search />
             검색
@@ -169,6 +175,13 @@ export function HireIntakesFilters({
             <X />
             필터 초기화
           </Button>
+          <SortBySelect
+            id="hire-intake-sort"
+            defaultLabel="입사일"
+            value={sortMode}
+            onChange={onSortModeChange}
+            disabled={disabled}
+          />
         </div>
       </div>
     </fieldset>

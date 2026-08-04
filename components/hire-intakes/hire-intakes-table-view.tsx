@@ -17,6 +17,11 @@ import { DataTablePagination } from "@/components/ui/data-table-pagination";
 import { filterHireIntakes } from "@/lib/filters/hire-intakes";
 import { formatDate } from "@/lib/format/date";
 import { paginate } from "@/lib/pagination";
+import {
+  compareTimestamps,
+  sortListRows,
+  type ListSortMode,
+} from "@/lib/sort/list-sort";
 
 type DepartmentOption = {
   id: string;
@@ -43,6 +48,14 @@ function toFormDateValue(date: Date | null) {
   return formatDate(date);
 }
 
+function compareHireIntakeDefault(a: HireIntakeTableRow, b: HireIntakeTableRow) {
+  const byHireDate = compareTimestamps(a.hireDate, b.hireDate, "desc");
+  if (byHireDate !== 0) {
+    return byHireDate;
+  }
+  return compareTimestamps(a.createdAt, b.createdAt, "desc");
+}
+
 export function HireIntakesTableView({
   hireIntakes,
   departments,
@@ -56,10 +69,16 @@ export function HireIntakesTableView({
   disabled = false,
 }: HireIntakesTableViewProps) {
   const [page, setPage] = useState(1);
+  const [sortMode, setSortMode] = useState<ListSortMode>("default");
 
   const filteredHireIntakes = useMemo(
-    () => filterHireIntakes(hireIntakes, appliedFilters),
-    [hireIntakes, appliedFilters],
+    () =>
+      sortListRows(
+        filterHireIntakes(hireIntakes, appliedFilters),
+        sortMode,
+        compareHireIntakeDefault,
+      ),
+    [hireIntakes, appliedFilters, sortMode],
   );
 
   const pagination = useMemo(
@@ -69,7 +88,7 @@ export function HireIntakesTableView({
 
   useEffect(() => {
     setPage(1);
-  }, [appliedFilters]);
+  }, [appliedFilters, sortMode]);
 
   useEffect(() => {
     if (page > pagination.totalPages) {
@@ -128,6 +147,8 @@ export function HireIntakesTableView({
         onDraftChange={onDraftChange}
         onSearch={onSearch}
         onClear={onClear}
+        sortMode={sortMode}
+        onSortModeChange={setSortMode}
         disabled={disabled}
       />
 

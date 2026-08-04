@@ -26,6 +26,11 @@ import { DataTablePagination } from "@/components/ui/data-table-pagination";
 import { filterDependents } from "@/lib/filters/dependents";
 import type { DependentRecordTableRow } from "@/lib/dependents/types";
 import { paginate } from "@/lib/pagination";
+import {
+  compareTimestamps,
+  sortListRows,
+  type ListSortMode,
+} from "@/lib/sort/list-sort";
 import { deleteDependentRecordAction } from "@/modules/dependents/actions";
 
 type DependentsTableProps = {
@@ -47,6 +52,21 @@ const stickyActionHeaderClassName =
 const stickyActionCellClassName =
   "sticky right-0 z-20 border-l border-border bg-muted px-4 py-3 text-center whitespace-nowrap shadow-[-10px_0_20px_-10px_rgba(0,0,0,0.12)] group-hover:bg-muted";
 
+function compareDependentDefault(
+  a: DependentRecordTableRow,
+  b: DependentRecordTableRow,
+) {
+  const byRegistrationDate = compareTimestamps(
+    a.registrationRequestedDate,
+    b.registrationRequestedDate,
+    "desc",
+  );
+  if (byRegistrationDate !== 0) {
+    return byRegistrationDate;
+  }
+  return compareTimestamps(a.createdAt, b.createdAt, "desc");
+}
+
 export function DependentsTable({
   dependentRecords,
   companyId,
@@ -61,6 +81,7 @@ export function DependentsTable({
     EMPTY_DEPENDENT_FILTERS,
   );
   const [page, setPage] = useState(1);
+  const [sortMode, setSortMode] = useState<ListSortMode>("default");
 
   const visibleRecords = useMemo(() => {
     if (!unreadIds) {
@@ -70,8 +91,13 @@ export function DependentsTable({
   }, [dependentRecords, unreadIds]);
 
   const filteredRecords = useMemo(
-    () => filterDependents(visibleRecords, appliedFilters),
-    [appliedFilters, visibleRecords],
+    () =>
+      sortListRows(
+        filterDependents(visibleRecords, appliedFilters),
+        sortMode,
+        compareDependentDefault,
+      ),
+    [appliedFilters, sortMode, visibleRecords],
   );
 
   const pagination = useMemo(
@@ -100,6 +126,11 @@ export function DependentsTable({
     setPage(1);
     setDraftFilters(EMPTY_DEPENDENT_FILTERS);
     setAppliedFilters(EMPTY_DEPENDENT_FILTERS);
+  }
+
+  function handleSortModeChange(next: ListSortMode) {
+    setPage(1);
+    setSortMode(next);
   }
 
   return (
@@ -150,6 +181,8 @@ export function DependentsTable({
                 onDraftChange={handleDraftChange}
                 onSearch={onSearch}
                 onClear={onClear}
+                sortMode={sortMode}
+                onSortModeChange={handleSortModeChange}
                 disabled={reviewActive}
               />
             </fieldset>

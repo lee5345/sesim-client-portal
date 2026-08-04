@@ -2,11 +2,13 @@
 
 import { Search, X } from "lucide-react";
 
+import { SortBySelect } from "@/components/filters/sort-by-select";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { DependentFilterValues } from "@/lib/filters/dependents";
+import type { ListSortMode } from "@/lib/sort/list-sort";
 
 export type { DependentFilterValues };
 export { EMPTY_DEPENDENT_FILTERS } from "@/lib/filters/dependents";
@@ -16,6 +18,8 @@ type DependentsFiltersProps = {
   onDraftChange: (next: DependentFilterValues) => void;
   onSearch: () => void;
   onClear: () => void;
+  sortMode: ListSortMode;
+  onSortModeChange: (next: ListSortMode) => void;
   disabled?: boolean;
 };
 
@@ -24,6 +28,8 @@ export function DependentsFilters({
   onDraftChange,
   onSearch,
   onClear,
+  sortMode,
+  onSortModeChange,
   disabled = false,
 }: DependentsFiltersProps) {
   return (
@@ -77,7 +83,7 @@ export function DependentsFilters({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-end gap-2">
           <Button type="button" onClick={onSearch} disabled={disabled}>
             <Search />
             검색
@@ -86,6 +92,13 @@ export function DependentsFilters({
             <X />
             필터 초기화
           </Button>
+          <SortBySelect
+            id="dependent-sort"
+            defaultLabel="등록 희망일"
+            value={sortMode}
+            onChange={onSortModeChange}
+            disabled={disabled}
+          />
         </div>
       </div>
     </div>
