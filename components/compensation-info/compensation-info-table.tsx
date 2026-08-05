@@ -43,6 +43,7 @@ import type { SalaryBasis } from "@/lib/generated/prisma/client";
 import type { UnusedLeaveUnit } from "@/lib/generated/prisma/client";
 import {
   copyCompensationInfoNamesFromMostRecentMonth,
+  getCompensationInfoMostRecentMonthWithData,
   createCompensationInfo,
   deleteCompensationInfoAction,
   updateCompensationInfo,
@@ -300,6 +301,10 @@ export function CompensationInfoTable({
   const [formError, setFormError] = useState<string | null>(null);
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
   const [copyModeDialogOpen, setCopyModeDialogOpen] = useState(false);
+  const [copySourceYearMonth, setCopySourceYearMonth] = useState<{
+    year: number;
+    month: number;
+  } | null>(null);
   const [unreadIds, setUnreadIds] = useState<Set<string> | null>(null);
   const [reviewActive, setReviewActive] = useState(false);
   const [draftNameFilter, setDraftNameFilter] = useState("");
@@ -334,6 +339,29 @@ export function CompensationInfoTable({
       setReviewActive(true);
     })();
   }, [basePath, companyId, month, router, searchParams, showUnread, year]);
+
+  useEffect(() => {
+    if (!companyId || (!copyDialogOpen && !copyModeDialogOpen)) {
+      return;
+    }
+
+    let cancelled = false;
+    setCopySourceYearMonth(null);
+
+    void (async () => {
+      const source = await getCompensationInfoMostRecentMonthWithData({
+        companyId,
+        year,
+        month,
+      });
+      if (cancelled) return;
+      setCopySourceYearMonth(source);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [companyId, copyDialogOpen, copyModeDialogOpen, month, year]);
 
   const visibleRows = useMemo(() => {
     if (!unreadIds) {
@@ -1010,8 +1038,18 @@ type TableRow =
           <DialogHeader>
             <DialogTitle>최근 인원 복사</DialogTitle>
             <DialogDescription>
-              가장 최근에 기록이 있는 월의 재직자 목록을 {year}년 {month}월로
-              복사합니다.
+              {copySourceYearMonth ? (
+                <>
+                  가장 최근에 기록이 있는 {copySourceYearMonth.year}년{" "}
+                  {copySourceYearMonth.month}월의 재직자 목록을 {year}년 {month}월로
+                  복사합니다.
+                </>
+              ) : (
+                <>
+                  가장 최근에 기록이 있는 월의 재직자 목록을 {year}년 {month}월로
+                  복사합니다.
+                </>
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -1042,6 +1080,12 @@ type TableRow =
               {year}년 {month}월에 이미 등록된 항목이 있습니다. 덮어쓰기는 기존
               항목을 삭제한 뒤 이름만 복사하고, 추가하기는 기존 재직자을 유지한 채
               새 재직자만 추가합니다.
+              {copySourceYearMonth ? (
+                <span className="mt-2 block">
+                  복사 대상 기간: {copySourceYearMonth.year}년{" "}
+                  {copySourceYearMonth.month}월
+                </span>
+              ) : null}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:justify-end">

@@ -38,7 +38,7 @@ export default async function FirmLayout({
     },
     {
       href: "/firm/activity-log",
-      label: "활동 기록",
+      label: "활동 기록 보관함",
       icon: "history" as const,
       disabled: true,
     },

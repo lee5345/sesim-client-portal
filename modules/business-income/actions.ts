@@ -345,6 +345,32 @@ export async function deleteBusinessIncomeAction(formData: FormData) {
   );
 }
 
+export async function getBusinessIncomeMostRecentMonthWithData(input: {
+  companyId: string;
+  year: number;
+  month: number;
+}): Promise<{ year: number; month: number } | null> {
+  const session = await requireDataEditAuth();
+  resolveCompanyId(session, input.companyId);
+  const period = periodSchema.parse({ year: input.year, month: input.month });
+
+  const mostRecent = await prisma.businessIncome.findFirst({
+    where: {
+      companyId: input.companyId,
+      deletedAt: null,
+      NOT: { year: period.year, month: period.month },
+    },
+    orderBy: [{ year: "desc" }, { month: "desc" }, { createdAt: "desc" }],
+    select: { year: true, month: true },
+  });
+
+  if (!mostRecent) {
+    return null;
+  }
+
+  return { year: mostRecent.year, month: mostRecent.month };
+}
+
 export async function copyBusinessIncomeNamesFromMostRecentMonth(input: {
   companyId: string;
   year: number;

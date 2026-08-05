@@ -290,6 +290,32 @@ export async function deleteCompensationInfoAction(formData: FormData) {
   await deleteCompensationInfo(String(id ?? ""), parseOptionalCompanyId(formData));
 }
 
+export async function getCompensationInfoMostRecentMonthWithData(input: {
+  companyId: string;
+  year: number;
+  month: number;
+}): Promise<{ year: number; month: number } | null> {
+  const session = await requireDataEditAuth();
+  resolveCompanyId(session, input.companyId);
+  const period = periodSchema.parse({ year: input.year, month: input.month });
+
+  const mostRecent = await prisma.compensationInfo.findFirst({
+    where: {
+      companyId: input.companyId,
+      deletedAt: null,
+      NOT: { year: period.year, month: period.month },
+    },
+    orderBy: [{ year: "desc" }, { month: "desc" }, { createdAt: "desc" }],
+    select: { year: true, month: true },
+  });
+
+  if (!mostRecent) {
+    return null;
+  }
+
+  return { year: mostRecent.year, month: mostRecent.month };
+}
+
 export async function copyCompensationInfoNamesFromMostRecentMonth(input: {
   companyId: string;
   year: number;
