@@ -24,20 +24,20 @@ export type { DailyWorkerTableRow };
 const EMPTY_CELL = "—";
 
 const headerCellClassName =
-  "border-r border-border/30 px-4 py-3 font-medium whitespace-nowrap last:border-r-0";
+  "border-r border-border/30 px-4 py-2 font-medium whitespace-nowrap last:border-r-0";
 const bodyCellClassName =
   "border-r border-border/30 px-4 py-3 whitespace-nowrap last:border-r-0";
 const autoCellClassName = `${bodyCellClassName} bg-muted/60 text-muted-foreground`;
 const dayHeaderClassName =
-  "border-r border-border/30 px-4 py-3 text-center font-medium whitespace-nowrap last:border-r-0";
+  "border-r border-border/30 px-4 py-2 text-center font-medium whitespace-nowrap last:border-r-0";
 const dayCellClassName =
   "border-r border-border/30 px-4 py-3 text-center font-mono text-muted-foreground whitespace-nowrap last:border-r-0";
 const stickyNameHeaderClassName =
-  "sticky left-0 z-40 border-r border-border bg-muted px-4 py-3 font-medium whitespace-nowrap shadow-[10px_0_20px_-10px_rgba(0,0,0,0.15)]";
+  "sticky left-0 z-40 border-r border-border bg-muted px-4 py-2 font-medium whitespace-nowrap shadow-[10px_0_20px_-10px_rgba(0,0,0,0.15)]";
 const stickyNameCellClassName =
   "sticky left-0 z-30 border-r border-border bg-muted px-4 py-3 text-muted-foreground whitespace-nowrap shadow-[10px_0_20px_-10px_rgba(0,0,0,0.12)] group-hover:bg-muted";
 const stickyActionHeaderClassName =
-  "sticky right-0 z-30 border-l border-border bg-muted px-4 py-3 text-center font-medium whitespace-nowrap shadow-[-10px_0_20px_-10px_rgba(0,0,0,0.15)]";
+  "sticky right-0 z-30 border-l border-border bg-muted px-4 py-2 text-center font-medium whitespace-nowrap shadow-[-10px_0_20px_-10px_rgba(0,0,0,0.15)]";
 const stickyActionCellClassName =
   "sticky right-0 z-20 border-l border-border bg-muted px-4 py-3 text-center whitespace-nowrap shadow-[-10px_0_20px_-10px_rgba(0,0,0,0.12)] group-hover:bg-muted";
 

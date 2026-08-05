@@ -1,20 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 
+import { MultiSelectFilter } from "@/components/filters/multi-select-filter";
 import { SortBySelect } from "@/components/filters/sort-by-select";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import type { ListSortMode } from "@/lib/sort/list-sort";
-import { cn } from "@/lib/utils";
 
 export type HireIntakeFilterValues = {
   name: string;
@@ -57,11 +52,6 @@ export function HireIntakesFilters({
   disabled = false,
 }: HireIntakesFiltersProps) {
   const [departmentMenuOpen, setDepartmentMenuOpen] = useState(false);
-
-  const departmentLabel =
-    draft.departments.length === 0
-      ? "부서"
-      : `부서 (${draft.departments.length})`;
 
   function toggleDepartment(name: string) {
     const next = draft.departments.includes(name)
@@ -123,48 +113,42 @@ export function HireIntakesFilters({
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <Label>부서</Label>
-          <Popover open={departmentMenuOpen} onOpenChange={setDepartmentMenuOpen}>
-            <PopoverTrigger
-              className={cn(
-                "flex h-8 w-full min-w-[9rem] items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-2.5 text-sm transition-colors outline-none hover:bg-muted/40 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 lg:w-[11rem]",
-                draft.departments.length > 0 && "border-primary/30",
-              )}
-            >
-              <span className="truncate">{departmentLabel}</span>
-              <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-56 p-2">
-              {departments.length === 0 ? (
-                <p className="px-2 py-1.5 text-sm text-muted-foreground">
-                  등록된 부서가 없습니다.
-                </p>
-              ) : (
-                <div className="max-h-56 space-y-0.5 overflow-y-auto">
-                  {departments.map((department) => {
-                    const checked = draft.departments.includes(department.name);
+        <MultiSelectFilter
+          label="부서"
+          triggerLabel="부서"
+          selectedCount={draft.departments.length}
+          open={departmentMenuOpen}
+          onOpenChange={setDepartmentMenuOpen}
+          disabled={disabled}
+          contentClassName="w-56"
+        >
+          {departments.length === 0 ? (
+            <p className="px-2 py-1.5 text-sm text-muted-foreground">
+              등록된 부서가 없습니다.
+            </p>
+          ) : (
+            <div className="max-h-56 space-y-0.5 overflow-y-auto">
+              {departments.map((department) => {
+                const checked = draft.departments.includes(department.name);
 
-                    return (
-                      <label
-                        key={department.id}
-                        className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
-                      >
-                        <input
-                          type="checkbox"
-                          className="size-3.5 rounded border-input accent-primary"
-                          checked={checked}
-                          onChange={() => toggleDepartment(department.name)}
-                        />
-                        <span className="truncate">{department.name}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              )}
-            </PopoverContent>
-          </Popover>
-        </div>
+                return (
+                  <label
+                    key={department.id}
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                  >
+                    <input
+                      type="checkbox"
+                      className="size-3.5 rounded border-input accent-primary"
+                      checked={checked}
+                      onChange={() => toggleDepartment(department.name)}
+                    />
+                    <span className="truncate">{department.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+        </MultiSelectFilter>
 
         <div className="flex items-end gap-2">
           <Button type="button" onClick={onSearch}>

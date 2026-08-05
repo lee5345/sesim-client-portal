@@ -1,22 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 
+import { MultiSelectFilter } from "@/components/filters/multi-select-filter";
 import { SortBySelect } from "@/components/filters/sort-by-select";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import type { LeaveRecordFilterValues } from "@/lib/filters/leave-records";
 import type { LeaveType } from "@/lib/generated/prisma/client";
 import type { ListSortMode } from "@/lib/sort/list-sort";
-import { cn } from "@/lib/utils";
 import {
   LEAVE_TYPES,
   LEAVE_TYPE_LABELS,
@@ -35,9 +30,6 @@ type LeaveRecordsFiltersProps = {
   disabled?: boolean;
 };
 
-const selectClassName =
-  "flex h-8 w-full min-w-[9rem] items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-2.5 text-sm transition-colors outline-none hover:bg-muted/40 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 lg:w-[11rem]";
-
 export function LeaveRecordsFilters({
   draft,
   onDraftChange,
@@ -48,11 +40,6 @@ export function LeaveRecordsFilters({
   disabled = false,
 }: LeaveRecordsFiltersProps) {
   const [leaveTypeMenuOpen, setLeaveTypeMenuOpen] = useState(false);
-
-  const leaveTypeLabel =
-    draft.leaveTypes.length === 0
-      ? "종류"
-      : `종류 (${draft.leaveTypes.length})`;
 
   function toggleLeaveType(leaveType: LeaveType) {
     const next = draft.leaveTypes.includes(leaveType)
@@ -87,45 +74,31 @@ export function LeaveRecordsFilters({
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <Label>종류</Label>
-          <Popover
-            open={leaveTypeMenuOpen}
-            onOpenChange={(open) => {
-              if (disabled) return;
-              setLeaveTypeMenuOpen(open);
-            }}
-          >
-            <PopoverTrigger
-              disabled={disabled}
-              className={cn(
-                selectClassName,
-                draft.leaveTypes.length > 0 && "border-primary/30",
-                disabled && "cursor-not-allowed opacity-50",
-              )}
-            >
-              <span className="truncate">{leaveTypeLabel}</span>
-              <ChevronDown className="size-4 shrink-0 opacity-60" />
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-72 p-2">
-              <div className="max-h-64 space-y-1 overflow-y-auto">
-                {LEAVE_TYPES.map((leaveType) => (
-                  <label
-                    key={leaveType}
-                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={draft.leaveTypes.includes(leaveType)}
-                      onChange={() => toggleLeaveType(leaveType)}
-                    />
-                    <span>{LEAVE_TYPE_LABELS[leaveType]}</span>
-                  </label>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
+        <MultiSelectFilter
+          label="종류"
+          triggerLabel="종류"
+          selectedCount={draft.leaveTypes.length}
+          open={leaveTypeMenuOpen}
+          onOpenChange={setLeaveTypeMenuOpen}
+          disabled={disabled}
+          contentClassName="w-72"
+        >
+          <div className="max-h-64 space-y-1 overflow-y-auto">
+            {LEAVE_TYPES.map((leaveType) => (
+              <label
+                key={leaveType}
+                className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+              >
+                <input
+                  type="checkbox"
+                  checked={draft.leaveTypes.includes(leaveType)}
+                  onChange={() => toggleLeaveType(leaveType)}
+                />
+                <span>{LEAVE_TYPE_LABELS[leaveType]}</span>
+              </label>
+            ))}
+          </div>
+        </MultiSelectFilter>
 
         <div className="space-y-1.5">
           <Label>기간</Label>

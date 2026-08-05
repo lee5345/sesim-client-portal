@@ -3,15 +3,11 @@
 import { useState } from "react";
 import { ChevronDown, Search, X } from "lucide-react";
 
+import { MultiSelectFilter } from "@/components/filters/multi-select-filter";
 import { SortBySelect } from "@/components/filters/sort-by-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import type { DailyWorkerFilterValues } from "@/lib/filters/daily-workers";
 import type { DailyWorkerOccupation, SalaryBasis } from "@/lib/generated/prisma/client";
 import type { ListSortMode } from "@/lib/sort/list-sort";
@@ -50,11 +46,6 @@ export function DailyWorkersFilters({
 }: DailyWorkersFiltersProps) {
   const [occupationMenuOpen, setOccupationMenuOpen] = useState(false);
 
-  const occupationLabel =
-    draft.occupations.length === 0
-      ? "직종"
-      : `직종 (${draft.occupations.length})`;
-
   function toggleOccupation(occupation: DailyWorkerOccupation) {
     const next = draft.occupations.includes(occupation)
       ? draft.occupations.filter((value) => value !== occupation)
@@ -86,53 +77,39 @@ export function DailyWorkersFilters({
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <Label>직종</Label>
-          <Popover
-            open={occupationMenuOpen}
-            onOpenChange={(open) => {
-              if (disabled) return;
-              setOccupationMenuOpen(open);
-            }}
-          >
-            <PopoverTrigger
-              disabled={disabled}
-              className={cn(
-                selectClassName,
-                draft.occupations.length > 0 && "border-primary/30",
-                disabled && "cursor-not-allowed opacity-50",
-              )}
-            >
-              <span className="truncate">{occupationLabel}</span>
-              <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-72 p-2">
-              <div className="max-h-56 space-y-0.5 overflow-y-auto">
-                {DAILY_WORKER_OCCUPATIONS.map((occupation) => {
-                  const checked = draft.occupations.includes(occupation.value);
+        <MultiSelectFilter
+          label="직종"
+          triggerLabel="직종"
+          selectedCount={draft.occupations.length}
+          open={occupationMenuOpen}
+          onOpenChange={setOccupationMenuOpen}
+          disabled={disabled}
+          contentClassName="w-72"
+        >
+          <div className="max-h-56 space-y-0.5 overflow-y-auto">
+            {DAILY_WORKER_OCCUPATIONS.map((occupation) => {
+              const checked = draft.occupations.includes(occupation.value);
 
-                  return (
-                    <label
-                      key={occupation.value}
-                      className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
-                    >
-                      <input
-                        type="checkbox"
-                        className="size-3.5 rounded border-input accent-primary"
-                        checked={checked}
-                        disabled={disabled}
-                        onChange={() => toggleOccupation(occupation.value)}
-                      />
-                      <span className="truncate">
-                        {DAILY_WORKER_OCCUPATION_LABELS[occupation.value]}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
+              return (
+                <label
+                  key={occupation.value}
+                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                >
+                  <input
+                    type="checkbox"
+                    className="size-3.5 rounded border-input accent-primary"
+                    checked={checked}
+                    disabled={disabled}
+                    onChange={() => toggleOccupation(occupation.value)}
+                  />
+                  <span className="truncate">
+                    {DAILY_WORKER_OCCUPATION_LABELS[occupation.value]}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </MultiSelectFilter>
 
         <div className="space-y-1.5">
           <Label htmlFor="daily-worker-salary-basis-filter">임금총액 기준</Label>

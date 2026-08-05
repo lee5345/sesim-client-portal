@@ -91,15 +91,15 @@ const textareaClassName =
   "h-8 w-full min-w-0 resize-none rounded-lg border border-input bg-transparent px-2 py-1 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
 
 const headerCellClassName =
-  "border-r border-border/30 px-4 py-3 text-left font-medium whitespace-nowrap last:border-r-0";
+  "border-r border-border/30 px-4 py-2 text-left font-medium whitespace-nowrap last:border-r-0";
 const bodyCellClassName =
   "border-r border-border/30 px-4 py-3 align-middle whitespace-nowrap last:border-r-0";
 const stickyNameHeaderClassName =
-  "sticky left-0 z-40 border-r border-border bg-muted px-4 py-3 text-left font-medium whitespace-nowrap shadow-[10px_0_20px_-10px_rgba(0,0,0,0.15)]";
+  "sticky left-0 z-40 border-r border-border bg-muted px-4 py-2 text-left font-medium whitespace-nowrap shadow-[10px_0_20px_-10px_rgba(0,0,0,0.15)]";
 const stickyNameCellClassName =
   "sticky left-0 z-30 border-r border-border bg-muted px-4 py-3 align-middle whitespace-nowrap shadow-[10px_0_20px_-10px_rgba(0,0,0,0.12)] group-hover:bg-muted";
 const stickyActionHeaderClassName =
-  "sticky right-0 z-30 border-l border-border bg-muted px-4 py-3 text-center font-medium whitespace-nowrap shadow-[-10px_0_20px_-10px_rgba(0,0,0,0.15)]";
+  "sticky right-0 z-30 border-l border-border bg-muted px-4 py-2 text-center font-medium whitespace-nowrap shadow-[-10px_0_20px_-10px_rgba(0,0,0,0.15)]";
 const stickyActionCellClassName =
   "sticky right-0 z-20 border-l border-border bg-muted px-4 py-3 text-center align-middle whitespace-nowrap shadow-[-10px_0_20px_-10px_rgba(0,0,0,0.12)] group-hover:bg-muted";
 
@@ -538,7 +538,9 @@ export function BusinessIncomeTable({
                       <th className={stickyNameHeaderClassName}>이름</th>
                       <th className={headerCellClassName}>
                         {editingRowId ? (
-                          <span className="whitespace-nowrap">주민등록번호</span>
+                          <div className="flex min-h-7 items-center whitespace-nowrap">
+                            <span>주민등록번호</span>
+                          </div>
                         ) : (
                           <MaskedRrnColumnHeader />
                         )}
