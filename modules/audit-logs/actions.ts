@@ -26,7 +26,27 @@ const listFiltersSchema = z.object({
   tableNames: z.array(z.enum(AUDIT_TABLE_NAME_OPTIONS)),
   createdAtFrom: z.string(),
   createdAtTo: z.string(),
+  payloadQuery: z.string(),
 });
+
+function escapeIlikePattern(value: string): string {
+  return value.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+}
+
+async function findAuditLogIdsByPayloadQuery(
+  companyId: string,
+  payloadQuery: string,
+): Promise<string[]> {
+  const pattern = `%${escapeIlikePattern(payloadQuery)}%`;
+  const rows = await prisma.$queryRaw<Array<{ id: string }>>`
+    SELECT id
+    FROM "AuditLog"
+    WHERE "companyId" = ${companyId}::uuid
+      AND payload IS NOT NULL
+      AND payload::text ILIKE ${pattern} ESCAPE '\\'
+  `;
+  return rows.map((row) => row.id);
+}
 
 export type AuditLogActorOption = {
   id: string;
@@ -106,6 +126,7 @@ export async function listAuditLogActors(
 function buildAuditLogWhere(
   companyId: string,
   filters: AuditLogFilterValues,
+  payloadMatchedIds?: string[],
 ): Prisma.AuditLogWhereInput {
   const createdAtFrom = parseAuditFilterDate(filters.createdAtFrom);
   const createdAtTo = parseAuditFilterDate(filters.createdAtTo, true);
@@ -120,6 +141,7 @@ function buildAuditLogWhere(
 
   return {
     companyId,
+    ...(payloadMatchedIds ? { id: { in: payloadMatchedIds } } : {}),
     ...(filters.actorIds.length > 0 ? { actorId: { in: filters.actorIds } } : {}),
     ...(filters.actions.length > 0
       ? { action: { in: filters.actions as AuditAction[] } }
@@ -156,7 +178,23 @@ export async function listAuditLogs(
     ? parsedFilters.data
     : EMPTY_AUDIT_LOG_FILTERS;
 
-  const where = buildAuditLogWhere(parsedCompanyId.data, safeFilters);
+  const payloadQuery = safeFilters.payloadQuery.trim();
+  let payloadMatchedIds: string[] | undefined;
+  if (payloadQuery) {
+    payloadMatchedIds = await findAuditLogIdsByPayloadQuery(
+      parsedCompanyId.data,
+      payloadQuery,
+    );
+    if (payloadMatchedIds.length === 0) {
+      return emptyPage(page);
+    }
+  }
+
+  const where = buildAuditLogWhere(
+    parsedCompanyId.data,
+    safeFilters,
+    payloadMatchedIds,
+  );
   const pageSize = CRUD_PAGE_SIZE;
   const safePage = Math.max(1, page);
 

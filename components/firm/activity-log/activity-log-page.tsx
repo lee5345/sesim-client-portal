@@ -160,19 +160,21 @@ export function ActivityLogPage({
 
   function handleDraftChange(next: AuditLogFilterValues) {
     setDraftFilters(next);
-    setAppliedFilters(next);
-    setPage(1);
   }
 
   function handleSearch() {
     setAppliedFilters(draftFilters);
     setPage(1);
+    setResult(emptyResult());
+    setLoading(true);
   }
 
   function handleClear() {
     setDraftFilters(EMPTY_AUDIT_LOG_FILTERS);
     setAppliedFilters(EMPTY_AUDIT_LOG_FILTERS);
     setPage(1);
+    setResult(emptyResult());
+    setLoading(true);
   }
 
   return (

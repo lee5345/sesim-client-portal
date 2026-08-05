@@ -9,6 +9,7 @@ export type AuditLogFilterValues = {
   tableNames: AuditLogTableName[];
   createdAtFrom: string;
   createdAtTo: string;
+  payloadQuery: string;
 };
 
 export const EMPTY_AUDIT_LOG_FILTERS: AuditLogFilterValues = {
@@ -17,6 +18,7 @@ export const EMPTY_AUDIT_LOG_FILTERS: AuditLogFilterValues = {
   tableNames: [],
   createdAtFrom: "",
   createdAtTo: "",
+  payloadQuery: "",
 };
 
 export function parseAuditFilterDate(value: string, endOfDay = false): Date | null {
@@ -49,8 +51,6 @@ const PREFERRED_PREVIEW_KEYS = [
   "targetPeriod",
 ] as const;
 
-const PREVIEW_MAX_LENGTH = 30;
-
 function formatPreviewValue(value: unknown): string | null {
   if (value === null || value === undefined) {
     return null;
@@ -65,13 +65,6 @@ function formatPreviewValue(value: unknown): string | null {
   return null;
 }
 
-function truncatePreview(summary: string): string {
-  if (summary.length <= PREVIEW_MAX_LENGTH) {
-    return summary;
-  }
-  return `${summary.slice(0, PREVIEW_MAX_LENGTH)}...`;
-}
-
 /** Compact one-line summary of an audit payload for table cells. */
 export function summarizeAuditPayload(payload: unknown): string {
   if (payload === null || payload === undefined) {
@@ -79,8 +72,7 @@ export function summarizeAuditPayload(payload: unknown): string {
   }
 
   if (typeof payload !== "object" || Array.isArray(payload)) {
-    const scalar = formatPreviewValue(payload);
-    return scalar ? truncatePreview(scalar) : "—";
+    return formatPreviewValue(payload) ?? "—";
   }
 
   const record = payload as Record<string, unknown>;
@@ -106,5 +98,5 @@ export function summarizeAuditPayload(payload: unknown): string {
     return "—";
   }
 
-  return truncatePreview(values.join(", "));
+  return values.join(", ");
 }

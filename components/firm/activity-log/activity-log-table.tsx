@@ -44,7 +44,7 @@ export function ActivityLogTable({
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg border">
       <div className="min-h-0 flex-1 overflow-auto">
         <table className="w-full min-w-[56rem] border-collapse text-sm">
-          <thead className="sticky top-0 z-10 bg-muted">
+          <thead className="sticky top-0 z-10 border-b border-border/60 bg-muted">
             <tr>
               <th className={headerCellClassName}>사용자</th>
               <th className={headerCellClassName}>역할</th>
@@ -117,7 +117,7 @@ function AuditLogRow({
   const preview = summarizeAuditPayload(row.payload);
 
   return (
-    <tr className="group border-t border-border/60 hover:bg-muted/30">
+    <tr className="group border-b border-border/60 hover:bg-muted/30">
       <td className={`${bodyCellClassName} whitespace-nowrap font-medium`}>
         {row.actor.name}
       </td>
@@ -130,8 +130,8 @@ function AuditLogRow({
       <td className={`${bodyCellClassName} whitespace-nowrap`}>
         {getAuditTableNameLabel(row.tableName)}
       </td>
-      <td className={`${bodyCellClassName} max-w-xs`}>
-        <div className="flex items-center gap-2">
+      <td className={`${bodyCellClassName} max-w-0 w-[30%]`}>
+        <div className="flex min-w-0 items-center gap-2">
           <span className="min-w-0 flex-1 truncate text-muted-foreground" title={preview}>
             {preview}
           </span>
