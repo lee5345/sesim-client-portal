@@ -23,6 +23,7 @@ type MultiSelectFilterProps = {
   onOpenChange: (open: boolean) => void;
   disabled?: boolean;
   contentClassName?: string;
+  triggerClassName?: string;
   children: ReactNode;
 };
 
@@ -34,6 +35,7 @@ export function MultiSelectFilter({
   onOpenChange,
   disabled = false,
   contentClassName,
+  triggerClassName: triggerClassNameProp,
   children,
 }: MultiSelectFilterProps) {
   const displayLabel =
@@ -56,6 +58,7 @@ export function MultiSelectFilter({
             triggerClassName,
             selectedCount > 0 && "border-primary/30",
             disabled && "cursor-not-allowed opacity-50",
+            triggerClassNameProp,
           )}
         >
           <span className="truncate">{displayLabel}</span>
