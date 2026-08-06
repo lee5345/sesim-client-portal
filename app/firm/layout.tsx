@@ -24,22 +24,21 @@ export default async function FirmLayout({
     { href: "/firm/dashboard", label: "대시보드", icon: "layout-dashboard" as const },
     { href: "/firm/companies", label: "고객사 목록", icon: "building2" as const },
     {
-      href: "/firm/client-accounts",
-      label: "고객 계정 관리",
-      icon: "users" as const,
-      badge: pendingCount,
-      badgeVariant: "registration" as const,
-    },
-    {
       href: "/firm/task-manager",
       label: "사무실 업무 관리",
       icon: "clipboard-list" as const,
-      disabled: true,
     },
     {
       href: "/firm/activity-log",
       label: "활동 기록 보관함",
       icon: "history" as const,
+    },
+    {
+      href: "/firm/client-accounts",
+      label: "고객 계정 관리",
+      icon: "users" as const,
+      badge: pendingCount,
+      badgeVariant: "registration" as const,
     },
     ...(session.user.role === "FIRM_ADMIN"
       ? [
