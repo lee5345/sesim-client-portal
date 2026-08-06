@@ -69,8 +69,8 @@ export function ActivityLogFilters({
       disabled={disabled}
       className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3 disabled:opacity-60"
     >
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-        <div className="min-w-0 flex-1">
+      <div className="flex flex-col gap-3 lg:flex-row lg:flex-nowrap lg:items-end">
+        <div className="min-w-0 flex-1 basis-0">
           <MultiSelectFilter
             label="사용자"
             triggerLabel="사용자"
@@ -115,7 +115,7 @@ export function ActivityLogFilters({
           </MultiSelectFilter>
         </div>
 
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 basis-0">
           <MultiSelectFilter
             label="작업"
             triggerLabel="작업"
@@ -149,7 +149,7 @@ export function ActivityLogFilters({
           </MultiSelectFilter>
         </div>
 
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 basis-0">
           <MultiSelectFilter
             label="모듈"
             triggerLabel="모듈"
@@ -185,7 +185,7 @@ export function ActivityLogFilters({
           </MultiSelectFilter>
         </div>
 
-        <div className="min-w-0 flex-[1.4] space-y-1.5">
+        <div className="w-auto shrink-0 space-y-1.5">
           <Label>일시</Label>
           <div className="flex items-center gap-2">
             <DateInput
@@ -194,7 +194,7 @@ export function ActivityLogFilters({
               onChange={(createdAtFrom) =>
                 onDraftChange({ ...draft, createdAtFrom })
               }
-              className="min-w-0 flex-1"
+              className="w-[10.5rem] shrink-0"
             />
             <span className="shrink-0 text-muted-foreground">~</span>
             <DateInput
@@ -203,7 +203,7 @@ export function ActivityLogFilters({
               onChange={(createdAtTo) =>
                 onDraftChange({ ...draft, createdAtTo })
               }
-              className="min-w-0 flex-1"
+              className="w-[10.5rem] shrink-0"
             />
           </div>
         </div>
