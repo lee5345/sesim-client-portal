@@ -70,6 +70,7 @@ export function ActivityLogPage({
     EMPTY_AUDIT_LOG_FILTERS,
   );
   const [page, setPage] = useState(1);
+  const [reloadNonce, setReloadNonce] = useState(0);
   const [actors, setActors] = useState<AuditLogActorOption[]>([]);
   const [result, setResult] = useState<AuditLogListResult>(emptyResult());
   const [loading, setLoading] = useState(false);
@@ -145,7 +146,7 @@ export function ActivityLogPage({
     return () => {
       cancelled = true;
     };
-  }, [selectedCompanyId, appliedFilters, page]);
+  }, [selectedCompanyId, appliedFilters, page, reloadNonce]);
 
   function handleSelectCompany(companyId: string) {
     setSelectedCompanyId(companyId);
@@ -155,6 +156,7 @@ export function ActivityLogPage({
     setActors([]);
     setResult(emptyResult());
     setLoading(true);
+    setReloadNonce((nonce) => nonce + 1);
     syncCompanyIdToUrl(companyId);
   }
 
@@ -163,10 +165,11 @@ export function ActivityLogPage({
   }
 
   function handleSearch() {
-    setAppliedFilters(draftFilters);
+    setAppliedFilters({ ...draftFilters });
     setPage(1);
     setResult(emptyResult());
     setLoading(true);
+    setReloadNonce((nonce) => nonce + 1);
   }
 
   function handleClear() {
@@ -175,6 +178,7 @@ export function ActivityLogPage({
     setPage(1);
     setResult(emptyResult());
     setLoading(true);
+    setReloadNonce((nonce) => nonce + 1);
   }
 
   return (
