@@ -10,9 +10,10 @@ import {
   parseAuditFilterDate,
   type AuditLogFilterValues,
 } from "@/lib/filters/audit-logs";
+import { auditPayloadMatchesQuery } from "@/lib/format/audit-payload";
 import type { PaginationResult } from "@/lib/pagination";
 import { compareKorean, sortFirmStaffUsers } from "@/lib/sort/korean";
-import type { AuditAction, Prisma, UserRole } from "@/lib/generated/prisma/client";
+import { Prisma, type AuditAction, type UserRole } from "@/lib/generated/prisma/client";
 import {
   AUDIT_ACTION_OPTIONS,
   AUDIT_TABLE_NAME_OPTIONS,
@@ -29,23 +30,26 @@ const listFiltersSchema = z.object({
   payloadQuery: z.string(),
 });
 
-function escapeIlikePattern(value: string): string {
-  return value.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
-}
-
 async function findAuditLogIdsByPayloadQuery(
   companyId: string,
   payloadQuery: string,
+  baseWhere: Prisma.AuditLogWhereInput,
 ): Promise<string[]> {
-  const pattern = `%${escapeIlikePattern(payloadQuery)}%`;
-  const rows = await prisma.$queryRaw<Array<{ id: string }>>`
-    SELECT id
-    FROM "AuditLog"
-    WHERE "companyId" = ${companyId}::uuid
-      AND payload IS NOT NULL
-      AND payload::text ILIKE ${pattern} ESCAPE '\\'
-  `;
-  return rows.map((row) => row.id);
+  const candidates = await prisma.auditLog.findMany({
+    where: {
+      ...baseWhere,
+      companyId,
+      NOT: { payload: { equals: Prisma.DbNull } },
+    },
+    select: {
+      id: true,
+      payload: true,
+    },
+  });
+
+  return candidates
+    .filter((row) => auditPayloadMatchesQuery(row.payload, payloadQuery))
+    .map((row) => row.id);
 }
 
 export type AuditLogActorOption = {
@@ -179,11 +183,17 @@ export async function listAuditLogs(
     : EMPTY_AUDIT_LOG_FILTERS;
 
   const payloadQuery = safeFilters.payloadQuery.trim();
+  const baseWhere = buildAuditLogWhere(parsedCompanyId.data, {
+    ...safeFilters,
+    payloadQuery: "",
+  });
+
   let payloadMatchedIds: string[] | undefined;
   if (payloadQuery) {
     payloadMatchedIds = await findAuditLogIdsByPayloadQuery(
       parsedCompanyId.data,
       payloadQuery,
+      baseWhere,
     );
     if (payloadMatchedIds.length === 0) {
       return emptyPage(page);

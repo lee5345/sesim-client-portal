@@ -214,7 +214,7 @@ export function ActivityLogFilters({
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={draft.payloadQuery}
-            placeholder="변경 내용으로 검색"
+            placeholder="페이로드로 검색"
             className="pl-8"
             onChange={(event) =>
               onDraftChange({ ...draft, payloadQuery: event.target.value })
@@ -225,7 +225,7 @@ export function ActivityLogFilters({
                 onSearch();
               }
             }}
-            aria-label="변경 내용으로 검색"
+            aria-label="페이로드으로 검색"
           />
         </div>
         <div className="flex shrink-0 items-center gap-2">

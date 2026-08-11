@@ -62,7 +62,7 @@ export function ActivityLogCompanyList({
 
   return (
     <aside className="flex h-full min-h-0 w-44 shrink-0 flex-col border-r bg-muted/20 lg:w-52">
-      <div className="space-y-2 border-b p-3">
+      <div className="space-y-2 border-b bg-muted/50 p-3">
         <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
           고객사
         </p>

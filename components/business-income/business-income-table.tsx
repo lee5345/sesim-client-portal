@@ -559,7 +559,7 @@ export function BusinessIncomeTable({
               companyId={companyId}
               revealBulkFn={revealBusinessIncomeRrns}
             >
-              <div className="max-h-[60vh] max-w-full min-w-0 overflow-auto">
+              <div className="max-w-full min-w-0 overflow-x-auto">
                 <table className="w-max min-w-full text-sm">
                   <thead>
                     <tr className="border-b bg-muted/40 text-left">

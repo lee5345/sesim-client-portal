@@ -185,7 +185,7 @@ export function ActivityLogPage({
     <div className="flex h-[calc(100vh-3rem)] flex-col gap-6 overflow-hidden md:h-[calc(100vh-4rem)]">
       <PageHeader
         title="활동 기록 보관함"
-        description="고객사별 데이터 생성·수정·삭제 이력을 조회합니다."
+        description="고객사별 데이터 등록·수정·삭제 이력을 조회합니다."
       />
 
       <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm">

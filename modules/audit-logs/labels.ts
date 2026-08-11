@@ -3,7 +3,7 @@ export const AUDIT_ACTION_OPTIONS = ["CREATE", "UPDATE", "DELETE"] as const;
 export type AuditLogActionFilter = (typeof AUDIT_ACTION_OPTIONS)[number];
 
 export const AUDIT_ACTION_LABELS: Record<AuditLogActionFilter, string> = {
-  CREATE: "생성",
+  CREATE: "등록",
   UPDATE: "수정",
   DELETE: "삭제",
 };
