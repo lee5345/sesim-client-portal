@@ -83,6 +83,7 @@ const leaveTypeSchema = z.enum(
     "GENERAL_PARENTAL_LEAVE",
     "CHILD_CARE_WORK_HOUR_REDUCTION",
     "PREGNANCY_WORK_HOUR_REDUCTION",
+    "MISCARRIAGE_STILLBIRTH_LEAVE",
   ],
   { error: "종류를 선택해 주세요." },
 );

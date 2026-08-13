@@ -7,6 +7,7 @@ export const LEAVE_TYPES = [
   "GENERAL_PARENTAL_LEAVE",
   "CHILD_CARE_WORK_HOUR_REDUCTION",
   "PREGNANCY_WORK_HOUR_REDUCTION",
+  "MISCARRIAGE_STILLBIRTH_LEAVE",
 ] as const satisfies readonly LeaveType[];
 
 export const LEAVE_TYPE_LABELS: Record<LeaveType, string> = {
@@ -16,6 +17,7 @@ export const LEAVE_TYPE_LABELS: Record<LeaveType, string> = {
   GENERAL_PARENTAL_LEAVE: "일반육아휴직",
   CHILD_CARE_WORK_HOUR_REDUCTION: "육아기근로시간단축",
   PREGNANCY_WORK_HOUR_REDUCTION: "임신기근로시간단축",
+  MISCARRIAGE_STILLBIRTH_LEAVE: "유사산휴가",
 };
 
 const DELIVERY_DATE_TYPES = new Set<LeaveType>([
