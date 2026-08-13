@@ -60,6 +60,7 @@ Thumbs.db
 
 # local db dumps/backups
 *.sql
+!prisma/migrations/**/*.sql
 *.dump
 *.bak
 

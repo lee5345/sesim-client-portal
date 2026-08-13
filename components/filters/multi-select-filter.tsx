@@ -24,6 +24,7 @@ type MultiSelectFilterProps = {
   disabled?: boolean;
   contentClassName?: string;
   triggerClassName?: string;
+  className?: string;
   children: ReactNode;
 };
 
@@ -36,13 +37,14 @@ export function MultiSelectFilter({
   disabled = false,
   contentClassName,
   triggerClassName: triggerClassNameProp,
+  className,
   children,
 }: MultiSelectFilterProps) {
   const displayLabel =
     selectedCount === 0 ? triggerLabel : `${triggerLabel} (${selectedCount})`;
 
   return (
-    <div className="space-y-1.5">
+    <div className={cn("space-y-1.5", className)}>
       <Label>{label}</Label>
       <Popover
         modal

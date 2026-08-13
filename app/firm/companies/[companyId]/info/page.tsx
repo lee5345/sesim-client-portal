@@ -50,7 +50,7 @@ export default async function FirmCompanyInfoPage({
 
         <div>
           <h1 className="text-2xl font-bold tracking-tight">고객사 등록 정보</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-muted-foreground">
             각 항목 옆의 수정 버튼으로 정보를 업데이트할 수 있습니다.
           </p>
         </div>

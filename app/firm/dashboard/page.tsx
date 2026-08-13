@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ClipboardList } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -17,7 +18,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default async function FirmDashboardPage() {
   await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
@@ -48,16 +50,21 @@ export default async function FirmDashboardPage() {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
-          <Card className="opacity-60 lg:col-span-1">
+          <Card className="lg:col-span-1">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ClipboardList className="size-5" />
-              사무실 업무 관리
+                사무실 업무 관리
               </CardTitle>
               <CardDescription>사무소 직원용 할 일 관리</CardDescription>
             </CardHeader>
             <CardContent>
-              <Badge variant="secondary">준비 중</Badge>
+              <Link
+                href="/firm/task-manager"
+                className={cn(buttonVariants({ variant: "secondary" }))}
+              >
+                업무 관리 열기
+              </Link>
             </CardContent>
           </Card>
 

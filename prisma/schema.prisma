@@ -59,6 +59,7 @@ model Company {
   tenantChanges             TenantChange[]
   terminations              Termination[]
   users                     User[]
+  officeTasks               OfficeTask[]
 
   @@index([deletedAt])
 }
@@ -102,9 +103,45 @@ model User {
   tenantChangeReadCursors      TenantChangeReadCursor[]
   tenantChangePeriodReadCursors TenantChangePeriodReadCursor[]
   createdTerminations          Termination[]            @relation("TerminationCreatedBy")
+  createdOfficeTasks           OfficeTask[]             @relation("OfficeTaskCreatedBy")
+  completedOfficeTasks         OfficeTask[]             @relation("OfficeTaskCompletedBy")
+  officeTaskAssignees          OfficeTaskAssignee[]
   company                      Company?                 @relation(fields: [companyId], references: [id])
 
   @@index([companyId])
+}
+
+model OfficeTask {
+  id            String               @id @default(uuid()) @db.Uuid
+  title         String
+  description   String?
+  dueAt         DateTime
+  hasDueTime    Boolean              @default(false)
+  companyId     String?              @db.Uuid
+  createdById   String               @db.Uuid
+  completedAt   DateTime?
+  completedById String?              @db.Uuid
+  deletedAt     DateTime?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  company       Company?             @relation(fields: [companyId], references: [id])
+  createdBy     User                 @relation("OfficeTaskCreatedBy", fields: [createdById], references: [id])
+  completedBy   User?                @relation("OfficeTaskCompletedBy", fields: [completedById], references: [id])
+  assignees     OfficeTaskAssignee[]
+
+  @@index([deletedAt, completedAt, dueAt])
+  @@index([createdById])
+  @@index([companyId])
+}
+
+model OfficeTaskAssignee {
+  taskId String     @db.Uuid
+  userId String     @db.Uuid
+  task   OfficeTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id])
+
+  @@id([taskId, userId])
+  @@index([userId])
 }
 
 model RegistrationRequest {

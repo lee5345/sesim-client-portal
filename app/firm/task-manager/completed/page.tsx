@@ -1,27 +1,27 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Archive } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
-import { ActiveOfficeTasksTable } from "@/components/firm/office-tasks/active-office-tasks-table";
+import { CompletedOfficeTasksTable } from "@/components/firm/office-tasks/completed-office-tasks-table";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { requireAuth } from "@/lib/auth/guards";
 import {
-  listActiveOfficeTasks,
+  listCompletedOfficeTasks,
   listOfficeTaskCompanyOptions,
   listOfficeTaskStaffOptions,
 } from "@/modules/office-tasks/actions";
 
 export const metadata: Metadata = {
-  title: "사무실 업무 관리",
+  title: "완료된 업무",
 };
 
-export default async function FirmTaskManagerPage() {
+export default async function FirmCompletedTasksPage() {
   const session = await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
   const isAdmin = session.user.role === "FIRM_ADMIN";
 
   const [tasks, staffUsers, companies] = await Promise.all([
-    listActiveOfficeTasks(),
+    listCompletedOfficeTasks(),
     listOfficeTaskStaffOptions(),
     listOfficeTaskCompanyOptions(),
   ]);
@@ -29,21 +29,21 @@ export default async function FirmTaskManagerPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-8">
       <PageHeader
-        title="사무실 업무 관리"
-        description="각종 사무실 내 업무들을 확인, 등록, 관리합니다."
+        title="완료된 업무"
+        description="완료 처리된 사무실 업무를 검색하고 관리합니다."
         actions={
           <Button
             nativeButton={false}
             variant="outline"
-            render={<Link href="/firm/task-manager/completed" />}
+            render={<Link href="/firm/task-manager" />}
           >
-            <Archive />
-            완료된 업무
+            <ArrowLeft />
+            진행 중인 업무
           </Button>
         }
       />
 
-      <ActiveOfficeTasksTable
+      <CompletedOfficeTasksTable
         tasks={tasks}
         currentUserId={session.user.userId}
         isAdmin={isAdmin}
