@@ -87,7 +87,11 @@ export function DateInput({
         >
           <CalendarIcon className="size-4" />
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="end">
+        <PopoverContent
+          className="w-auto max-h-none p-0"
+          positionerClassName="w-auto max-w-none"
+          align="end"
+        >
           <Calendar
             mode="single"
             selected={selected}
