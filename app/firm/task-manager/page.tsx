@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Archive } from "lucide-react";
 
-import { ActiveOfficeTasksTable } from "@/components/firm/office-tasks/active-office-tasks-table";
+import { ActiveOfficeTasksBoard } from "@/components/firm/office-tasks/active-office-tasks-board";
+import { OfficeTaskFormDialog } from "@/components/firm/office-tasks/office-task-form-dialog";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { requireAuth } from "@/lib/auth/guards";
@@ -27,29 +28,42 @@ export default async function FirmTaskManagerPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
-      <PageHeader
-        title="사무실 업무 관리"
-        description="각종 사무실 내 업무들을 확인, 등록, 관리합니다."
-        actions={
-          <Button
-            nativeButton={false}
-            variant="outline"
-            render={<Link href="/firm/task-manager/completed" />}
-          >
-            <Archive />
-            완료된 업무
-          </Button>
-        }
-      />
+    <div className="mx-auto flex h-[calc(100vh-3rem)] max-w-5xl flex-col gap-8 overflow-hidden md:h-[calc(100vh-4rem)]">
+      <div className="shrink-0">
+        <PageHeader
+          title="사무실 업무 관리"
+          description="각종 사무실 내 업무들을 확인, 등록, 관리합니다."
+          actions={
+            <>
+              <Button
+                nativeButton={false}
+                variant="outline"
+                render={<Link href="/firm/task-manager/completed" />}
+              >
+                <Archive />
+                완료된 업무
+              </Button>
+              <OfficeTaskFormDialog
+                mode="create"
+                currentUserId={session.user.userId}
+                isAdmin={isAdmin}
+                staffUsers={staffUsers}
+                companies={companies}
+              />
+            </>
+          }
+        />
+      </div>
 
-      <ActiveOfficeTasksTable
-        tasks={tasks}
-        currentUserId={session.user.userId}
-        isAdmin={isAdmin}
-        staffUsers={staffUsers}
-        companies={companies}
-      />
+      <div className="min-h-0 flex-1">
+        <ActiveOfficeTasksBoard
+          tasks={tasks}
+          currentUserId={session.user.userId}
+          isAdmin={isAdmin}
+          staffUsers={staffUsers}
+          companies={companies}
+        />
+      </div>
     </div>
   );
 }

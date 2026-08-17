@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import { CompletedOfficeTasksTable } from "@/components/firm/office-tasks/completed-office-tasks-table";
+import { CompletedOfficeTasksList } from "@/components/firm/office-tasks/completed-office-tasks-list";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { requireAuth } from "@/lib/auth/guards";
@@ -43,7 +43,7 @@ export default async function FirmCompletedTasksPage() {
         }
       />
 
-      <CompletedOfficeTasksTable
+      <CompletedOfficeTasksList
         tasks={tasks}
         currentUserId={session.user.userId}
         isAdmin={isAdmin}

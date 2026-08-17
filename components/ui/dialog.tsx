@@ -116,6 +116,7 @@ function DialogFooter({
       data-slot="dialog-footer"
       className={cn(
         "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end",
+        "[&_[data-slot=button]]:h-8 [&_[data-slot=button]]:gap-1.5 [&_[data-slot=button]]:px-2.5 [&_[data-slot=button]]:text-sm [&_[data-slot=button]:has(>svg:only-child)]:size-8 [&_[data-slot=button]:has(>svg:only-child)]:p-0",
         className
       )}
       {...props}

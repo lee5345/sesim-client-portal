@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { SearchableCompanySelect } from "@/components/firm/office-tasks/searchable-company-select";
 import { MultiSelectFilter } from "@/components/filters/multi-select-filter";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import {
@@ -36,6 +37,7 @@ import type {
 } from "@/lib/office-tasks/types";
 import {
   createOfficeTask,
+  deleteOfficeTask,
   updateOfficeTask,
 } from "@/modules/office-tasks/actions";
 
@@ -66,6 +68,9 @@ type OfficeTaskFormDialogProps = {
   task?: OfficeTaskTableRow;
   triggerVariant?: "default" | "outline" | "ghost";
   triggerSize?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-sm" | "icon-lg";
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showTrigger?: boolean;
 };
 
 function getInitialValues(
@@ -102,15 +107,27 @@ export function OfficeTaskFormDialog({
   task,
   triggerVariant = mode === "create" ? "default" : "ghost",
   triggerSize = mode === "create" ? "default" : "icon-sm",
+  open: openProp,
+  onOpenChange,
+  showTrigger = true,
 }: OfficeTaskFormDialogProps) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [assigneeMenuOpen, setAssigneeMenuOpen] = useState(false);
   const [values, setValues] = useState<OfficeTaskFormValues>(() =>
     getInitialValues(task, currentUserId),
   );
   const [isPending, startTransition] = useTransition();
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? openProp : uncontrolledOpen;
+
+  function setOpen(nextOpen: boolean) {
+    if (!isControlled) {
+      setUncontrolledOpen(nextOpen);
+    }
+    onOpenChange?.(nextOpen);
+  }
 
   useEffect(() => {
     if (open) {
@@ -184,25 +201,27 @@ export function OfficeTaskFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        render={
-          <Button
-            type="button"
-            variant={triggerVariant}
-            size={triggerSize}
-            aria-label={mode === "create" ? "업무 등록" : "업무 수정"}
-          />
-        }
-      >
-        {mode === "create" ? (
-          <>
-            <Plus />
-            업무 등록
-          </>
-        ) : (
-          <Pencil className="size-4" />
-        )}
-      </DialogTrigger>
+      {showTrigger ? (
+        <DialogTrigger
+          render={
+            <Button
+              type="button"
+              variant={triggerVariant}
+              size={triggerSize}
+              aria-label={mode === "create" ? "업무 등록" : "업무 수정"}
+            />
+          }
+        >
+          {mode === "create" ? (
+            <>
+              <Plus />
+              업무 등록
+            </>
+          ) : (
+            <Pencil className="size-4" />
+          )}
+        </DialogTrigger>
+      ) : null}
       <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-lg">
         <DialogHeader className="shrink-0">
           <DialogTitle>
@@ -353,9 +372,25 @@ export function OfficeTaskFormDialog({
                     }))
                   }
                 />
-                마감 시간 지정
+                시간 설정하기
               </label>
               <div className="grid grid-cols-3 gap-2">
+                <select
+                  id="office-task-due-period"
+                  value={values.dueTimePeriod}
+                  disabled={isPending || !values.hasDueTime}
+                  className={selectClassName}
+                  aria-label="마감 오전/오후"
+                  onChange={(event) =>
+                    setValues((current) => ({
+                      ...current,
+                      dueTimePeriod: event.target.value as DueTimePeriod,
+                    }))
+                  }
+                >
+                  <option value="AM">오전</option>
+                  <option value="PM">오후</option>
+                </select>
                 <select
                   id="office-task-due-hour"
                   value={values.dueTimeHour}
@@ -394,22 +429,6 @@ export function OfficeTaskFormDialog({
                     </option>
                   ))}
                 </select>
-                <select
-                  id="office-task-due-period"
-                  value={values.dueTimePeriod}
-                  disabled={isPending || !values.hasDueTime}
-                  className={selectClassName}
-                  aria-label="마감 오전/오후"
-                  onChange={(event) =>
-                    setValues((current) => ({
-                      ...current,
-                      dueTimePeriod: event.target.value as DueTimePeriod,
-                    }))
-                  }
-                >
-                  <option value="AM">오전</option>
-                  <option value="PM">오후</option>
-                </select>
               </div>
           </div>
 
@@ -419,6 +438,29 @@ export function OfficeTaskFormDialog({
             </p>
           ) : null}
           </div>
+
+          {mode === "edit" && task ? (
+            <div className="shrink-0 border-t pt-4">
+              <p className="mb-3 text-sm text-muted-foreground">
+                업무를 삭제하면 복구할 수 없습니다.
+              </p>
+              <ConfirmDeleteDialog
+                title="업무 삭제"
+                description="이 업무를 삭제하면 복구할 수 없습니다. 계속하시겠습니까?"
+                action={async (formData) => {
+                  await deleteOfficeTask(formData);
+                  setOpen(false);
+                  router.refresh();
+                }}
+                hiddenFields={{ id: task.id }}
+                triggerLabel="업무 삭제"
+                confirmLabel="삭제 확인"
+                requireTypedConfirmation
+                disabled={isPending}
+                iconTrigger={false}
+              />
+            </div>
+          ) : null}
 
           <DialogFooter className="shrink-0">
             <Button

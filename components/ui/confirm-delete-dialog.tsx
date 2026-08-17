@@ -1,5 +1,6 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { DELETE_CONFIRMATION_PHRASE } from "@/lib/validation/delete-confirmation";
@@ -25,10 +26,26 @@ type ConfirmDeleteDialogProps = {
   confirmLabel?: string;
   requireTypedConfirmation?: boolean;
   triggerVariant?: "default" | "destructive" | "outline" | "secondary" | "ghost";
+  confirmVariant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "success";
   triggerSize?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-sm" | "icon-lg";
   triggerClassName?: string;
   disabled?: boolean;
+  iconTrigger?: boolean;
 };
+
+function getIconTriggerSize(
+  triggerSize: NonNullable<ConfirmDeleteDialogProps["triggerSize"]>,
+): "icon-xs" | "icon-sm" | "icon" {
+  if (triggerSize === "xs") {
+    return "icon-xs";
+  }
+
+  if (triggerSize === "lg" || triggerSize === "default") {
+    return "icon";
+  }
+
+  return "icon-sm";
+}
 
 export function ConfirmDeleteDialog({
   title,
@@ -39,9 +56,11 @@ export function ConfirmDeleteDialog({
   confirmLabel = "삭제 확인",
   requireTypedConfirmation = false,
   triggerVariant = "destructive",
+  confirmVariant = "destructive",
   triggerSize = "sm",
   triggerClassName,
   disabled = false,
+  iconTrigger,
 }: ConfirmDeleteDialogProps) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"confirm" | "type">("confirm");
@@ -61,6 +80,7 @@ export function ConfirmDeleteDialog({
 
   const canSubmitTypedConfirmation =
     typedConfirmation.trim() === DELETE_CONFIRMATION_PHRASE;
+  const useIconTrigger = iconTrigger ?? triggerLabel === "삭제";
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -70,11 +90,12 @@ export function ConfirmDeleteDialog({
           <Button
             type="button"
             variant={triggerVariant}
-            size={triggerSize}
+            size={useIconTrigger ? getIconTriggerSize(triggerSize) : triggerSize}
             className={triggerClassName}
             disabled={disabled}
+            aria-label={useIconTrigger ? title : undefined}
           >
-            {triggerLabel}
+            {useIconTrigger ? <Trash2 /> : triggerLabel}
           </Button>
         }
       />
@@ -112,7 +133,7 @@ export function ConfirmDeleteDialog({
           {step === "confirm" && requireTypedConfirmation ? (
             <Button
               type="button"
-              variant="destructive"
+              variant={confirmVariant}
               onClick={() => setStep("type")}
             >
               {confirmLabel}
@@ -136,7 +157,7 @@ export function ConfirmDeleteDialog({
               ) : null}
               <Button
                 type="submit"
-                variant="destructive"
+                variant={confirmVariant}
                 disabled={requireTypedConfirmation && !canSubmitTypedConfirmation}
               >
                 {requireTypedConfirmation ? "삭제" : confirmLabel}

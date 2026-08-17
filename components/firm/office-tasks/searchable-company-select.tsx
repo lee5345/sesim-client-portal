@@ -11,6 +11,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { UNSPECIFIED_COMPANY_LABEL } from "@/lib/office-tasks/display";
 import type { OfficeTaskCompanyOption } from "@/lib/office-tasks/types";
 import { cn } from "@/lib/utils";
 
@@ -57,7 +58,7 @@ export function SearchableCompanySelect({
     });
   }, [companies, query, value]);
 
-  const displayLabel = selectedCompany?.name ?? "선택 안 함";
+  const displayLabel = selectedCompany?.name ?? UNSPECIFIED_COMPANY_LABEL;
 
   return (
     <div className={cn("space-y-1.5", className)}>
@@ -107,7 +108,7 @@ export function SearchableCompanySelect({
                   setQuery("");
                 }}
               >
-                <span>선택 안 함</span>
+                <span>{UNSPECIFIED_COMPANY_LABEL}</span>
                 {value === null ? <Check className="size-4" /> : null}
               </button>
 
