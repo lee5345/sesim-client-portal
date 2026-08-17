@@ -41,7 +41,10 @@ export function ActiveOfficeTasksPreview({ tasks }: ActiveOfficeTasksPreviewProp
       </CardHeader>
       <CardContent className="flex min-h-0 flex-1 flex-col gap-4">
         {tasks.length === 0 ? (
-          <EmptyState message="진행 중인 업무가 없습니다." />
+          <EmptyState
+            className="min-h-0 flex-1"
+            message="진행 중인 업무가 없습니다."
+          />
         ) : (
           <div className="min-h-0 flex-1 overflow-y-auto">
             <ul className="space-y-2 pr-1">
