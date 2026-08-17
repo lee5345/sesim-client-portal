@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ClipboardList } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "대시보드",
 };
 
 import { requireAuth } from "@/lib/auth/guards";
+import { ActiveOfficeTasksPreview } from "@/components/dashboard/active-office-tasks-preview";
 import { RecentActivityTable } from "@/components/dashboard/recent-activity-table";
 import { getFirmDashboardData } from "@/modules/dashboard/firm";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -18,8 +17,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 export default async function FirmDashboardPage() {
   await requireAuth(["FIRM_STAFF", "FIRM_ADMIN"]);
@@ -49,24 +46,8 @@ export default async function FirmDashboardPage() {
           />
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-3">
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ClipboardList className="size-5" />
-                사무실 업무 관리
-              </CardTitle>
-              <CardDescription>사무소 직원용 할 일 관리</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link
-                href="/firm/task-manager"
-                className={cn(buttonVariants({ variant: "secondary" }))}
-              >
-                업무 관리 열기
-              </Link>
-            </CardContent>
-          </Card>
+        <div className="grid items-stretch gap-4 lg:grid-cols-3">
+          <ActiveOfficeTasksPreview tasks={data.activeOfficeTasks} />
 
           <Card className="lg:col-span-2">
             <CardHeader>

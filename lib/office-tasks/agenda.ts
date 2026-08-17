@@ -3,11 +3,17 @@ import type { OfficeTaskTableRow } from "@/lib/office-tasks/types";
 
 const RECENTLY_ADDED_MS = 24 * 60 * 60 * 1000;
 
-export type OfficeTaskAgenda = {
-  today: OfficeTaskTableRow[];
-  tomorrow: OfficeTaskTableRow[];
-  recentlyAdded: OfficeTaskTableRow[];
-};
+export type OfficeTaskAgendaItem = Pick<
+  OfficeTaskTableRow,
+  "dueAtIso" | "createdAt" | "isOverdue"
+>;
+
+export type OfficeTaskAgenda<T extends OfficeTaskAgendaItem = OfficeTaskTableRow> =
+  {
+    today: T[];
+    tomorrow: T[];
+    recentlyAdded: T[];
+  };
 
 export function shiftKstDateKey(dateKey: string, days: number): string {
   const [year, month, day] = dateKey.split("-").map(Number);
@@ -18,17 +24,17 @@ export function shiftKstDateKey(dateKey: string, days: number): string {
   return `${nextYear}-${nextMonth}-${nextDay}`;
 }
 
-export function groupActiveOfficeTasksForAgenda(
-  tasks: OfficeTaskTableRow[],
+export function groupActiveOfficeTasksForAgenda<T extends OfficeTaskAgendaItem>(
+  tasks: T[],
   now = new Date(),
-): OfficeTaskAgenda {
+): OfficeTaskAgenda<T> {
   const todayKey = formatKstDateKey(now);
   const tomorrowKey = shiftKstDateKey(todayKey, 1);
   const recentCutoff = now.getTime() - RECENTLY_ADDED_MS;
 
-  const today: OfficeTaskTableRow[] = [];
-  const tomorrow: OfficeTaskTableRow[] = [];
-  const recentlyAdded: OfficeTaskTableRow[] = [];
+  const today: T[] = [];
+  const tomorrow: T[] = [];
+  const recentlyAdded: T[] = [];
 
   for (const task of tasks) {
     const dueKey = formatKstDateKey(new Date(task.dueAtIso));
@@ -36,7 +42,10 @@ export function groupActiveOfficeTasksForAgenda(
       today.push(task);
     } else if (dueKey === tomorrowKey) {
       tomorrow.push(task);
-    } else if (new Date(task.createdAt).getTime() >= recentCutoff) {
+    } else if (
+      !task.isOverdue &&
+      new Date(task.createdAt).getTime() >= recentCutoff
+    ) {
       recentlyAdded.push(task);
     }
   }
@@ -46,4 +55,22 @@ export function groupActiveOfficeTasksForAgenda(
   );
 
   return { today, tomorrow, recentlyAdded };
+}
+
+export function countOfficeTaskAgendaHighlights(
+  agenda: OfficeTaskAgenda<OfficeTaskAgendaItem>,
+) {
+  return agenda.today.length + agenda.tomorrow.length + agenda.recentlyAdded.length;
+}
+
+export function summarizeOfficeTaskNavBadges(
+  tasks: Array<OfficeTaskAgendaItem & { isOverdue: boolean }>,
+  now = new Date(),
+) {
+  return {
+    agendaCount: countOfficeTaskAgendaHighlights(
+      groupActiveOfficeTasksForAgenda(tasks, now),
+    ),
+    overdueCount: tasks.filter((task) => task.isOverdue).length,
+  };
 }

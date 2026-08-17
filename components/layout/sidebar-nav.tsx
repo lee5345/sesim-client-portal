@@ -20,6 +20,7 @@ export type SidebarNavItem = {
   disabled?: boolean;
   badge?: number;
   badgeVariant?: "registration" | "change";
+  dangerBadge?: number;
 };
 
 type SidebarNavProps = {
@@ -39,6 +40,8 @@ export function SidebarNav({ items }: SidebarNavProps) {
         const Icon: LucideIcon = NAV_ICONS[item.icon];
         const liveBadge = realtime?.getNavBadge(item.href);
         const badgeCount = liveBadge ?? item.badge ?? 0;
+        const dangerBadgeCount =
+          realtime?.getNavDangerBadge(item.href) ?? item.dangerBadge ?? 0;
         const badgeVariant =
           item.href === "/firm/client-accounts" ? "registration" : "change";
 
@@ -74,10 +77,22 @@ export function SidebarNav({ items }: SidebarNavProps) {
           >
             <Icon className="size-4 shrink-0" />
             <span className="flex-1">{item.label}</span>
-            <NotificationCountBadge
-              count={badgeCount}
-              variant={item.badgeVariant ?? badgeVariant}
-            />
+            <span className="flex items-center gap-1">
+              <NotificationCountBadge
+                count={dangerBadgeCount}
+                variant="overdue"
+                aria-label={`마감 지난 업무 ${dangerBadgeCount}건`}
+              />
+              <NotificationCountBadge
+                count={badgeCount}
+                variant={item.badgeVariant ?? badgeVariant}
+                aria-label={
+                  item.href === "/firm/task-manager"
+                    ? `주요 사항 ${badgeCount}건`
+                    : undefined
+                }
+              />
+            </span>
           </Link>
         );
       })}

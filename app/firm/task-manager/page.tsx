@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Archive } from "lucide-react";
 
+import { Suspense } from "react";
+
 import { ActiveOfficeTasksBoard } from "@/components/firm/office-tasks/active-office-tasks-board";
 import { OfficeTaskFormDialog } from "@/components/firm/office-tasks/office-task-form-dialog";
 import { PageHeader } from "@/components/layout/page-header";
@@ -56,13 +58,15 @@ export default async function FirmTaskManagerPage() {
       </div>
 
       <div className="min-h-0 flex-1">
-        <ActiveOfficeTasksBoard
-          tasks={tasks}
-          currentUserId={session.user.userId}
-          isAdmin={isAdmin}
-          staffUsers={staffUsers}
-          companies={companies}
-        />
+        <Suspense fallback={null}>
+          <ActiveOfficeTasksBoard
+            tasks={tasks}
+            currentUserId={session.user.userId}
+            isAdmin={isAdmin}
+            staffUsers={staffUsers}
+            companies={companies}
+          />
+        </Suspense>
       </div>
     </div>
   );

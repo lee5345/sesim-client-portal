@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ClipboardList } from "lucide-react";
 
 import { OfficeTaskAgendaSidebar } from "@/components/firm/office-tasks/office-task-agenda-sidebar";
 import { OfficeTaskDetailsDialog } from "@/components/firm/office-tasks/office-task-details-dialog";
 import { OfficeTaskFormDialog } from "@/components/firm/office-tasks/office-task-form-dialog";
 import { OfficeTaskItem } from "@/components/firm/office-tasks/office-task-item";
-import { EmptyState } from "@/components/dashboard/empty-state";
 import {
   Card,
   CardContent,
@@ -16,6 +16,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { groupActiveOfficeTasksForAgenda } from "@/lib/office-tasks/agenda";
+import {
+  getOfficeTaskManagerHref,
+  parseOfficeTaskDialogFromSearchParams,
+  TASK_MANAGER_PATH,
+} from "@/lib/office-tasks/paths";
 import type {
   OfficeTaskCompanyOption,
   OfficeTaskStaffOption,
@@ -37,18 +42,67 @@ export function ActiveOfficeTasksBoard({
   staffUsers,
   companies,
 }: ActiveOfficeTasksBoardProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [detailsTask, setDetailsTask] = useState<OfficeTaskTableRow | null>(null);
   const [editingTask, setEditingTask] = useState<OfficeTaskTableRow | null>(null);
 
   const agenda = useMemo(() => groupActiveOfficeTasksForAgenda(tasks), [tasks]);
 
+  useEffect(() => {
+    const { taskId, mode } = parseOfficeTaskDialogFromSearchParams(searchParams);
+
+    if (!taskId) {
+      setDetailsTask(null);
+      setEditingTask(null);
+      return;
+    }
+
+    const matchedTask = tasks.find((task) => task.id === taskId);
+    if (!matchedTask) {
+      router.replace(TASK_MANAGER_PATH);
+      return;
+    }
+
+    if (mode === "edit") {
+      setEditingTask(matchedTask);
+      setDetailsTask(null);
+      return;
+    }
+
+    setDetailsTask(matchedTask);
+    setEditingTask(null);
+  }, [router, searchParams, tasks]);
+
+  function replaceDialogUrl(taskId: string | null, mode: "view" | "edit" | null) {
+    if (!taskId || !mode) {
+      router.replace(TASK_MANAGER_PATH);
+      return;
+    }
+
+    router.replace(getOfficeTaskManagerHref(taskId, mode));
+  }
+
   function handleOpenDetails(task: OfficeTaskTableRow) {
-    setDetailsTask(task);
+    replaceDialogUrl(task.id, "view");
+  }
+
+  function handleCloseDetails() {
+    replaceDialogUrl(null, null);
   }
 
   function handleEdit(task: OfficeTaskTableRow) {
-    setDetailsTask(null);
-    setEditingTask(task);
+    replaceDialogUrl(task.id, "edit");
+  }
+
+  function handleCloseEdit() {
+    const taskId = editingTask?.id ?? searchParams.get("task");
+    if (taskId) {
+      replaceDialogUrl(taskId, "view");
+      return;
+    }
+
+    replaceDialogUrl(null, null);
   }
 
   return (
@@ -68,7 +122,9 @@ export function ActiveOfficeTasksBoard({
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border bg-muted/20">
               {tasks.length === 0 ? (
                 <div className="flex flex-1 items-center justify-center p-6">
-                  <EmptyState message="진행 중인 업무가 없습니다." />
+                  <p className="text-sm text-muted-foreground">
+                    진행 중인 업무가 없습니다.
+                  </p>
                 </div>
               ) : (
                 <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
@@ -99,7 +155,7 @@ export function ActiveOfficeTasksBoard({
         open={detailsTask !== null}
         onOpenChange={(open) => {
           if (!open) {
-            setDetailsTask(null);
+            handleCloseDetails();
           }
         }}
         onEdit={handleEdit}
@@ -117,7 +173,7 @@ export function ActiveOfficeTasksBoard({
           showTrigger={false}
           onOpenChange={(open) => {
             if (!open) {
-              setEditingTask(null);
+              handleCloseEdit();
             }
           }}
         />

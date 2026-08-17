@@ -6,10 +6,12 @@ import type {
 } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/db/db";
 import { isFirmRole } from "@/lib/permissions/crud";
+import { getOfficeTaskNavBadgeCounts } from "@/modules/office-tasks/nav-badges";
 
 export type NotificationCounts = {
   registrationRequests: number;
   navBadges: Record<string, number>;
+  navDangerBadges: Record<string, number>;
   companyBadges: Record<string, number>;
   companyModuleBadges: Record<string, Partial<Record<TenantChangeEntityType, number>>>;
 };
@@ -658,17 +660,24 @@ export async function getNotificationCounts(input: {
   companyId?: string | null;
 }): Promise<NotificationCounts> {
   const audience = audienceForRole(input.role);
-  const registrationRequests = isFirmRole(input.role)
-    ? await prisma.registrationRequest.count({ where: { status: "PENDING" } })
-    : 0;
-
+  const isFirm = isFirmRole(input.role);
   const companyIds = input.companyId ? [input.companyId] : undefined;
-  const unreadByCompany = await getUnreadByCompany(
-    input.userId,
-    audience,
-    [...TENANT_NOTIFICATION_ENTITY_TYPES],
-    companyIds,
-  );
+
+  const [registrationRequests, unreadByCompany, officeTaskBadges] =
+    await Promise.all([
+      isFirm
+        ? prisma.registrationRequest.count({ where: { status: "PENDING" } })
+        : Promise.resolve(0),
+      getUnreadByCompany(
+        input.userId,
+        audience,
+        [...TENANT_NOTIFICATION_ENTITY_TYPES],
+        companyIds,
+      ),
+      isFirm
+        ? getOfficeTaskNavBadgeCounts(input.userId)
+        : Promise.resolve({ agendaCount: 0, overdueCount: 0 }),
+    ]);
 
   const companyModuleBadges = unreadByCompany;
   const companyBadges: Record<string, number> = {};
@@ -677,8 +686,9 @@ export async function getNotificationCounts(input: {
   }
 
   const navBadges: Record<string, number> = {};
+  const navDangerBadges: Record<string, number> = {};
 
-  if (isFirmRole(input.role)) {
+  if (isFirm) {
     const totalCompanyUnread = Object.values(companyBadges).reduce(
       (sum, count) => sum + count,
       0,
@@ -688,6 +698,12 @@ export async function getNotificationCounts(input: {
     }
     if (registrationRequests > 0) {
       navBadges["/firm/client-accounts"] = registrationRequests;
+    }
+    if (officeTaskBadges.agendaCount > 0) {
+      navBadges["/firm/task-manager"] = officeTaskBadges.agendaCount;
+    }
+    if (officeTaskBadges.overdueCount > 0) {
+      navDangerBadges["/firm/task-manager"] = officeTaskBadges.overdueCount;
     }
   } else if (input.companyId) {
     const counts = unreadByCompany[input.companyId] ?? {};
@@ -702,6 +718,7 @@ export async function getNotificationCounts(input: {
   return {
     registrationRequests,
     navBadges,
+    navDangerBadges,
     companyBadges,
     companyModuleBadges,
   };

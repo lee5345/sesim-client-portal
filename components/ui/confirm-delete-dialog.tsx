@@ -31,6 +31,7 @@ type ConfirmDeleteDialogProps = {
   triggerClassName?: string;
   disabled?: boolean;
   iconTrigger?: boolean;
+  onSuccess?: () => void;
 };
 
 function getIconTriggerSize(
@@ -61,6 +62,7 @@ export function ConfirmDeleteDialog({
   triggerClassName,
   disabled = false,
   iconTrigger,
+  onSuccess,
 }: ConfirmDeleteDialogProps) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"confirm" | "type">("confirm");
@@ -143,6 +145,7 @@ export function ConfirmDeleteDialog({
               action={async (formData) => {
                 await action(formData);
                 handleOpenChange(false);
+                onSuccess?.();
               }}
             >
               {Object.entries(hiddenFields).map(([name, value]) => (

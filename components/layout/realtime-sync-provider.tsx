@@ -23,6 +23,7 @@ const POLL_INTERVAL_MS = 10_000;
 type RealtimeSyncContextValue = {
   notifications: NotificationCounts;
   getNavBadge: (href: string) => number;
+  getNavDangerBadge: (href: string) => number;
   getCompanyBadge: (companyId: string) => number;
   getCompanyModuleBadge: (
     companyId: string,
@@ -134,6 +135,8 @@ export function RealtimeSyncProvider({
     () => ({
       notifications,
       getNavBadge: (href: string) => notifications.navBadges[href] ?? 0,
+      getNavDangerBadge: (href: string) =>
+        notifications.navDangerBadges[href] ?? 0,
       getCompanyBadge: (companyId: string) =>
         notifications.companyBadges[companyId] ?? 0,
       getCompanyModuleBadge: (companyId, entityType) =>

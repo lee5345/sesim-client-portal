@@ -1,6 +1,7 @@
 import type { RecentActivityTableRow } from "@/components/dashboard/recent-activity-table";
 import { prisma } from "@/lib/db/db";
 import { formatDate, formatYearMonth } from "@/lib/format/date";
+import { listActiveOfficeTasks } from "@/modules/office-tasks/actions";
 
 function displayName(value: string | null | undefined) {
   return value?.trim() ? value : "—";
@@ -13,6 +14,7 @@ export async function getFirmDashboardData() {
   const [
     companyCount,
     clientAccountCount,
+    activeOfficeTasks,
     recentNewHires,
     recentTerminations,
     recentDailyWorkers,
@@ -34,6 +36,7 @@ export async function getFirmDashboardData() {
     prisma.user.count({
       where: { role: "CLIENT_ADMIN" },
     }),
+    listActiveOfficeTasks(),
     prisma.newHire.findMany({
       where: { deletedAt: null },
       orderBy: { createdAt: "desc" },
@@ -267,5 +270,6 @@ export async function getFirmDashboardData() {
     clientAccountCount,
     recentActivityCount,
     recentActivity,
+    activeOfficeTasks,
   };
 }

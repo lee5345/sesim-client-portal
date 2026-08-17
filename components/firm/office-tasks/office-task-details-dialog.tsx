@@ -3,12 +3,14 @@
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { MultilineText } from "@/components/ui/multiline-text";
 import { OfficeTaskDueLabel } from "@/components/firm/office-tasks/office-task-due-label";
 import { formatDateTime } from "@/lib/format/date";
@@ -18,8 +20,10 @@ import {
   formatTaskCompanyName,
   isCompletedOfficeTask,
 } from "@/lib/office-tasks/display";
+import { getOfficeTaskDueUrgencyBadge } from "@/lib/office-tasks/due-urgency";
 import type { OfficeTaskTableRow } from "@/lib/office-tasks/types";
 import { cn } from "@/lib/utils";
+import { completeOfficeTask } from "@/modules/office-tasks/actions";
 
 type OfficeTaskDetailsDialogProps = {
   task: OfficeTaskTableRow | null;
@@ -69,14 +73,27 @@ export function OfficeTaskDetailsDialog({
   onEdit,
 }: OfficeTaskDetailsDialogProps) {
   const completed = task ? isCompletedOfficeTask(task) : false;
+  const urgencyBadge =
+    task && !completed ? getOfficeTaskDueUrgencyBadge(task) : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
-        <div className="shrink-0 border-b bg-muted/50 px-4 py-4">
-          <DialogTitle className="text-lg leading-snug font-semibold">
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b bg-muted/50 px-4 py-4">
+          <DialogTitle className="min-w-0 text-lg leading-snug font-semibold">
             {task?.title ?? "업무 상세"}
           </DialogTitle>
+          {urgencyBadge ? (
+            <Badge
+              variant="outline"
+              className={cn(
+                "shrink-0 border-transparent font-normal",
+                urgencyBadge.className,
+              )}
+            >
+              {urgencyBadge.label}
+            </Badge>
+          ) : null}
         </div>
 
         {task ? (
@@ -100,19 +117,14 @@ export function OfficeTaskDetailsDialog({
         ) : null}
 
         {task ? (
-          <div
-            className={cn(
-              "grid shrink-0 gap-4 border-t px-4 py-3",
-              completed && "sm:grid-cols-2",
-            )}
-          >
-            <div className="space-y-1">
-              <MetadataLine label="등록자">{task.createdBy.name}</MetadataLine>
-              <MetadataLine label="등록 시각">
-                {formatDateTime(new Date(task.createdAt))}
-              </MetadataLine>
-            </div>
-            {completed ? (
+          completed ? (
+            <div className="grid shrink-0 gap-4 border-t px-4 py-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <MetadataLine label="등록자">{task.createdBy.name}</MetadataLine>
+                <MetadataLine label="등록 시각">
+                  {formatDateTime(new Date(task.createdAt))}
+                </MetadataLine>
+              </div>
               <div className="space-y-1">
                 <MetadataLine label="완료 처리자">
                   {task.completedBy?.name ?? EMPTY_TASK_CELL}
@@ -123,8 +135,30 @@ export function OfficeTaskDetailsDialog({
                     : EMPTY_TASK_CELL}
                 </MetadataLine>
               </div>
-            ) : null}
-          </div>
+            </div>
+          ) : (
+            <div className="flex shrink-0 items-center justify-between gap-4 border-t px-4 py-3">
+              <div className="space-y-1">
+                <MetadataLine label="등록자">{task.createdBy.name}</MetadataLine>
+                <MetadataLine label="등록 시각">
+                  {formatDateTime(new Date(task.createdAt))}
+                </MetadataLine>
+              </div>
+              <ConfirmDeleteDialog
+                title="업무 완료"
+                description="이 업무를 완료 처리하시겠습니까? 완료된 업무는 완료 목록으로 이동합니다."
+                action={completeOfficeTask}
+                hiddenFields={{ id: task.id }}
+                triggerLabel="업무 완료"
+                confirmLabel="업무 완료"
+                confirmVariant="success"
+                triggerVariant="outline"
+                triggerSize="sm"
+                iconTrigger={false}
+                onSuccess={() => onOpenChange(false)}
+              />
+            </div>
+          )
         ) : null}
 
         {task ? (
