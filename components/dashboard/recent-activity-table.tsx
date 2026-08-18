@@ -14,6 +14,8 @@ export type RecentActivityTableRow = {
   createdAt: Date;
   companyId?: string;
   companyName?: string;
+  year?: number;
+  month?: number;
 };
 
 type RecentActivityTableProps = {
@@ -55,6 +57,8 @@ export function RecentActivityTable({
                     type: row.type,
                     mode: linkMode,
                     companyId: row.companyId,
+                    year: row.year,
+                    month: row.month,
                   })}
                 />
               </td>

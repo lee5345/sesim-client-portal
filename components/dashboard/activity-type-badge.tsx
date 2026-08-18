@@ -39,6 +39,20 @@ export const DASHBOARD_ACTIVITY_MODULE_PATHS: Record<
   피부양자: "dependents",
 };
 
+const MONTHLY_SCOPED_ACTIVITY_TYPES = [
+  "일용직",
+  "상세급여",
+  "사업소득",
+] as const satisfies readonly DashboardActivityType[];
+
+type MonthlyScopedActivityType = (typeof MONTHLY_SCOPED_ACTIVITY_TYPES)[number];
+
+function isMonthlyScopedActivityType(
+  type: DashboardActivityType,
+): type is MonthlyScopedActivityType {
+  return (MONTHLY_SCOPED_ACTIVITY_TYPES as readonly string[]).includes(type);
+}
+
 const ACTIVITY_TYPE_META: Record<
   DashboardActivityType,
   {
@@ -60,17 +74,38 @@ export function getDashboardActivityHref(input: {
   type: DashboardActivityType;
   mode: "client" | "firm";
   companyId?: string;
+  year?: number;
+  month?: number;
 }) {
   const modulePath = DASHBOARD_ACTIVITY_MODULE_PATHS[input.type];
+  const params = new URLSearchParams();
 
   if (input.mode === "firm") {
     if (!input.companyId) {
       return undefined;
     }
-    return `/firm/companies/${input.companyId}?tab=${modulePath}`;
+    params.set("tab", modulePath);
+    appendMonthScope(params, input);
+    return `/firm/companies/${input.companyId}?${params.toString()}`;
   }
 
-  return `/client/${modulePath}`;
+  appendMonthScope(params, input);
+  const query = params.toString();
+  return query ? `/client/${modulePath}?${query}` : `/client/${modulePath}`;
+}
+
+function appendMonthScope(
+  params: URLSearchParams,
+  input: { type: DashboardActivityType; year?: number; month?: number },
+) {
+  if (!isMonthlyScopedActivityType(input.type)) {
+    return;
+  }
+  if (input.year == null || input.month == null) {
+    return;
+  }
+  params.set("year", String(input.year));
+  params.set("month", String(input.month));
 }
 
 type ActivityTypeBadgeProps = {
