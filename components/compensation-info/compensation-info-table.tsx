@@ -5,6 +5,7 @@ import { Calculator, Copy, Pencil, Plus, Search, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { CompensationInfoMonthSelector } from "@/components/compensation-info/compensation-info-month-selector";
+import { CopyRecentPeopleDialog } from "@/components/client/copy-recent-people-dialog";
 import { ExcelExportDialog } from "@/components/export/excel-export-dialog";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { SortBySelect } from "@/components/filters/sort-by-select";
@@ -13,14 +14,6 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { CompactDateTime } from "@/components/ui/compact-datetime";
 import { MultilineText, notesBodyCellClassName } from "@/components/ui/multiline-text";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
@@ -76,6 +69,7 @@ const headerCellClassName =
   "border-r border-border/30 px-4 py-3 text-left font-medium whitespace-nowrap last:border-r-0";
 const bodyCellClassName =
   "border-r border-border/30 px-4 py-3 align-middle whitespace-nowrap last:border-r-0";
+const notesCellClassName = notesBodyCellClassName;
 const stickyNameHeaderClassName =
   "sticky left-0 z-40 border-r border-border bg-muted px-4 py-3 text-left font-medium whitespace-nowrap shadow-[10px_0_20px_-10px_rgba(0,0,0,0.15)]";
 const stickyNameCellClassName =
@@ -300,11 +294,6 @@ export function CompensationInfoTable({
   const [formValues, setFormValues] = useState<RowFormValues>(createEmptyFormValues);
   const [formError, setFormError] = useState<string | null>(null);
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
-  const [copyModeDialogOpen, setCopyModeDialogOpen] = useState(false);
-  const [copySourceYearMonth, setCopySourceYearMonth] = useState<{
-    year: number;
-    month: number;
-  } | null>(null);
   const [unreadIds, setUnreadIds] = useState<Set<string> | null>(null);
   const [reviewActive, setReviewActive] = useState(false);
   const [draftNameFilter, setDraftNameFilter] = useState("");
@@ -339,29 +328,6 @@ export function CompensationInfoTable({
       setReviewActive(true);
     })();
   }, [basePath, companyId, month, router, searchParams, showUnread, year]);
-
-  useEffect(() => {
-    if (!companyId || (!copyDialogOpen && !copyModeDialogOpen)) {
-      return;
-    }
-
-    let cancelled = false;
-    setCopySourceYearMonth(null);
-
-    void (async () => {
-      const source = await getCompensationInfoMostRecentMonthWithData({
-        companyId,
-        year,
-        month,
-      });
-      if (cancelled) return;
-      setCopySourceYearMonth(source);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [companyId, copyDialogOpen, copyModeDialogOpen, month, year]);
 
   const visibleRows = useMemo(() => {
     if (!unreadIds) {
@@ -491,10 +457,6 @@ type TableRow =
   }
 
   function handleCopyClick() {
-    if (compensationInfos.length > 0) {
-      setCopyModeDialogOpen(true);
-      return;
-    }
     setCopyDialogOpen(true);
   }
 
@@ -511,7 +473,6 @@ type TableRow =
         mode,
       });
       setCopyDialogOpen(false);
-      setCopyModeDialogOpen(false);
       router.refresh();
     });
   }
@@ -684,7 +645,7 @@ type TableRow =
 
         {filteredRows.length === 0 && !editingRowId ? (
           compensationInfos.length === 0 ? (
-            <EmptyState message="등록된 상세급여 정보가 없습니다. 재직자 추가 버튼으로 첫 항목을 추가하거나 최근 월 인원을 복사해 주세요." />
+            <EmptyState message="등록된 상세급여 정보가 없습니다. 재직자 추가 버튼으로 첫 항목을 추가하거나 최근 인원을 복사해 주세요." />
           ) : (
             <div className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
               검색 조건에 맞는 상세급여 정보가 없습니다.
@@ -925,7 +886,7 @@ type TableRow =
                         )}
                       </td>
                       <td
-                        className={`${notesBodyCellClassName}${hasAnyNotes ? " min-w-52" : ""}`}
+                        className={`${notesCellClassName}${hasAnyNotes ? " min-w-52" : ""}`}
                       >
                         {isEditing ? (
                           <textarea
@@ -1033,89 +994,19 @@ type TableRow =
         )}
       </CardContent>
 
-      <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>최근 인원 복사</DialogTitle>
-            <DialogDescription>
-              {copySourceYearMonth ? (
-                <>
-                  가장 최근에 기록이 있는 {copySourceYearMonth.year}년{" "}
-                  {copySourceYearMonth.month}월의 재직자 목록을 {year}년 {month}월로
-                  복사합니다.
-                </>
-              ) : (
-                <>
-                  가장 최근에 기록이 있는 월의 재직자 목록을 {year}년 {month}월로
-                  복사합니다.
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setCopyDialogOpen(false)}
-              disabled={isPending}
-            >
-              취소
-            </Button>
-            <Button
-              type="button"
-              disabled={isPending}
-              onClick={() => runCopy("append")}
-            >
-              복사
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={copyModeDialogOpen} onOpenChange={setCopyModeDialogOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>복사 방식 선택</DialogTitle>
-            <DialogDescription>
-              {year}년 {month}월에 이미 등록된 항목이 있습니다. 덮어쓰기는 기존
-              항목을 삭제한 뒤 이름만 복사하고, 추가하기는 기존 재직자을 유지한 채
-              새 재직자만 추가합니다.
-              {copySourceYearMonth ? (
-                <span className="mt-2 block">
-                  복사 대상 기간: {copySourceYearMonth.year}년{" "}
-                  {copySourceYearMonth.month}월
-                </span>
-              ) : null}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setCopyModeDialogOpen(false)}
-              disabled={isPending}
-            >
-              취소
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isPending}
-              onClick={() => runCopy("append")}
-            >
-              추가하기
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={isPending}
-              onClick={() => runCopy("overwrite")}
-            >
-              덮어쓰기
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CopyRecentPeopleDialog
+        open={copyDialogOpen}
+        onOpenChange={setCopyDialogOpen}
+        companyId={companyId}
+        targetYear={year}
+        targetMonth={month}
+        hasExistingEntries={compensationInfos.length > 0}
+        listNoun="재직자"
+        existingModeDescription={`${year}년 ${month}월에 이미 등록된 항목이 있습니다. 덮어쓰기는 기존 항목을 삭제한 뒤 이름만 복사하고, 추가하기는 기존 재직자을 유지한 채 새 재직자만 추가합니다.`}
+        isPending={isPending}
+        loadSource={getCompensationInfoMostRecentMonthWithData}
+        onCopy={runCopy}
+      />
     </Card>
   );
 }

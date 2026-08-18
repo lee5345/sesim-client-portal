@@ -60,7 +60,7 @@ export function groupActiveOfficeTasksForAgenda<T extends OfficeTaskAgendaItem>(
 export function countOfficeTaskAgendaHighlights(
   agenda: OfficeTaskAgenda<OfficeTaskAgendaItem>,
 ) {
-  return agenda.today.length + agenda.tomorrow.length + agenda.recentlyAdded.length;
+  return agenda.today.length + agenda.tomorrow.length;
 }
 
 export function summarizeOfficeTaskNavBadges(

@@ -88,7 +88,7 @@ export function SidebarNav({ items }: SidebarNavProps) {
                 variant={item.badgeVariant ?? badgeVariant}
                 aria-label={
                   item.href === "/firm/task-manager"
-                    ? `주요 사항 ${badgeCount}건`
+                    ? `오늘·내일 마감 ${badgeCount}건`
                     : undefined
                 }
               />

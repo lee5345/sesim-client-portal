@@ -358,7 +358,10 @@ export async function getBusinessIncomeMostRecentMonthWithData(input: {
     where: {
       companyId: input.companyId,
       deletedAt: null,
-      NOT: { year: period.year, month: period.month },
+      OR: [
+        { year: { lt: period.year } },
+        { year: period.year, month: { lt: period.month } },
+      ],
     },
     orderBy: [{ year: "desc" }, { month: "desc" }, { createdAt: "desc" }],
     select: { year: true, month: true },
@@ -385,7 +388,10 @@ export async function copyBusinessIncomeNamesFromMostRecentMonth(input: {
     where: {
       companyId: input.companyId,
       deletedAt: null,
-      NOT: { year: period.year, month: period.month },
+      OR: [
+        { year: { lt: period.year } },
+        { year: period.year, month: { lt: period.month } },
+      ],
     },
     orderBy: [{ year: "desc" }, { month: "desc" }, { createdAt: "desc" }],
     select: { year: true, month: true },

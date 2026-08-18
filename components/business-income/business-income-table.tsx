@@ -15,6 +15,7 @@ import { NAV_ICONS } from "@/components/layout/nav-icons";
 const BusinessIncomeIcon = NAV_ICONS["dollar-sign"];
 
 import { BusinessIncomeMonthSelector } from "@/components/business-income/business-income-month-selector";
+import { CopyRecentPeopleDialog } from "@/components/client/copy-recent-people-dialog";
 import {
   MaskedRrnCell,
   MaskedRrnColumnHeader,
@@ -29,14 +30,6 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { CompactDateTime } from "@/components/ui/compact-datetime";
 import { MultilineText, notesBodyCellClassName } from "@/components/ui/multiline-text";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
@@ -186,11 +179,6 @@ export function BusinessIncomeTable({
   const [formValues, setFormValues] = useState<RowFormValues>(createEmptyFormValues);
   const [formError, setFormError] = useState<string | null>(null);
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
-  const [copyModeDialogOpen, setCopyModeDialogOpen] = useState(false);
-  const [copySourceYearMonth, setCopySourceYearMonth] = useState<{
-    year: number;
-    month: number;
-  } | null>(null);
   const [unreadIds, setUnreadIds] = useState<Set<string> | null>(null);
   const [reviewActive, setReviewActive] = useState(false);
   const [draftNameFilter, setDraftNameFilter] = useState("");
@@ -228,29 +216,6 @@ export function BusinessIncomeTable({
       setReviewActive(true);
     })();
   }, [basePath, companyId, month, router, searchParams, showUnread, year]);
-
-  useEffect(() => {
-    if (!companyId || (!copyDialogOpen && !copyModeDialogOpen)) {
-      return;
-    }
-
-    let cancelled = false;
-    setCopySourceYearMonth(null);
-
-    void (async () => {
-      const source = await getBusinessIncomeMostRecentMonthWithData({
-        companyId,
-        year,
-        month,
-      });
-      if (cancelled) return;
-      setCopySourceYearMonth(source);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [companyId, copyDialogOpen, copyModeDialogOpen, month, year]);
 
   const visibleRows = useMemo(() => {
     if (!unreadIds) {
@@ -383,10 +348,6 @@ export function BusinessIncomeTable({
   }
 
   function handleCopyClick() {
-    if (businessIncomes.length > 0) {
-      setCopyModeDialogOpen(true);
-      return;
-    }
     setCopyDialogOpen(true);
   }
 
@@ -403,7 +364,6 @@ export function BusinessIncomeTable({
         mode,
       });
       setCopyDialogOpen(false);
-      setCopyModeDialogOpen(false);
       router.refresh();
     });
   }
@@ -546,7 +506,7 @@ export function BusinessIncomeTable({
 
         {filteredRows.length === 0 && !editingRowId ? (
           businessIncomes.length === 0 ? (
-            <EmptyState message="등록된 사업소득 정보가 없습니다. 인원 추가 버튼으로 첫 항목을 추가하거나 최근 월 인원을 복사해 주세요." />
+            <EmptyState message="등록된 사업소득 정보가 없습니다. 인원 추가 버튼으로 첫 항목을 추가하거나 최근 인원을 복사해 주세요." />
           ) : (
             <div className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
               검색 조건에 맞는 사업소득 정보가 없습니다.
@@ -778,89 +738,19 @@ export function BusinessIncomeTable({
         )}
       </CardContent>
 
-      <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>최근 인원 복사</DialogTitle>
-            <DialogDescription>
-              {copySourceYearMonth ? (
-                <>
-                  가장 최근에 기록이 있는 {copySourceYearMonth.year}년{" "}
-                  {copySourceYearMonth.month}월의 인원 목록을 {year}년 {month}월로
-                  복사합니다.
-                </>
-              ) : (
-                <>
-                  가장 최근에 기록이 있는 월의 인원 목록을 {year}년 {month}월로
-                  복사합니다.
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setCopyDialogOpen(false)}
-              disabled={isPending}
-            >
-              취소
-            </Button>
-            <Button
-              type="button"
-              disabled={isPending}
-              onClick={() => runCopy("append")}
-            >
-              복사
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={copyModeDialogOpen} onOpenChange={setCopyModeDialogOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>복사 방식 선택</DialogTitle>
-            <DialogDescription>
-              {year}년 {month}월에 이미 등록된 항목이 있습니다. 덮어쓰기는 기존
-              항목을 삭제한 뒤 이름·주민번호만 복사하고, 추가하기는 기존 인원을
-              유지한 채 새 인원만 추가합니다.
-              {copySourceYearMonth ? (
-                <span className="mt-2 block">
-                  복사 대상 기간: {copySourceYearMonth.year}년{" "}
-                  {copySourceYearMonth.month}월
-                </span>
-              ) : null}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setCopyModeDialogOpen(false)}
-              disabled={isPending}
-            >
-              취소
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isPending}
-              onClick={() => runCopy("append")}
-            >
-              추가하기
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={isPending}
-              onClick={() => runCopy("overwrite")}
-            >
-              덮어쓰기
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CopyRecentPeopleDialog
+        open={copyDialogOpen}
+        onOpenChange={setCopyDialogOpen}
+        companyId={companyId}
+        targetYear={year}
+        targetMonth={month}
+        hasExistingEntries={businessIncomes.length > 0}
+        listNoun="인원"
+        existingModeDescription={`${year}년 ${month}월에 이미 등록된 항목이 있습니다. 덮어쓰기는 기존 항목을 삭제한 뒤 이름·주민번호만 복사하고, 추가하기는 기존 인원을 유지한 채 새 인원만 추가합니다.`}
+        isPending={isPending}
+        loadSource={getBusinessIncomeMostRecentMonthWithData}
+        onCopy={runCopy}
+      />
     </Card>
   );
 }

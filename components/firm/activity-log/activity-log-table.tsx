@@ -57,7 +57,7 @@ export function ActivityLogTable({
               <th className={headerCellClassName}>사용자</th>
               <th className={headerCellClassName}>역할</th>
               <th className={headerCellClassName}>작업</th>
-              <th className={headerCellClassName}>모듈</th>
+              <th className={headerCellClassName}>탭</th>
               <th className={headerCellClassName}>페이로드</th>
               <th className={headerCellClassName}>일시</th>
             </tr>

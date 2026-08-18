@@ -8,6 +8,7 @@ import { DailyWorkerFormDialog } from "@/components/client/daily-worker-form-dia
 import { ExcelExportDialog } from "@/components/export/excel-export-dialog";
 import { DailyWorkersTableView } from "@/components/daily-workers/daily-workers-table-view";
 import { DailyWorkersMonthSelector } from "@/components/daily-workers/daily-workers-month-selector";
+import { CopyRecentPeopleDialog } from "@/components/client/copy-recent-people-dialog";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import {
   EMPTY_DAILY_WORKER_FILTERS,
@@ -31,14 +32,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 type DailyWorkersTableProps = {
   dailyWorkers: DailyWorkerTableRow[];
@@ -75,11 +68,6 @@ export function DailyWorkersTable({
   const [unreadIds, setUnreadIds] = useState<Set<string> | null>(null);
   const [reviewActive, setReviewActive] = useState(false);
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
-  const [copyModeDialogOpen, setCopyModeDialogOpen] = useState(false);
-  const [copySourceYearMonth, setCopySourceYearMonth] = useState<{
-    year: number;
-    month: number;
-  } | null>(null);
   const [draftFilters, setDraftFilters] = useState<DailyWorkersFilterValues>(
     EMPTY_DAILY_WORKER_FILTERS,
   );
@@ -135,29 +123,6 @@ export function DailyWorkersTable({
     })();
   }, [basePath, companyId, month, router, searchParams, showUnread, year]);
 
-  useEffect(() => {
-    if (!companyId || (!copyDialogOpen && !copyModeDialogOpen)) {
-      return;
-    }
-
-    let cancelled = false;
-    setCopySourceYearMonth(null);
-
-    void (async () => {
-      const source = await getDailyWorkerMostRecentMonthWithData({
-        companyId,
-        year,
-        month,
-      });
-      if (cancelled) return;
-      setCopySourceYearMonth(source);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [companyId, copyDialogOpen, copyModeDialogOpen, month, year]);
-
   function handleDraftChange(next: DailyWorkersFilterValues) {
     setDraftFilters(next);
     setAppliedFilters(next);
@@ -173,10 +138,6 @@ export function DailyWorkersTable({
   }
 
   function handleCopyClick() {
-    if (dailyWorkers.length > 0) {
-      setCopyModeDialogOpen(true);
-      return;
-    }
     setCopyDialogOpen(true);
   }
 
@@ -193,7 +154,6 @@ export function DailyWorkersTable({
         mode,
       });
       setCopyDialogOpen(false);
-      setCopyModeDialogOpen(false);
       router.refresh();
     });
   }
@@ -274,7 +234,7 @@ export function DailyWorkersTable({
         </div>
 
         {dailyWorkers.length === 0 ? (
-          <EmptyState message="등록된 일용직이 없습니다. 일용직 등록 버튼으로 첫 항목을 추가하거나 최근 월 인원을 복사해 주세요." />
+          <EmptyState message="등록된 일용직이 없습니다. 일용직 등록 버튼으로 첫 항목을 추가하거나 최근 인원을 복사해 주세요." />
         ) : (
           <DailyWorkersTableView
             dailyWorkers={visibleDailyWorkers}
@@ -292,89 +252,19 @@ export function DailyWorkersTable({
         )}
       </CardContent>
 
-      <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>최근 인원 복사</DialogTitle>
-            <DialogDescription>
-              {copySourceYearMonth ? (
-                <>
-                  가장 최근에 기록이 있는 {copySourceYearMonth.year}년{" "}
-                  {copySourceYearMonth.month}월의 인원 목록을 {year}년 {month}월로
-                  복사합니다.
-                </>
-              ) : (
-                <>
-                  가장 최근에 기록이 있는 월의 인원 목록을 {year}년 {month}월로
-                  복사합니다.
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setCopyDialogOpen(false)}
-              disabled={isPending}
-            >
-              취소
-            </Button>
-            <Button
-              type="button"
-              disabled={isPending}
-              onClick={() => runCopy("append")}
-            >
-              복사
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={copyModeDialogOpen} onOpenChange={setCopyModeDialogOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>복사 방식 선택</DialogTitle>
-            <DialogDescription>
-              {year}년 {month}월에 이미 등록된 항목이 있습니다. 덮어쓰기는 기존
-              항목을 삭제한 뒤 이름·주민번호·직종만 복사하고, 추가하기는 기존
-              인원을 유지한 채 새 인원만 추가합니다.
-              {copySourceYearMonth ? (
-                <span className="mt-2 block">
-                  복사 대상 기간: {copySourceYearMonth.year}년{" "}
-                  {copySourceYearMonth.month}월
-                </span>
-              ) : null}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setCopyModeDialogOpen(false)}
-              disabled={isPending}
-            >
-              취소
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isPending}
-              onClick={() => runCopy("append")}
-            >
-              추가하기
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={isPending}
-              onClick={() => runCopy("overwrite")}
-            >
-              덮어쓰기
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CopyRecentPeopleDialog
+        open={copyDialogOpen}
+        onOpenChange={setCopyDialogOpen}
+        companyId={companyId}
+        targetYear={year}
+        targetMonth={month}
+        hasExistingEntries={dailyWorkers.length > 0}
+        listNoun="인원"
+        existingModeDescription={`${year}년 ${month}월에 이미 등록된 항목이 있습니다. 덮어쓰기는 기존 항목을 삭제한 뒤 이름·주민번호·직종만 복사하고, 추가하기는 기존 인원을 유지한 채 새 인원만 추가합니다.`}
+        isPending={isPending}
+        loadSource={getDailyWorkerMostRecentMonthWithData}
+        onCopy={runCopy}
+      />
     </Card>
   );
 }

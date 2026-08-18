@@ -151,8 +151,8 @@ export function ActivityLogFilters({
 
         <div className="min-w-0 flex-1 basis-0">
           <MultiSelectFilter
-            label="모듈"
-            triggerLabel="모듈"
+            label="탭"
+            triggerLabel="탭"
             selectedCount={draft.tableNames.length}
             open={moduleMenuOpen}
             onOpenChange={setModuleMenuOpen}
